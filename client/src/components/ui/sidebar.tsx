@@ -1,11 +1,11 @@
-import { useState, useContext } from "react";
+import { useState } from "react";
 import { ChevronDown, ChevronRight, MapPin, Camera, X, Plus, User, Menu } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
-import { AppContext } from "../../App";
+import useSidebarStore from "@/hooks/use-sidebar";
 
 // Define the jobsite and camera types
 interface Camera {
@@ -27,8 +27,8 @@ interface SidebarProps {
 }
 
 export function Sidebar({ onSelectionChange }: SidebarProps) {
-  // Get the context for sidebar functionality
-  const { toggleSidebar } = useContext(AppContext);
+  // Get the toggle function from the sidebar store
+  const { toggle } = useSidebarStore();
   
   // Sample jobsite data - in a real app this would come from an API
   const [jobsites, setJobsites] = useState<Jobsite[]>([
@@ -72,7 +72,7 @@ export function Sidebar({ onSelectionChange }: SidebarProps) {
   // Handle sidebar toggle with logging
   const handleToggleSidebar = () => {
     console.log("Sidebar toggle button clicked");
-    toggleSidebar();
+    toggle();
   };
 
   // Toggle jobsite expansion
