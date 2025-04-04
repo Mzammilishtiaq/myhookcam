@@ -3,6 +3,9 @@ import {
   annotations, type Annotation, type InsertAnnotation,
   bookmarks, type Bookmark, type InsertBookmark,
   shares, type Share, type InsertShare,
+  devices, type Device, type InsertDevice,
+  deviceStatus, type DeviceStatus, type InsertDeviceStatus,
+  deviceRuntimes, type DeviceRuntime, type InsertDeviceRuntime,
   type Clip
 } from "@shared/schema";
 import { db } from "./db";
@@ -34,6 +37,18 @@ export interface IStorage {
   getShareByToken(token: string): Promise<Share | undefined>;
   createShare(share: InsertShare, token: string): Promise<Share>;
   deleteShare(id: number): Promise<boolean>;
+  
+  // IoT Device operations
+  getDevices(): Promise<Device[]>;
+  getDevice(id: number): Promise<Device | undefined>;
+  createDevice(device: InsertDevice): Promise<Device>;
+  
+  // Device Status operations
+  getDeviceStatus(date: string, deviceId?: number, timeframe?: "daily" | "weekly" | "monthly"): Promise<DeviceStatus[]>;
+  createDeviceStatus(status: InsertDeviceStatus): Promise<DeviceStatus>;
+  
+  // Device Runtime operations
+  getDeviceRuntime(deviceId: number | undefined, date: string, timeframe: "daily" | "weekly" | "monthly"): Promise<DeviceRuntime[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -124,7 +139,7 @@ export class DatabaseStorage implements IStorage {
     return db
       .select()
       .from(shares)
-      .orderBy(shares.createdAt, { direction: 'desc' });
+      .orderBy(desc(shares.createdAt));
   }
 
   async getShareByToken(token: string): Promise<Share | undefined> {
@@ -145,7 +160,87 @@ export class DatabaseStorage implements IStorage {
 
   async deleteShare(id: number): Promise<boolean> {
     const result = await db.delete(shares).where(eq(shares.id, id));
-    return result.count > 0;
+    return !!result.rowCount;
+  }
+  
+  // IoT Device operations
+  async getDevices(): Promise<Device[]> {
+    return db
+      .select()
+      .from(devices)
+      .orderBy(devices.name);
+  }
+  
+  async getDevice(id: number): Promise<Device | undefined> {
+    const result = await db.select().from(devices).where(eq(devices.id, id));
+    return result[0];
+  }
+  
+  async createDevice(insertDevice: InsertDevice): Promise<Device> {
+    const result = await db.insert(devices).values(insertDevice).returning();
+    return result[0];
+  }
+  
+  // Device Status operations
+  async getDeviceStatus(
+    date: string, 
+    deviceId?: number, 
+    timeframe: "daily" | "weekly" | "monthly" = "daily"
+  ): Promise<DeviceStatus[]> {
+    // Create different conditions based on parameters
+    let conditions = [];
+    
+    // Add date condition
+    conditions.push(eq(deviceStatus.date, date));
+    
+    // Add device ID condition if provided
+    if (deviceId !== undefined) {
+      conditions.push(eq(deviceStatus.deviceId, deviceId));
+    }
+    
+    // Query with all conditions
+    const query = conditions.length > 1
+      ? db.select().from(deviceStatus).where(and(...conditions))
+      : db.select().from(deviceStatus).where(conditions[0]);
+    
+    return await query.orderBy(deviceStatus.timestamp);
+  }
+  
+  async createDeviceStatus(insertStatus: InsertDeviceStatus): Promise<DeviceStatus> {
+    const result = await db.insert(deviceStatus).values(insertStatus).returning();
+    return result[0];
+  }
+  
+  // Device Runtime operations
+  async getDeviceRuntime(
+    deviceId: number | undefined,
+    date: string,
+    timeframe: "daily" | "weekly" | "monthly"
+  ): Promise<DeviceRuntime[]> {
+    // Build conditions based on timeframe and deviceId
+    const conditions = [];
+    
+    // Add condition based on timeframe
+    if (timeframe === "daily") {
+      conditions.push(eq(deviceRuntimes.date, date));
+    } else if (timeframe === "weekly") {
+      conditions.push(eq(deviceRuntimes.weekStartDate, date));
+    } else if (timeframe === "monthly") {
+      const month = date.substring(0, 7); // Extract YYYY-MM part
+      conditions.push(eq(deviceRuntimes.month, month));
+    }
+    
+    // Add device ID condition if provided
+    if (deviceId !== undefined) {
+      conditions.push(eq(deviceRuntimes.deviceId, deviceId));
+    }
+    
+    // Execute query with all conditions
+    const query = conditions.length > 1
+      ? db.select().from(deviceRuntimes).where(and(...conditions))
+      : db.select().from(deviceRuntimes).where(conditions[0]);
+    
+    return await query;
   }
 }
 

@@ -1,294 +1,327 @@
 import { useState } from "react";
+import { format, parseISO } from "date-fns";
+import { useQuery } from "@tanstack/react-query";
+import { Progress } from "@/components/ui/progress";
 import { Card } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar } from "@/components/ui/calendar";
-import { format, startOfWeek, endOfWeek, addDays, subDays, startOfMonth, endOfMonth } from "date-fns";
-import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  ResponsiveContainer,
-  Legend 
-} from "recharts";
+import { Badge } from "@/components/ui/badge";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import type { DeviceStatus, DeviceRuntime, Device } from "@shared/schema";
 
-// Mock data - would be replaced with real API data
-const generateDeviceStatusData = (date: Date, deviceId: string) => {
-  const hours = [];
-  for (let hour = 0; hour < 24; hour++) {
-    // Create 12 entries (5-minute increments) for each hour
-    for (let increment = 0; increment < 12; increment++) {
-      const minute = increment * 5;
-      const timeLabel = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
-      // Random status (90% chance of being online)
-      const status = Math.random() > 0.1 ? 'online' : 'offline';
-      hours.push({
-        time: timeLabel,
-        status,
-        deviceId
-      });
-    }
-  }
-  return hours;
-};
+interface DeviceTimelineProps {
+  deviceName: string;
+  deviceId: number;
+  timeframe: "daily" | "weekly" | "monthly";
+  date: string;
+  statusData: DeviceStatus[];
+  runtimeData: DeviceRuntime | undefined;
+}
 
-const generateRuntimeStats = (deviceId: string) => {
-  // Mock runtime data (in minutes)
-  return {
-    daily: Math.floor(Math.random() * 60 * 24 * 0.9), // ~90% of day
-    weekly: Math.floor(Math.random() * 60 * 24 * 7 * 0.85), // ~85% of week
-    monthly: Math.floor(Math.random() * 60 * 24 * 30 * 0.8) // ~80% of month
-  };
-};
-
-// Convert runtime minutes to hours and minutes format
-const formatRuntime = (minutes: number) => {
-  const hours = Math.floor(minutes / 60);
-  const mins = minutes % 60;
-  return `${hours}h ${mins}m`;
-};
-
-// Create hourly view data for visualization
-const createHourlyViewData = (statusData: any[]) => {
-  const hourlyData = [];
-  for (let hour = 0; hour < 24; hour++) {
-    const hourString = hour.toString().padStart(2, '0');
-    
-    // Filter data for this hour
-    const hourData = statusData.filter(item => 
-      item.time.startsWith(hourString)
-    );
-    
-    // Calculate uptime percentage for this hour
-    const onlineCount = hourData.filter(item => item.status === 'online').length;
-    const uptimePercentage = (onlineCount / hourData.length) * 100;
-    
-    hourlyData.push({
-      hour: `${hourString}:00`,
-      uptime: uptimePercentage.toFixed(0)
-    });
-  }
+function DeviceTimeline({ deviceName, deviceId, timeframe, date, statusData, runtimeData }: DeviceTimelineProps) {
+  // Calculate uptime percentage
+  const onlineCount = statusData.filter(item => item.status === "online").length;
+  const uptimePercentage = statusData.length > 0 ? (onlineCount / statusData.length) * 100 : 0;
   
-  return hourlyData;
-};
+  // Get runtime in hours and minutes
+  const getRuntimeFormatted = () => {
+    if (!runtimeData) return "No data";
+    
+    const totalMinutes = runtimeData.runtimeMinutes;
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    
+    return `${hours}h ${minutes}m`;
+  };
+  
+  // Get uptime percentage
+  const getUptimeFormatted = () => {
+    if (statusData.length === 0) return "No data";
+    return `${uptimePercentage.toFixed(1)}%`;
+  };
+  
+  return (
+    <Card className="p-4 mb-4">
+      <div className="flex justify-between mb-2">
+        <div>
+          <h3 className="font-semibold text-lg">{deviceName}</h3>
+          <div className="flex space-x-4 text-sm mt-1">
+            <span>Uptime: <strong className="text-yellow-500">{getUptimeFormatted()}</strong></span>
+            <span>Runtime: <strong className="text-yellow-500">{getRuntimeFormatted()}</strong></span>
+          </div>
+        </div>
+        <Badge variant={uptimePercentage > 95 ? "outline" : "destructive"}>
+          {uptimePercentage > 95 ? "Healthy" : "Needs Attention"}
+        </Badge>
+      </div>
+      
+      <div className="h-8 flex mt-4 mb-1 rounded-md overflow-hidden">
+        {statusData.length > 0 ? (
+          statusData.map((item, index) => (
+            <div 
+              key={index} 
+              className={`flex-1 border-r border-background last:border-r-0 ${
+                item.status === 'online' ? 'bg-green-500' : 'bg-red-500'
+              }`}
+              title={`${item.timePoint}: ${item.status}`}
+            />
+          ))
+        ) : (
+          <div className="flex-1 bg-gray-300 text-center text-xs text-gray-600 flex items-center justify-center">
+            No data available
+          </div>
+        )}
+      </div>
+      
+      <div className="flex justify-between mt-1 text-xs text-gray-500">
+        {timeframe === "daily" ? (
+          <>
+            <span>12 AM</span>
+            <span>6 AM</span>
+            <span>12 PM</span>
+            <span>6 PM</span>
+            <span>12 AM</span>
+          </>
+        ) : timeframe === "weekly" ? (
+          <>
+            <span>Mon</span>
+            <span>Tue</span>
+            <span>Wed</span>
+            <span>Thu</span>
+            <span>Fri</span>
+            <span>Sat</span>
+            <span>Sun</span>
+          </>
+        ) : (
+          <>
+            <span>Week 1</span>
+            <span>Week 2</span>
+            <span>Week 3</span>
+            <span>Week 4</span>
+          </>
+        )}
+      </div>
+      
+      {runtimeData && (
+        <div className="mt-4">
+          <div className="text-sm mb-1 flex justify-between">
+            <span>Runtime</span>
+            <span>{getRuntimeFormatted()}</span>
+          </div>
+          <Progress value={
+            timeframe === "daily" ? 
+              Math.min((runtimeData.runtimeMinutes / (24 * 60)) * 100, 100) : 
+            timeframe === "weekly" ? 
+              Math.min((runtimeData.runtimeMinutes / (7 * 24 * 60)) * 100, 100) : 
+              Math.min((runtimeData.runtimeMinutes / (30 * 24 * 60)) * 100, 100)
+          } />
+        </div>
+      )}
+    </Card>
+  );
+}
 
 export default function SystemStatus() {
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  const [timeframeView, setTimeframeView] = useState<"daily" | "weekly" | "monthly">("daily");
+  const [timeframe, setTimeframe] = useState<"daily" | "weekly" | "monthly">("daily");
+  const [date, setDate] = useState<Date>(new Date());
   
-  // Format date for display
-  const formattedDate = format(selectedDate, "yyyy-MM-dd");
+  const formattedDate = format(date, "yyyy-MM-dd");
   
-  // Generate mock data for the selected date
-  const cameraStatusData = generateDeviceStatusData(selectedDate, "camera");
-  const displayStatusData = generateDeviceStatusData(selectedDate, "display");
+  // Fetch devices
+  const { data: devices = [] } = useQuery<Device[]>({
+    queryKey: ['/api/devices'],
+    queryFn: async () => {
+      const response = await fetch('/api/devices');
+      if (!response.ok) throw new Error('Failed to fetch devices');
+      return response.json();
+    }
+  });
   
-  // Generate runtime statistics
-  const cameraRuntime = generateRuntimeStats("camera");
-  const displayRuntime = generateRuntimeStats("display");
+  // If no devices exist, use a placeholder message
+  const hasDevices = devices.length > 0;
   
-  // Create hourly view data for charts
-  const cameraHourlyData = createHourlyViewData(cameraStatusData);
-  const displayHourlyData = createHourlyViewData(displayStatusData);
-
-  // Navigation functions
-  const goToPreviousDay = () => setSelectedDate(subDays(selectedDate, 1));
-  const goToNextDay = () => setSelectedDate(addDays(selectedDate, 1));
-
-  // Get date range for weekly and monthly views
-  const weekStart = format(startOfWeek(selectedDate), "MMM d");
-  const weekEnd = format(endOfWeek(selectedDate), "MMM d, yyyy");
-  const monthStart = format(startOfMonth(selectedDate), "MMM d");
-  const monthEnd = format(endOfMonth(selectedDate), "MMM d, yyyy");
+  // Fetch status data for all devices
+  const { data: allStatusData = [], isLoading: statusLoading } = useQuery<DeviceStatus[]>({
+    queryKey: ['/api/device-status', formattedDate, timeframe],
+    queryFn: async () => {
+      const response = await fetch(`/api/device-status?date=${formattedDate}&timeframe=${timeframe}`);
+      if (!response.ok) throw new Error('Failed to fetch device status');
+      return response.json();
+    }
+  });
+  
+  // Fetch runtime data for all devices
+  const { data: allRuntimeData = [], isLoading: runtimeLoading } = useQuery<DeviceRuntime[]>({
+    queryKey: ['/api/device-runtime', formattedDate, timeframe],
+    queryFn: async () => {
+      const response = await fetch(`/api/device-runtime?date=${formattedDate}&timeframe=${timeframe}`);
+      if (!response.ok) throw new Error('Failed to fetch device runtime');
+      return response.json();
+    }
+  });
   
   return (
     <div className="container mx-auto p-4">
-      <Card className="p-6">
-        <h2 className="text-2xl font-bold mb-4 text-[#555555]"><span className="text-[#FBBC05]">HookCam</span> System Status</h2>
+      <div className="mb-6 flex justify-between items-center">
+        <h2 className="text-xl font-semibold text-[#555555]"><span className="text-[#FBBC05]">HookCam</span> System Health</h2>
         
-        {/* System Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-          <div className="bg-green-100 p-4 rounded-lg border border-green-500">
-            <h3 className="font-semibold text-green-800">Storage Status</h3>
+        <div className="flex space-x-4 items-center">
+          <div className="flex">
+            <button 
+              className={`px-3 py-1 rounded-l-md border border-r-0 ${
+                timeframe === 'daily' 
+                  ? 'bg-[#FBBC05] text-[#000000] border-[#FBBC05]' 
+                  : 'bg-[#555555] text-white border-[#555555]'
+              }`}
+              onClick={() => setTimeframe("daily")}
+            >
+              Daily
+            </button>
+            <button 
+              className={`px-3 py-1 border border-r-0 ${
+                timeframe === 'weekly' 
+                  ? 'bg-[#FBBC05] text-[#000000] border-[#FBBC05]' 
+                  : 'bg-[#555555] text-white border-[#555555]'
+              }`}
+              onClick={() => setTimeframe("weekly")}
+            >
+              Weekly
+            </button>
+            <button 
+              className={`px-3 py-1 rounded-r-md border ${
+                timeframe === 'monthly' 
+                  ? 'bg-[#FBBC05] text-[#000000] border-[#FBBC05]' 
+                  : 'bg-[#555555] text-white border-[#555555]'
+              }`}
+              onClick={() => setTimeframe("monthly")}
+            >
+              Monthly
+            </button>
+          </div>
+          
+          <div className="flex items-center">
+            <button 
+              className="p-1 rounded hover:bg-[#FBBC05] hover:text-[#000000]"
+              onClick={() => {
+                const newDate = new Date(date);
+                newDate.setDate(date.getDate() - (timeframe === 'daily' ? 1 : timeframe === 'weekly' ? 7 : 30));
+                setDate(newDate);
+              }}
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </button>
+            <input 
+              type="date" 
+              className="px-2 py-1 border border-[#BCBBBB] rounded bg-[#FBBC05] text-[#000000] font-medium" 
+              value={formattedDate}
+              onChange={(e) => setDate(parseISO(e.target.value))}
+            />
+            <button 
+              className="p-1 rounded hover:bg-[#FBBC05] hover:text-[#000000]"
+              onClick={() => {
+                const newDate = new Date(date);
+                newDate.setDate(date.getDate() + (timeframe === 'daily' ? 1 : timeframe === 'weekly' ? 7 : 30));
+                setDate(newDate);
+              }}
+            >
+              <ChevronRight className="h-5 w-5" />
+            </button>
+          </div>
+        </div>
+      </div>
+      
+      {/* System Overview Section */}
+      <Card className="p-4 mb-6">
+        <h3 className="text-lg font-semibold mb-3 text-[#555555]">System Overview</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+            <h4 className="font-semibold text-green-800">Storage Status</h4>
             <p className="text-green-700">Operational (87% free space)</p>
           </div>
-          <div className="bg-green-100 p-4 rounded-lg border border-green-500">
-            <h3 className="font-semibold text-green-800">Recording Status</h3>
+          <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+            <h4 className="font-semibold text-green-800">Recording Status</h4>
             <p className="text-green-700">Recording active</p>
           </div>
-          <div className="bg-green-100 p-4 rounded-lg border border-green-500">
-            <h3 className="font-semibold text-green-800">Network Status</h3>
+          <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+            <h4 className="font-semibold text-green-800">Network Status</h4>
             <p className="text-green-700">Connected (150 Mbps)</p>
           </div>
-          <div className="bg-green-100 p-4 rounded-lg border border-green-500">
-            <h3 className="font-semibold text-green-800">System Temperature</h3>
+          <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+            <h4 className="font-semibold text-green-800">System Temperature</h4>
             <p className="text-green-700">Normal (32°C)</p>
           </div>
         </div>
-        
-        {/* Device Health IoT Monitoring Section */}
-        <div className="mt-8">
-          <h3 className="text-xl font-semibold mb-4 text-[#555555]">Device Health Monitoring</h3>
-          
-          {/* Timeframe Selection */}
-          <div className="flex justify-between items-center mb-4">
-            <div>
-              <Tabs value={timeframeView} onValueChange={(v) => setTimeframeView(v as any)}>
-                <TabsList>
-                  <TabsTrigger value="daily">Daily</TabsTrigger>
-                  <TabsTrigger value="weekly">Weekly</TabsTrigger>
-                  <TabsTrigger value="monthly">Monthly</TabsTrigger>
-                </TabsList>
-              </Tabs>
-            </div>
-            
-            <div className="flex items-center space-x-2">
-              <button 
-                className="p-1 rounded hover:bg-[#FBBC05] hover:text-[#000000]"
-                onClick={goToPreviousDay}
-              >
-                <span className="flex items-center">◀ Previous</span>
-              </button>
-              
-              {timeframeView === "daily" && (
-                <span className="font-medium">{formattedDate}</span>
-              )}
-              {timeframeView === "weekly" && (
-                <span className="font-medium">{weekStart} - {weekEnd}</span>
-              )}
-              {timeframeView === "monthly" && (
-                <span className="font-medium">{monthStart} - {monthEnd}</span>
-              )}
-              
-              <button 
-                className="p-1 rounded hover:bg-[#FBBC05] hover:text-[#000000]"
-                onClick={goToNextDay}
-              >
-                <span className="flex items-center">Next ▶</span>
-              </button>
-            </div>
-          </div>
-          
-          {/* Device Status Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
-            {/* Camera Device */}
-            <Card className="p-4">
-              <h4 className="text-lg font-semibold mb-2">Camera (10.1.1.100)</h4>
-              <div className="grid grid-cols-3 gap-2 mb-4">
-                <div className="bg-blue-50 p-3 rounded border border-blue-200">
-                  <span className="block text-sm text-gray-500">Daily Runtime</span>
-                  <span className="font-medium">{formatRuntime(cameraRuntime.daily)}</span>
-                </div>
-                <div className="bg-blue-50 p-3 rounded border border-blue-200">
-                  <span className="block text-sm text-gray-500">Weekly Runtime</span>
-                  <span className="font-medium">{formatRuntime(cameraRuntime.weekly)}</span>
-                </div>
-                <div className="bg-blue-50 p-3 rounded border border-blue-200">
-                  <span className="block text-sm text-gray-500">Monthly Runtime</span>
-                  <span className="font-medium">{formatRuntime(cameraRuntime.monthly)}</span>
-                </div>
-              </div>
-              
-              {/* Status Chart - Horizontal Timeline */}
-              <div className="my-4">
-                <h5 className="text-sm font-medium mb-2">Daily Status Timeline (5-min increments)</h5>
-                <div className="h-16 relative">
-                  <div className="absolute top-0 left-0 w-full h-6 bg-gray-200 rounded"></div>
-                  {cameraStatusData.map((point, index) => {
-                    const totalPoints = cameraStatusData.length;
-                    const width = `${100 / totalPoints}%`;
-                    const left = `${(index / totalPoints) * 100}%`;
-                    return (
-                      <div 
-                        key={`camera-${point.time}`}
-                        className={`absolute top-0 h-6 ${point.status === 'online' ? 'bg-green-500' : 'bg-gray-400'}`}
-                        style={{ 
-                          width, 
-                          left, 
-                          transition: 'all 0.2s ease'
-                        }}
-                        title={`${point.time} - ${point.status}`}
-                      />
-                    );
-                  })}
-                  
-                  {/* Time markers */}
-                  <div className="absolute top-8 left-0 w-full flex justify-between text-xs text-gray-500">
-                    <span>00:00</span>
-                    <span>06:00</span>
-                    <span>12:00</span>
-                    <span>18:00</span>
-                    <span>23:59</span>
-                  </div>
-                </div>
-              </div>
-            </Card>
-            
-            {/* Display Device */}
-            <Card className="p-4">
-              <h4 className="text-lg font-semibold mb-2">Display (10.1.1.5)</h4>
-              <div className="grid grid-cols-3 gap-2 mb-4">
-                <div className="bg-blue-50 p-3 rounded border border-blue-200">
-                  <span className="block text-sm text-gray-500">Daily Runtime</span>
-                  <span className="font-medium">{formatRuntime(displayRuntime.daily)}</span>
-                </div>
-                <div className="bg-blue-50 p-3 rounded border border-blue-200">
-                  <span className="block text-sm text-gray-500">Weekly Runtime</span>
-                  <span className="font-medium">{formatRuntime(displayRuntime.weekly)}</span>
-                </div>
-                <div className="bg-blue-50 p-3 rounded border border-blue-200">
-                  <span className="block text-sm text-gray-500">Monthly Runtime</span>
-                  <span className="font-medium">{formatRuntime(displayRuntime.monthly)}</span>
-                </div>
-              </div>
-              
-              {/* Status Chart - Horizontal Timeline */}
-              <div className="my-4">
-                <h5 className="text-sm font-medium mb-2">Daily Status Timeline (5-min increments)</h5>
-                <div className="h-16 relative">
-                  <div className="absolute top-0 left-0 w-full h-6 bg-gray-200 rounded"></div>
-                  {displayStatusData.map((point, index) => {
-                    const totalPoints = displayStatusData.length;
-                    const width = `${100 / totalPoints}%`;
-                    const left = `${(index / totalPoints) * 100}%`;
-                    return (
-                      <div 
-                        key={`display-${point.time}`}
-                        className={`absolute top-0 h-6 ${point.status === 'online' ? 'bg-green-500' : 'bg-gray-400'}`}
-                        style={{ 
-                          width, 
-                          left, 
-                          transition: 'all 0.2s ease'
-                        }}
-                        title={`${point.time} - ${point.status}`}
-                      />
-                    );
-                  })}
-                  
-                  {/* Time markers */}
-                  <div className="absolute top-8 left-0 w-full flex justify-between text-xs text-gray-500">
-                    <span>00:00</span>
-                    <span>06:00</span>
-                    <span>12:00</span>
-                    <span>18:00</span>
-                    <span>23:59</span>
-                  </div>
-                </div>
-              </div>
-            </Card>
-          </div>
-          
-          {/* Note about fake data */}
-          <div className="mt-4 p-4 bg-[#FBBC05]/10 rounded-lg border border-[#FBBC05]">
-            <p className="text-[#555555]">
-              This view shows device uptime data in 5-minute increments. Currently displaying sample data. 
-              In production, this will connect to your actual device health monitoring system.
-            </p>
-          </div>
-        </div>
       </Card>
+      
+      <div className="grid grid-cols-1 gap-4">
+        {hasDevices ? (
+          devices.map(device => {
+            // Filter status data for this device
+            const deviceStatusData = allStatusData.filter(
+              status => status.deviceId === device.id
+            );
+            
+            // Get runtime data for this device
+            const deviceRuntimeData = allRuntimeData.find(
+              runtime => runtime.deviceId === device.id
+            );
+            
+            return (
+              <DeviceTimeline
+                key={device.id}
+                deviceName={device.name}
+                deviceId={device.id}
+                timeframe={timeframe}
+                date={formattedDate}
+                statusData={deviceStatusData}
+                runtimeData={deviceRuntimeData}
+              />
+            );
+          })
+        ) : statusLoading || runtimeLoading ? (
+          <Card className="p-4">
+            <p className="text-center py-8 text-gray-500">Loading device data...</p>
+          </Card>
+        ) : (
+          // Demo devices if no real devices exist in the database
+          [
+            { id: 1, name: "Camera 1 - Front Entrance" },
+            { id: 2, name: "Camera 2 - Loading Dock" },
+            { id: 3, name: "Camera 3 - Parking Lot" },
+            { id: 4, name: "NVR Server" },
+            { id: 5, name: "Network Switch" }
+          ].map(device => {
+            // Get mock status data for this device
+            const deviceStatusData = allStatusData.filter(
+              status => status.deviceId === device.id
+            );
+            
+            // Get mock runtime data for this device
+            const deviceRuntimeData = allRuntimeData.find(
+              runtime => runtime.deviceId === device.id
+            );
+            
+            return (
+              <DeviceTimeline
+                key={device.id}
+                deviceName={device.name}
+                deviceId={device.id}
+                timeframe={timeframe}
+                date={formattedDate}
+                statusData={deviceStatusData}
+                runtimeData={deviceRuntimeData}
+              />
+            );
+          })
+        )}
+      </div>
+      
+      {/* Note about device monitoring */}
+      <div className="mt-6 p-4 bg-[#FBBC05]/10 rounded-lg border border-[#FBBC05]">
+        <p className="text-[#555555]">
+          This view shows device uptime data in 5-minute increments for all devices.
+          In production, this will connect to your actual device health monitoring system.
+          You can add new devices via the API at /api/devices.
+        </p>
+      </div>
     </div>
   );
 }

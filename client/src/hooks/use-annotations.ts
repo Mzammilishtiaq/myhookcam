@@ -8,7 +8,7 @@ export function useAnnotations(date: string) {
   
   // Fetch notes (using annotations endpoint)
   const {
-    data: annotations = [],
+    data = [],
     isLoading,
     isError
   } = useQuery<Annotation[]>({
@@ -20,8 +20,8 @@ export function useAnnotations(date: string) {
     }
   });
   
-  // Add note
-  const addAnnotation = useMutation({
+  // Create note
+  const createAnnotationMutation = useMutation({
     mutationFn: async (newAnnotation: InsertAnnotation) => {
       const response = await apiRequest('POST', '/api/annotations', newAnnotation);
       return response.json();
@@ -32,7 +32,7 @@ export function useAnnotations(date: string) {
   });
   
   // Update note
-  const updateAnnotation = useMutation({
+  const updateAnnotationMutation = useMutation({
     mutationFn: async ({ id, ...data }: { id: number } & Partial<InsertAnnotation>) => {
       const response = await apiRequest('PATCH', `/api/annotations/${id}`, data);
       return response.json();
@@ -43,7 +43,7 @@ export function useAnnotations(date: string) {
   });
   
   // Delete note
-  const deleteAnnotation = useMutation({
+  const deleteAnnotationMutation = useMutation({
     mutationFn: async (id: number) => {
       await apiRequest('DELETE', `/api/annotations/${id}`);
       return id;
@@ -53,11 +53,24 @@ export function useAnnotations(date: string) {
     }
   });
   
+  // Wrapper functions to make the actual API calls
+  const createAnnotation = async (newAnnotation: InsertAnnotation) => {
+    return createAnnotationMutation.mutateAsync(newAnnotation);
+  };
+  
+  const updateAnnotation = async (id: number, data: Partial<InsertAnnotation>) => {
+    return updateAnnotationMutation.mutateAsync({ id, ...data });
+  };
+  
+  const deleteAnnotation = async (id: number) => {
+    return deleteAnnotationMutation.mutateAsync(id);
+  };
+  
   return {
-    annotations,
+    data,
     isLoading,
     isError,
-    addAnnotation,
+    createAnnotation,
     updateAnnotation,
     deleteAnnotation
   };

@@ -5,11 +5,15 @@ import {
   insertAnnotationSchema, 
   insertBookmarkSchema,
   clipSchema,
-  insertShareSchema
+  insertShareSchema,
+  insertDeviceSchema,
+  insertDeviceStatusSchema,
+  insertDeviceRuntimeSchema
 } from "@shared/schema";
 import { S3Client, ListObjectsV2Command, GetObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { z } from "zod";
+import { format } from "date-fns";
 
 // Initialize AWS S3 client
 const s3Client = new S3Client({
@@ -492,6 +496,185 @@ View here: ${shareLink}`;
       return res.status(500).json({ message: "Failed to delete share" });
     }
   });
+
+  // Device IoT monitoring endpoints
+  
+  // Get all devices
+  app.get("/api/devices", async (req: Request, res: Response) => {
+    try {
+      const devices = await storage.getDevices();
+      return res.status(200).json(devices);
+    } catch (error) {
+      console.error("Error fetching devices:", error);
+      return res.status(500).json({ message: "Failed to fetch devices" });
+    }
+  });
+
+  // Create a new device
+  app.post("/api/devices", async (req: Request, res: Response) => {
+    try {
+      const parsedBody = insertDeviceSchema.safeParse(req.body);
+      
+      if (!parsedBody.success) {
+        return res.status(400).json({ message: "Invalid device data", errors: parsedBody.error });
+      }
+      
+      const device = await storage.createDevice(parsedBody.data);
+      return res.status(201).json(device);
+    } catch (error) {
+      console.error("Error creating device:", error);
+      return res.status(500).json({ message: "Failed to create device" });
+    }
+  });
+
+  // Get device status for a specific date and timeframe
+  app.get("/api/device-status", async (req: Request, res: Response) => {
+    try {
+      const date = req.query.date as string;
+      const deviceId = req.query.deviceId ? parseInt(req.query.deviceId as string) : undefined;
+      const timeframe = (req.query.timeframe as "daily" | "weekly" | "monthly") || "daily";
+      
+      if (!date) {
+        return res.status(400).json({ message: "Date parameter is required" });
+      }
+      
+      // Get device status data
+      const statusData = await storage.getDeviceStatus(date, deviceId, timeframe);
+      
+      // For development, return mock data if no real data exists
+      if (statusData.length === 0) {
+        const mockStatusData = generateMockDeviceStatus(date, deviceId || 1, timeframe);
+        return res.status(200).json(mockStatusData);
+      }
+      
+      return res.status(200).json(statusData);
+    } catch (error) {
+      console.error("Error fetching device status:", error);
+      return res.status(500).json({ message: "Failed to fetch device status" });
+    }
+  });
+
+  // Record device status
+  app.post("/api/device-status", async (req: Request, res: Response) => {
+    try {
+      const parsedBody = insertDeviceStatusSchema.safeParse(req.body);
+      
+      if (!parsedBody.success) {
+        return res.status(400).json({ message: "Invalid device status data", errors: parsedBody.error });
+      }
+      
+      const deviceStatus = await storage.createDeviceStatus(parsedBody.data);
+      return res.status(201).json(deviceStatus);
+    } catch (error) {
+      console.error("Error recording device status:", error);
+      return res.status(500).json({ message: "Failed to record device status" });
+    }
+  });
+
+  // Get device runtime statistics
+  app.get("/api/device-runtime", async (req: Request, res: Response) => {
+    try {
+      const deviceId = req.query.deviceId ? parseInt(req.query.deviceId as string) : undefined;
+      const timeframe = (req.query.timeframe as "daily" | "weekly" | "monthly") || "daily";
+      const date = req.query.date as string;
+      
+      if (!date) {
+        return res.status(400).json({ message: "Date parameter is required" });
+      }
+      
+      // Get runtime statistics
+      const runtimeStats = await storage.getDeviceRuntime(deviceId, date, timeframe);
+      
+      // For development, return mock data if no real data exists
+      if (runtimeStats.length === 0) {
+        // Mock runtime based on device and timeframe
+        const mockRuntime = generateMockDeviceRuntime(deviceId || 1, timeframe);
+        return res.status(200).json([mockRuntime]);
+      }
+      
+      return res.status(200).json(runtimeStats);
+    } catch (error) {
+      console.error("Error fetching runtime statistics:", error);
+      return res.status(500).json({ message: "Failed to fetch runtime statistics" });
+    }
+  });
+
+  // Helper function to generate mock device status data
+  function generateMockDeviceStatus(date: string, deviceId: number, timeframe: "daily" | "weekly" | "monthly") {
+    let incrementsPerUnit = 288; // 5-minute increments in a day (24 * 12)
+    let units = 1; // default to 1 day
+    
+    if (timeframe === "weekly") {
+      units = 7; // 7 days per week
+    } else if (timeframe === "monthly") {
+      units = 30; // ~30 days per month
+    }
+    
+    const totalIncrements = incrementsPerUnit * units;
+    const statusData = [];
+    
+    for (let i = 0; i < totalIncrements; i++) {
+      const day = Math.floor(i / incrementsPerUnit);
+      const dayIncrement = i % incrementsPerUnit;
+      const hour = Math.floor(dayIncrement / 12);
+      const minuteIncrement = dayIncrement % 12;
+      const minute = minuteIncrement * 5;
+      
+      const timeLabel = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+      const dayOffset = day; // For multi-day timeframes
+      
+      // Calculate timestamp
+      let timestamp = new Date(date);
+      timestamp.setHours(hour, minute, 0, 0);
+      if (dayOffset > 0) {
+        timestamp.setDate(timestamp.getDate() + dayOffset);
+      }
+      
+      // Random status with 90-95% chance of being online (based on device)
+      const reliability = 0.9 + (deviceId % 5) * 0.01; // Different reliability per device
+      const isOnline = Math.random() < reliability;
+      
+      statusData.push({
+        id: i + 1, // Mock ID
+        deviceId,
+        timestamp: timestamp.toISOString(),
+        status: isOnline ? 'online' : 'offline',
+        date: format(timestamp, 'yyyy-MM-dd'),
+        timePoint: timeLabel,
+        createdAt: new Date().toISOString()
+      });
+    }
+    
+    return statusData;
+  }
+
+  // Helper function to generate mock device runtime data
+  function generateMockDeviceRuntime(deviceId: number, timeframe: "daily" | "weekly" | "monthly") {
+    // Base reliability varies slightly between devices for more realistic data
+    const baseReliability = 0.85 + (deviceId % 5) * 0.02;
+    
+    let runtimeMinutes: number;
+    
+    // Calculate runtime based on timeframe
+    if (timeframe === "daily") {
+      runtimeMinutes = Math.floor(24 * 60 * baseReliability * (0.95 + Math.random() * 0.05));
+    } else if (timeframe === "weekly") {
+      runtimeMinutes = Math.floor(7 * 24 * 60 * baseReliability * (0.95 + Math.random() * 0.05));
+    } else { // monthly
+      runtimeMinutes = Math.floor(30 * 24 * 60 * baseReliability * (0.90 + Math.random() * 0.08));
+    }
+    
+    return {
+      id: 1, // Mock ID
+      deviceId,
+      date: new Date().toISOString().split('T')[0],
+      weekStartDate: timeframe === "weekly" ? new Date().toISOString().split('T')[0] : null,
+      month: timeframe === "monthly" ? new Date().toISOString().split('T')[0].substring(0, 7) : null,
+      runtimeMinutes,
+      type: timeframe,
+      updatedAt: new Date().toISOString()
+    };
+  }
 
   const httpServer = createServer(app);
   return httpServer;

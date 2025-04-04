@@ -1,15 +1,13 @@
-import { useState } from "react";
-import { Edit, Trash2, AlertCircle } from "lucide-react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { useState, useEffect, useRef } from "react";
+import { Clock, Save, X, Trash2 } from "lucide-react";
+import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { useAnnotations } from "@/hooks/use-annotations";
-import { useBookmarks } from "@/hooks/use-bookmarks";
-import { formatVideoTime } from "@/lib/time";
-import type { Clip } from "@shared/schema";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { formatTime } from "@/lib/time";
+import { useToast } from "@/hooks/use-toast";
+import { useAnnotations } from "@/hooks/use-annotations";
+import type { Clip } from "@shared/schema";
 
 interface NoteSidebarProps {
   selectedDate: string;
@@ -20,279 +18,259 @@ interface NoteSidebarProps {
 export function NoteSidebar({
   selectedDate,
   currentClip,
-  currentVideoTime
+  currentVideoTime,
 }: NoteSidebarProps) {
-  const [activeTab, setActiveTab] = useState<string>("notes");
-  const [showNoteModal, setShowNoteModal] = useState(false);
-  const [showBookmarkModal, setShowBookmarkModal] = useState(false);
-  const [noteText, setNoteText] = useState("");
-  const [bookmarkLabel, setBookmarkLabel] = useState("");
-  
+  const { toast } = useToast();
+  const [newNote, setNewNote] = useState("");
+  const [editingNote, setEditingNote] = useState<number | null>(null);
+  const [editedText, setEditedText] = useState("");
+  const listRef = useRef<HTMLDivElement>(null);
+
+  // Get annotations from the server
   const { 
-    annotations: notes, 
-    isLoading: isLoadingNotes,
-    addAnnotation: addNote,
-    updateAnnotation: updateNote,
-    deleteAnnotation: deleteNote
+    data: notes = [], 
+    isLoading, 
+    createAnnotation, 
+    updateAnnotation, 
+    deleteAnnotation 
   } = useAnnotations(selectedDate);
-  
-  const {
-    bookmarks,
-    isLoading: isLoadingBookmarks,
-    addBookmark,
-    deleteBookmark
-  } = useBookmarks(selectedDate);
-  
-  // Add a new note
-  const handleAddNote = () => {
-    if (!currentClip || !noteText.trim()) return;
-    
-    addNote.mutate({
-      videoTime: formatVideoTime(currentVideoTime),
-      clipTime: currentClip.startTime,
-      date: selectedDate,
-      content: noteText.trim()
-    }, {
-      onSuccess: () => {
-        setNoteText("");
-        setShowNoteModal(false);
+
+  // Auto-scroll to current time notes
+  useEffect(() => {
+    if (listRef.current && currentClip && notes.length > 0) {
+      const currentTimeInSeconds = currentVideoTime;
+      
+      // Find notes that are within 10 seconds of the current time
+      const nearbyNoteIndex = notes.findIndex(
+        (note: any) => {
+          const clipTimeInSeconds = 
+            parseInt(note.clipTime.split(":")[0]) * 60 + 
+            parseInt(note.clipTime.split(":")[1]);
+          return Math.abs(clipTimeInSeconds - currentTimeInSeconds) < 10;
+        }
+      );
+      
+      if (nearbyNoteIndex !== -1) {
+        const noteElement = listRef.current.children[nearbyNoteIndex] as HTMLElement;
+        noteElement.scrollIntoView({ behavior: "smooth", block: "nearest" });
       }
-    });
-  };
-  
-  // Add a new bookmark
-  const handleAddBookmark = () => {
-    if (!currentClip || !bookmarkLabel.trim()) return;
+    }
+  }, [currentVideoTime, notes, currentClip]);
+
+  // Handle creating a new note
+  const handleCreateNote = async () => {
+    if (!currentClip || !newNote.trim()) return;
     
-    addBookmark.mutate({
-      videoTime: formatVideoTime(currentVideoTime),
-      clipTime: currentClip.startTime,
-      date: selectedDate,
-      label: bookmarkLabel.trim()
-    }, {
-      onSuccess: () => {
-        setBookmarkLabel("");
-        setShowBookmarkModal(false);
-      }
-    });
-  };
-  
-  // Edit an existing note
-  const handleEditNote = (id: number, currentContent: string) => {
-    const newContent = prompt("Update note:", currentContent);
-    
-    if (newContent && newContent !== currentContent) {
-      updateNote.mutate({
-        id,
-        content: newContent
+    try {
+      await createAnnotation({
+        date: selectedDate,
+        videoTime: formatTime(currentVideoTime),
+        clipTime: currentClip.startTime,
+        content: newNote.trim(),
+      });
+      
+      setNewNote("");
+      toast({
+        title: "Success",
+        description: "Note added successfully",
+      });
+    } catch (error) {
+      console.error("Error creating note:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to add note",
       });
     }
   };
-  
-  // Delete a note
-  const handleDeleteNote = (id: number) => {
-    if (confirm("Are you sure you want to delete this note?")) {
-      deleteNote.mutate(id);
+
+  // Handle updating a note
+  const handleUpdateNote = async (id: number) => {
+    if (!editedText.trim()) return;
+    
+    try {
+      await updateAnnotation(id, { content: editedText.trim() });
+      setEditingNote(null);
+      toast({
+        title: "Success",
+        description: "Note updated successfully",
+      });
+    } catch (error) {
+      console.error("Error updating note:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to update note",
+      });
     }
   };
-  
-  // Delete a bookmark
-  const handleDeleteBookmark = (id: number) => {
-    if (confirm("Are you sure you want to delete this bookmark?")) {
-      deleteBookmark.mutate(id);
+
+  // Handle deleting a note
+  const handleDeleteNote = async (id: number) => {
+    try {
+      await deleteAnnotation(id);
+      toast({
+        title: "Success",
+        description: "Note deleted successfully",
+      });
+    } catch (error) {
+      console.error("Error deleting note:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to delete note",
+      });
     }
   };
-  
-  // Calculate current time display for note form
-  const currentTimeDisplay = currentClip 
-    ? `${currentClip.startTime} (${formatVideoTime(currentVideoTime)})`
-    : "--:--";
-  
+
+  // Start editing a note
+  const startEditing = (id: number, content: string) => {
+    setEditingNote(id);
+    setEditedText(content);
+  };
+
+  // Cancel editing a note
+  const cancelEditing = () => {
+    setEditingNote(null);
+  };
+
+  // Jump to a specific time in the video
+  const jumpToTime = (timeString: string) => {
+    if (!timeString) return;
+    
+    const [minutes, seconds] = timeString.split(":").map(Number);
+    const videoElement = document.querySelector("video");
+    
+    if (videoElement) {
+      videoElement.currentTime = minutes * 60 + seconds;
+      videoElement.play().catch(err => console.error("Error playing video:", err));
+    }
+  };
+
+  // Check if a time is in the current clip
+  const isTimeInCurrentClip = (timeString: string): boolean => {
+    if (!currentClip || !timeString) return false;
+    
+    const [minutes, seconds] = timeString.split(":").map(Number);
+    const timeInSeconds = minutes * 60 + seconds;
+    
+    const startParts = currentClip.startTime.split(":");
+    const startH = parseInt(startParts[0]);
+    const startM = parseInt(startParts[1]);
+    
+    const endParts = currentClip.endTime.split(":");
+    const endH = parseInt(endParts[0]);
+    const endM = parseInt(endParts[1]);
+    
+    // Convert to seconds within the hour (for 5-minute clip comparison)
+    const clipStartInSeconds = startM * 60;
+    const clipEndInSeconds = (endH > startH ? 3600 : 0) + endM * 60;
+    
+    return timeInSeconds >= clipStartInSeconds && timeInSeconds <= clipEndInSeconds;
+  };
+
   return (
-    <>
-      <div className="sidebar w-full md:w-80 bg-[#FFFFFF] rounded-lg shadow-lg h-[calc(100vh-240px)] md:h-auto flex flex-col border border-[#BCBBBB]">
-        <Tabs defaultValue="notes" value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid grid-cols-2 border-b rounded-none">
-            <TabsTrigger value="notes" className="data-[state=active]:text-[#FBBC05] data-[state=active]:border-b-2 data-[state=active]:border-[#FBBC05]">
-              Notes
-            </TabsTrigger>
-            <TabsTrigger value="bookmarks" className="data-[state=active]:text-[#FBBC05] data-[state=active]:border-b-2 data-[state=active]:border-[#FBBC05]">
-              Bookmarks
-            </TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="notes" className="flex-grow flex flex-col">
-            <ScrollArea className="flex-grow p-4">
-              {isLoadingNotes ? (
-                <div className="flex justify-center items-center h-40">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#FBBC05]"></div>
-                </div>
-              ) : notes.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-40 text-[#BCBBBB]">
-                  <AlertCircle className="h-12 w-12 mb-2" />
-                  <p>No notes for this date</p>
-                </div>
-              ) : (
-                notes.map((note) => (
-                  <div 
-                    key={note.id}
-                    className="note-item p-3 border-b border-[#BCBBBB] cursor-pointer hover:bg-[#FBBC05]/10"
-                  >
-                    <div className="flex justify-between items-start mb-1">
-                      <span className="font-mono text-xs text-[#555555] font-bold">{note.clipTime}</span>
-                      <div className="flex space-x-1">
-                        <button 
-                          className="text-[#BCBBBB] hover:text-[#555555]"
-                          onClick={() => handleEditNote(note.id, note.content)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </button>
-                        <button 
-                          className="text-[#BCBBBB] hover:text-[#555555]"
-                          onClick={() => handleDeleteNote(note.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </div>
-                    <p className="text-sm text-[#555555]">{note.content}</p>
-                  </div>
-                ))
-              )}
-            </ScrollArea>
-            
-            <div className="p-4 border-t border-[#BCBBBB]">
-              <Button
-                onClick={() => setShowNoteModal(true)}
-                className="w-full bg-[#FBBC05] hover:bg-[#FBBC05]/90 text-[#000000]"
-                disabled={!currentClip}
-              >
-                Add Note
-              </Button>
-            </div>
-          </TabsContent>
-          
-          <TabsContent value="bookmarks" className="flex-grow flex flex-col">
-            <ScrollArea className="flex-grow p-4">
-              {isLoadingBookmarks ? (
-                <div className="flex justify-center items-center h-40">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#FBBC05]"></div>
-                </div>
-              ) : bookmarks.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-40 text-[#BCBBBB]">
-                  <AlertCircle className="h-12 w-12 mb-2" />
-                  <p>No bookmarks for this date</p>
-                </div>
-              ) : (
-                bookmarks.map((bookmark) => (
-                  <div 
-                    key={bookmark.id}
-                    className="bookmark-item p-3 border-b border-[#BCBBBB] cursor-pointer hover:bg-[#FBBC05]/10"
-                  >
-                    <div className="flex justify-between items-start mb-1">
-                      <span className="font-mono text-xs text-[#555555] font-bold">{bookmark.clipTime}</span>
-                      <button 
-                        className="text-[#BCBBBB] hover:text-[#555555]"
-                        onClick={() => handleDeleteBookmark(bookmark.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </div>
-                    <p className="text-sm font-medium text-[#555555]">{bookmark.label}</p>
-                  </div>
-                ))
-              )}
-            </ScrollArea>
-            
-            <div className="p-4 border-t border-[#BCBBBB]">
-              <Button
-                onClick={() => setShowBookmarkModal(true)}
-                className="w-full bg-[#FBBC05] hover:bg-[#FBBC05]/90 text-[#000000]"
-                disabled={!currentClip}
-              >
-                Add Bookmark
-              </Button>
-            </div>
-          </TabsContent>
-        </Tabs>
+    <div className="h-full flex flex-col">
+      <div className="py-2 px-4 bg-gray-800 text-yellow-500 rounded-t-md font-bold">
+        Notes
       </div>
-
-      {/* Note Modal */}
-      <Dialog open={showNoteModal} onOpenChange={setShowNoteModal}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="text-[#555555]">Add Note</DialogTitle>
-          </DialogHeader>
-          <div className="p-4">
-            <div className="mb-2">
-              <span className="text-sm font-mono text-[#555555]">
-                Time: <span className="text-[#FBBC05] font-bold">{currentTimeDisplay}</span>
-              </span>
-            </div>
-            <Textarea
-              value={noteText}
-              onChange={(e) => setNoteText(e.target.value)}
-              placeholder="Enter your note here..."
-              className="w-full mb-4 text-sm border-[#BCBBBB] focus:border-[#FBBC05] focus:ring-[#FBBC05]"
-              rows={4}
-            />
-          </div>
-          <DialogFooter className="sm:justify-between">
-            <Button
-              variant="outline"
-              className="border-[#BCBBBB] text-[#555555] hover:bg-[#BCBBBB]/10"
-              onClick={() => setShowNoteModal(false)}
+      
+      {/* New note input */}
+      <div className="p-4 border-b border-gray-700">
+        <div className="mb-2 flex items-center text-sm text-gray-400">
+          <Clock className="w-4 h-4 mr-1" />
+          <span>Time: {formatTime(currentVideoTime)}</span>
+        </div>
+        
+        <Textarea
+          value={newNote}
+          onChange={(e) => setNewNote(e.target.value)}
+          placeholder="Add a note about this moment..."
+          className="mb-2 h-20"
+          disabled={!currentClip}
+        />
+        
+        <Button
+          onClick={handleCreateNote}
+          disabled={!currentClip || !newNote.trim()}
+          className="w-full"
+        >
+          Add Note
+        </Button>
+      </div>
+      
+      {/* List of notes */}
+      <div className="flex-1 overflow-y-auto p-2" ref={listRef}>
+        {isLoading ? (
+          <div className="text-center py-4 text-gray-500">Loading notes...</div>
+        ) : notes.length === 0 ? (
+          <div className="text-center py-4 text-gray-500">No notes for this date</div>
+        ) : (
+          notes.map((note: any) => (
+            <Card
+              key={note.id}
+              className={`mb-2 ${
+                isTimeInCurrentClip(note.clipTime)
+                  ? "border-yellow-500"
+                  : "border-gray-700"
+              }`}
             >
-              Cancel
-            </Button>
-            <Button
-              className="bg-[#FBBC05] hover:bg-[#FBBC05]/90 text-[#000000]"
-              onClick={handleAddNote}
-              disabled={!noteText.trim() || !currentClip}
-            >
-              Save Note
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Bookmark Modal */}
-      <Dialog open={showBookmarkModal} onOpenChange={setShowBookmarkModal}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="text-[#555555]">Add Bookmark</DialogTitle>
-          </DialogHeader>
-          <div className="p-4">
-            <div className="mb-2">
-              <span className="text-sm font-mono text-[#555555]">
-                Time: <span className="text-[#FBBC05] font-bold">{currentTimeDisplay}</span>
-              </span>
-            </div>
-            <Input
-              value={bookmarkLabel}
-              onChange={(e) => setBookmarkLabel(e.target.value)}
-              placeholder="Enter bookmark label..."
-              className="w-full mb-4 text-sm border-[#BCBBBB] focus:border-[#FBBC05] focus:ring-[#FBBC05]"
-            />
-          </div>
-          <DialogFooter className="sm:justify-between">
-            <Button
-              variant="outline"
-              className="border-[#BCBBBB] text-[#555555] hover:bg-[#BCBBBB]/10"
-              onClick={() => setShowBookmarkModal(false)}
-            >
-              Cancel
-            </Button>
-            <Button
-              className="bg-[#FBBC05] hover:bg-[#FBBC05]/90 text-[#000000]"
-              onClick={handleAddBookmark}
-              disabled={!bookmarkLabel.trim() || !currentClip}
-            >
-              Save Bookmark
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </>
+              <div className="p-3">
+                {editingNote === note.id ? (
+                  <>
+                    <Textarea
+                      value={editedText}
+                      onChange={(e) => setEditedText(e.target.value)}
+                      className="mb-2"
+                    />
+                    <div className="flex justify-end space-x-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={cancelEditing}
+                      >
+                        <X className="w-4 h-4 mr-1" /> Cancel
+                      </Button>
+                      <Button
+                        size="sm"
+                        onClick={() => handleUpdateNote(note.id)}
+                      >
+                        <Save className="w-4 h-4 mr-1" /> Save
+                      </Button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div 
+                      className="text-sm font-medium text-yellow-500 mb-1 cursor-pointer hover:underline"
+                      onClick={() => jumpToTime(note.clipTime)}
+                    >
+                      {note.clipTime}
+                    </div>
+                    <div className="mb-2">{note.content}</div>
+                    <div className="flex justify-end space-x-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => startEditing(note.id, note.content)}
+                      >
+                        Edit
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => handleDeleteNote(note.id)}
+                      >
+                        <Trash2 className="w-4 h-4 mr-1" /> Delete
+                      </Button>
+                    </div>
+                  </>
+                )}
+              </div>
+            </Card>
+          ))
+        )}
+      </div>
+    </div>
   );
 }
