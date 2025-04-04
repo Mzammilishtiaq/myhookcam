@@ -81,9 +81,9 @@ export default function Recordings() {
         </div>
       </div>
 
-      <div className="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4">
-        {/* Video and Timeline Section */}
-        <div className="flex-grow">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* Video Player - Takes 2/3 of the space on larger screens */}
+        <div className="md:col-span-2">
           <VideoPlayer 
             clip={currentClip}
             nextClip={nextClip}
@@ -93,7 +93,19 @@ export default function Recordings() {
             onEnded={handleClipEnded}
             onPlayPause={setIsPlaying}
           />
-          
+        </div>
+        
+        {/* Notes Section - Takes 1/3 of the space, positioned to the right */}
+        <div className="md:col-span-1 md:row-span-2">
+          <NoteSidebar 
+            selectedDate={formattedDate}
+            currentClip={currentClip}
+            currentVideoTime={currentVideoTime}
+          />
+        </div>
+        
+        {/* Timeline and Controls - Takes the full width under the video */}
+        <div className="md:col-span-2">
           <Timeline 
             clips={clips}
             currentClip={currentClip}
@@ -108,13 +120,6 @@ export default function Recordings() {
             selectedDate={formattedDate}
           />
         </div>
-        
-        {/* Sidebar */}
-        <NoteSidebar 
-          selectedDate={formattedDate}
-          currentClip={currentClip}
-          currentVideoTime={currentVideoTime}
-        />
       </div>
       
       {/* Export Modal */}

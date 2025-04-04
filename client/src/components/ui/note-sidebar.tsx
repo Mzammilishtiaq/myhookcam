@@ -170,37 +170,37 @@ export function NoteSidebar({
   };
 
   return (
-    <div className="h-full flex flex-col">
-      <div className="py-2 px-4 bg-gray-800 text-yellow-500 rounded-t-md font-bold">
+    <div className="h-full flex flex-col border border-[#BCBBBB] rounded-md shadow bg-white">
+      <div className="py-2 px-4 bg-[#555555] text-[#FBBC05] rounded-t-md font-bold text-lg">
         Notes
       </div>
       
       {/* New note input */}
-      <div className="p-4 border-b border-gray-700">
-        <div className="mb-2 flex items-center text-sm text-gray-400">
+      <div className="p-4 border-b border-[#BCBBBB]">
+        <div className="mb-2 flex items-center text-sm text-[#555555]">
           <Clock className="w-4 h-4 mr-1" />
-          <span>Time: {formatTime(currentVideoTime)}</span>
+          <span>Current Time: {formatTime(currentVideoTime)}</span>
         </div>
         
         <Textarea
           value={newNote}
           onChange={(e) => setNewNote(e.target.value)}
           placeholder="Add a note about this moment..."
-          className="mb-2 h-20"
+          className="mb-2 h-20 border-[#BCBBBB]"
           disabled={!currentClip}
         />
         
         <Button
           onClick={handleCreateNote}
           disabled={!currentClip || !newNote.trim()}
-          className="w-full"
+          className="w-full bg-[#FBBC05] text-[#000000] hover:bg-[#FBBC05]/90"
         >
           Add Note
         </Button>
       </div>
       
       {/* List of notes */}
-      <div className="flex-1 overflow-y-auto p-2" ref={listRef}>
+      <div className="h-[calc(100vh-450px)] min-h-[200px] overflow-y-auto p-2" ref={listRef}>
         {isLoading ? (
           <div className="text-center py-4 text-gray-500">Loading notes...</div>
         ) : notes.length === 0 ? (
@@ -211,9 +211,9 @@ export function NoteSidebar({
               key={note.id}
               className={`mb-2 ${
                 isTimeInCurrentClip(note.clipTime)
-                  ? "border-yellow-500"
-                  : "border-gray-700"
-              }`}
+                  ? "border-[#FBBC05]"
+                  : "border-[#BCBBBB]"
+              } shadow-sm hover:shadow transition-shadow`}
             >
               <div className="p-3">
                 {editingNote === note.id ? (
@@ -221,18 +221,20 @@ export function NoteSidebar({
                     <Textarea
                       value={editedText}
                       onChange={(e) => setEditedText(e.target.value)}
-                      className="mb-2"
+                      className="mb-2 border-[#BCBBBB]"
                     />
                     <div className="flex justify-end space-x-2">
                       <Button
                         size="sm"
                         variant="outline"
+                        className="border-[#BCBBBB] text-[#555555] hover:bg-[#F5F5F5]"
                         onClick={cancelEditing}
                       >
                         <X className="w-4 h-4 mr-1" /> Cancel
                       </Button>
                       <Button
                         size="sm"
+                        className="bg-[#FBBC05] text-[#000000] hover:bg-[#FBBC05]/90"
                         onClick={() => handleUpdateNote(note.id)}
                       >
                         <Save className="w-4 h-4 mr-1" /> Save
@@ -242,16 +244,18 @@ export function NoteSidebar({
                 ) : (
                   <>
                     <div 
-                      className="text-sm font-medium text-yellow-500 mb-1 cursor-pointer hover:underline"
+                      className="text-sm font-medium text-[#FBBC05] mb-1 cursor-pointer hover:underline flex items-center"
                       onClick={() => jumpToTime(note.clipTime)}
                     >
+                      <Clock className="w-3 h-3 mr-1" />
                       {note.clipTime}
                     </div>
-                    <div className="mb-2">{note.content}</div>
+                    <div className="mb-2 text-[#555555]">{note.content}</div>
                     <div className="flex justify-end space-x-2">
                       <Button
                         size="sm"
                         variant="outline"
+                        className="border-[#BCBBBB] text-[#555555] hover:bg-[#F5F5F5]"
                         onClick={() => startEditing(note.id, note.content)}
                       >
                         Edit
@@ -259,6 +263,7 @@ export function NoteSidebar({
                       <Button
                         size="sm"
                         variant="destructive"
+                        className="bg-[#555555] hover:bg-[#555555]/90"
                         onClick={() => handleDeleteNote(note.id)}
                       >
                         <Trash2 className="w-4 h-4 mr-1" /> Delete

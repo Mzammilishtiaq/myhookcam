@@ -229,7 +229,7 @@ export function VideoPlayer({
   const clipTimeDisplay = clip ? clip.startTime : "--:--";
   
   return (
-    <div className="video-player-container bg-[#000000] rounded-lg shadow-lg overflow-hidden mb-8 border border-[#BCBBBB]">
+    <div className="video-player-container bg-[#000000] rounded-lg shadow-lg overflow-hidden mb-4 border border-[#BCBBBB]">
       <div 
         ref={videoContainerRef}
         className="relative overflow-hidden" 
@@ -237,7 +237,11 @@ export function VideoPlayer({
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
-        style={{ cursor: zoom > 1 ? (isDragging ? 'grabbing' : 'grab') : 'default' }}
+        style={{ 
+          cursor: zoom > 1 ? (isDragging ? 'grabbing' : 'grab') : 'default',
+          height: "calc(100vh - 300px)",  /* Make the video larger */
+          minHeight: "400px"
+        }}
       >
         {/* Main video element with zoom and pan transform */}
         <div 
@@ -249,7 +253,7 @@ export function VideoPlayer({
         >
           <video 
             ref={videoRef}
-            className="w-full aspect-video bg-[#555555]"
+            className="w-full h-full object-contain bg-[#555555]"
             src={clipUrl}
             onTimeUpdate={handleTimeUpdate}
             onEnded={onEnded}
