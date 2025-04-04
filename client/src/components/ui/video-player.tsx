@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { 
   Play, Pause, SkipForward, Volume2, Volume, Maximize, Loader2,
-  ZoomIn, ZoomOut, MoveHorizontal, MoveVertical, RotateCcw, FastForward, Rewind
+  ZoomIn, ZoomOut, MoveHorizontal, MoveVertical, RotateCcw, FastForward, Rewind,
+  ArrowUp, ArrowDown, ArrowLeft, ArrowRight
 } from "lucide-react";
 import { formatTime } from "@/lib/time";
 import { getClipUrl } from "@/lib/s3";
@@ -221,6 +222,81 @@ export function VideoPlayer({
     setPan({ x: 0, y: 0 });
   }, [clip]);
   
+  // Handle keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+        return; // Ignore if user is typing in an input field
+      }
+      
+      switch (e.key) {
+        case ' ':
+          e.preventDefault();
+          togglePlay();
+          break;
+        case 'ArrowRight':
+          if (e.shiftKey && zoom > 1) {
+            e.preventDefault();
+            handleKeyboardPan('right');
+          } else if (videoRef.current) {
+            e.preventDefault();
+            videoRef.current.currentTime += 5; // Skip forward 5 seconds
+          }
+          break;
+        case 'ArrowLeft':
+          if (e.shiftKey && zoom > 1) {
+            e.preventDefault();
+            handleKeyboardPan('left');
+          } else if (videoRef.current) {
+            e.preventDefault();
+            videoRef.current.currentTime -= 5; // Skip backward 5 seconds
+          }
+          break;
+        case 'ArrowUp':
+          if (zoom > 1) {
+            e.preventDefault();
+            handleKeyboardPan('up');
+          }
+          break;
+        case 'ArrowDown':
+          if (zoom > 1) {
+            e.preventDefault();
+            handleKeyboardPan('down');
+          }
+          break;
+        case 'm':
+          e.preventDefault();
+          toggleMute();
+          break;
+        case 'f':
+          e.preventDefault();
+          toggleFullscreen();
+          break;
+        case '+':
+        case '=': // Same key as + but without shift
+          e.preventDefault();
+          handleZoomIn();
+          break;
+        case '-':
+          e.preventDefault();
+          handleZoomOut();
+          break;
+        case 'r':
+          e.preventDefault();
+          handleZoomReset();
+          break;
+        default:
+          break;
+      }
+    };
+    
+    window.addEventListener('keydown', handleKeyDown);
+    
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [zoom, isPlaying, isMuted]);
+  
   // Format displayed current time
   const formattedCurrentTime = formatTime(currentTime);
   const formattedDuration = formatTime(videoRef.current?.duration || 300);
@@ -318,30 +394,30 @@ export function VideoPlayer({
             <button
               className="bg-[#000000] bg-opacity-70 text-[#FFFFFF] p-2 rounded-full hover:bg-[#FBBC05] hover:bg-opacity-30 transition-colors"
               onClick={() => handleKeyboardPan('up')}
-              title="Pan Up"
+              title="Pan Up (↑)"
             >
-              <MoveVertical className="h-4 w-4 rotate-180" />
+              <ArrowUp className="h-4 w-4" />
             </button>
             <button
               className="bg-[#000000] bg-opacity-70 text-[#FFFFFF] p-2 rounded-full hover:bg-[#FBBC05] hover:bg-opacity-30 transition-colors"
               onClick={() => handleKeyboardPan('left')}
-              title="Pan Left"
+              title="Pan Left (←)"
             >
-              <MoveHorizontal className="h-4 w-4 rotate-180" />
+              <ArrowLeft className="h-4 w-4" />
             </button>
             <button
               className="bg-[#000000] bg-opacity-70 text-[#FFFFFF] p-2 rounded-full hover:bg-[#FBBC05] hover:bg-opacity-30 transition-colors"
               onClick={() => handleKeyboardPan('right')}
-              title="Pan Right"
+              title="Pan Right (→)"
             >
-              <MoveHorizontal className="h-4 w-4" />
+              <ArrowRight className="h-4 w-4" />
             </button>
             <button
               className="bg-[#000000] bg-opacity-70 text-[#FFFFFF] p-2 rounded-full hover:bg-[#FBBC05] hover:bg-opacity-30 transition-colors"
               onClick={() => handleKeyboardPan('down')}
-              title="Pan Down"
+              title="Pan Down (↓)"
             >
-              <MoveVertical className="h-4 w-4" />
+              <ArrowDown className="h-4 w-4" />
             </button>
           </div>
         )}
@@ -426,7 +502,7 @@ export function VideoPlayer({
           {/* Zoom info */}
           {zoom > 1 && (
             <div className="w-full text-[#FFFFFF] text-xs font-mono">
-              Zoom: {zoom.toFixed(2)}x | Pan: {pan.x.toFixed(1)}, {pan.y.toFixed(1)} | Drag video to pan or use pan controls
+              Zoom: {zoom.toFixed(2)}x | Pan: {pan.x.toFixed(1)}, {pan.y.toFixed(1)} | Drag video or use arrow keys (Shift+arrow) to pan
             </div>
           )}
         </div>
