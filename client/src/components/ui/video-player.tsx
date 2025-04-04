@@ -359,66 +359,81 @@ export function VideoPlayer({
         </div>
         
         {/* Zoom controls overlay */}
-        <div className="absolute top-4 right-4 flex space-x-2 z-10">
-          <button
-            className="bg-[#000000] bg-opacity-70 text-[#FFFFFF] p-2 rounded-full hover:bg-[#FBBC05] hover:bg-opacity-30 transition-colors"
+        <div className="absolute top-4 right-4 flex flex-col gap-2 z-10">
+          <Button 
+            size="sm" 
+            variant="outline" 
+            className="bg-[#000000] bg-opacity-70 border-[#FBBC05] text-[#FFFFFF] hover:bg-[#FBBC05] hover:text-[#000000]"
             onClick={handleZoomIn}
             disabled={zoom >= 3}
-            title="Zoom In"
           >
             <ZoomIn className="h-4 w-4" />
-          </button>
+          </Button>
           
-          <button
-            className="bg-[#000000] bg-opacity-70 text-[#FFFFFF] p-2 rounded-full hover:bg-[#FBBC05] hover:bg-opacity-30 transition-colors"
+          <Button 
+            size="sm" 
+            variant="outline" 
+            className="bg-[#000000] bg-opacity-70 border-[#FBBC05] text-[#FFFFFF] hover:bg-[#FBBC05] hover:text-[#000000]"
             onClick={handleZoomOut}
             disabled={zoom <= 1}
-            title="Zoom Out"
           >
             <ZoomOut className="h-4 w-4" />
-          </button>
+          </Button>
           
-          <button
-            className="bg-[#000000] bg-opacity-70 text-[#FFFFFF] p-2 rounded-full hover:bg-[#FBBC05] hover:bg-opacity-30 transition-colors"
+          <Button 
+            size="sm" 
+            variant="outline" 
+            className="bg-[#000000] bg-opacity-70 border-[#FBBC05] text-[#FFFFFF] hover:bg-[#FBBC05] hover:text-[#000000]"
             onClick={handleZoomReset}
             disabled={zoom === 1 && pan.x === 0 && pan.y === 0}
-            title="Reset Zoom & Pan"
           >
             <RotateCcw className="h-4 w-4" />
-          </button>
+          </Button>
         </div>
 
         {/* Pan controls - only visible when zoomed in */}
         {zoom > 1 && (
-          <div className="absolute top-1/2 transform -translate-y-1/2 left-4 flex flex-col space-y-2 z-10">
-            <button
-              className="bg-[#000000] bg-opacity-70 text-[#FFFFFF] p-2 rounded-full hover:bg-[#FBBC05] hover:bg-opacity-30 transition-colors"
-              onClick={() => handleKeyboardPan('up')}
-              title="Pan Up (↑)"
-            >
-              <ArrowUp className="h-4 w-4" />
-            </button>
-            <button
-              className="bg-[#000000] bg-opacity-70 text-[#FFFFFF] p-2 rounded-full hover:bg-[#FBBC05] hover:bg-opacity-30 transition-colors"
-              onClick={() => handleKeyboardPan('left')}
-              title="Pan Left (←)"
-            >
-              <ArrowLeft className="h-4 w-4" />
-            </button>
-            <button
-              className="bg-[#000000] bg-opacity-70 text-[#FFFFFF] p-2 rounded-full hover:bg-[#FBBC05] hover:bg-opacity-30 transition-colors"
-              onClick={() => handleKeyboardPan('right')}
-              title="Pan Right (→)"
-            >
-              <ArrowRight className="h-4 w-4" />
-            </button>
-            <button
-              className="bg-[#000000] bg-opacity-70 text-[#FFFFFF] p-2 rounded-full hover:bg-[#FBBC05] hover:bg-opacity-30 transition-colors"
-              onClick={() => handleKeyboardPan('down')}
-              title="Pan Down (↓)"
-            >
-              <ArrowDown className="h-4 w-4" />
-            </button>
+          <div className="absolute bottom-20 right-4 grid grid-cols-3 gap-1 z-10">
+            <div className="col-start-2">
+              <Button 
+                size="sm" 
+                variant="outline" 
+                className="bg-[#000000] bg-opacity-70 border-[#FBBC05] text-[#FFFFFF] hover:bg-[#FBBC05] hover:text-[#000000] p-1"
+                onClick={() => handleKeyboardPan('up')}
+              >
+                <ArrowUp className="h-4 w-4" />
+              </Button>
+            </div>
+            <div className="col-start-1 row-start-2">
+              <Button 
+                size="sm" 
+                variant="outline" 
+                className="bg-[#000000] bg-opacity-70 border-[#FBBC05] text-[#FFFFFF] hover:bg-[#FBBC05] hover:text-[#000000] p-1"
+                onClick={() => handleKeyboardPan('left')}
+              >
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
+            </div>
+            <div className="col-start-3 row-start-2">
+              <Button 
+                size="sm" 
+                variant="outline" 
+                className="bg-[#000000] bg-opacity-70 border-[#FBBC05] text-[#FFFFFF] hover:bg-[#FBBC05] hover:text-[#000000] p-1"
+                onClick={() => handleKeyboardPan('right')}
+              >
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+            </div>
+            <div className="col-start-2 row-start-3">
+              <Button 
+                size="sm" 
+                variant="outline" 
+                className="bg-[#000000] bg-opacity-70 border-[#FBBC05] text-[#FFFFFF] hover:bg-[#FBBC05] hover:text-[#000000] p-1"
+                onClick={() => handleKeyboardPan('down')}
+              >
+                <ArrowDown className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         )}
         
