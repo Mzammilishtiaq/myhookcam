@@ -5,6 +5,8 @@ import {
   shares, type Share, type InsertShare,
   type Clip
 } from "@shared/schema";
+import { db } from "./db";
+import { eq, and } from "drizzle-orm";
 
 // Storage interface for CRUD operations
 export interface IStorage {
@@ -34,169 +36,118 @@ export interface IStorage {
   deleteShare(id: number): Promise<boolean>;
 }
 
-export class MemStorage implements IStorage {
-  private users: Map<number, User>;
-  private annotations: Map<number, Annotation>;
-  private bookmarks: Map<number, Bookmark>;
-  private shares: Map<number, Share>;
-  private userId: number;
-  private annotationId: number;
-  private bookmarkId: number;
-  private shareId: number;
-
-  constructor() {
-    this.users = new Map();
-    this.annotations = new Map();
-    this.bookmarks = new Map();
-    this.shares = new Map();
-    this.userId = 1;
-    this.annotationId = 1;
-    this.bookmarkId = 1;
-    this.shareId = 1;
-  }
-
+export class DatabaseStorage implements IStorage {
   // User operations
   async getUser(id: number): Promise<User | undefined> {
-    return this.users.get(id);
+    const result = await db.select().from(users).where(eq(users.id, id));
+    return result[0];
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username === username,
-    );
+    const result = await db.select().from(users).where(eq(users.username, username));
+    return result[0];
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const id = this.userId++;
-    const user: User = { ...insertUser, id };
-    this.users.set(id, user);
-    return user;
+    const result = await db.insert(users).values(insertUser).returning();
+    return result[0];
   }
 
   // Annotation operations
   async getAnnotations(date: string): Promise<Annotation[]> {
-    return Array.from(this.annotations.values()).filter(
-      (annotation) => annotation.date === date
-    ).sort((a, b) => {
-      return a.clipTime.localeCompare(b.clipTime);
-    });
+    return db
+      .select()
+      .from(annotations)
+      .where(eq(annotations.date, date))
+      .orderBy(annotations.clipTime);
   }
 
   async getAnnotation(id: number): Promise<Annotation | undefined> {
-    return this.annotations.get(id);
+    const result = await db.select().from(annotations).where(eq(annotations.id, id));
+    return result[0];
   }
 
   async createAnnotation(insertAnnotation: InsertAnnotation): Promise<Annotation> {
-    const id = this.annotationId++;
-    const now = new Date();
-    const annotation: Annotation = { 
-      ...insertAnnotation, 
-      id, 
-      createdAt: now 
-    };
-    this.annotations.set(id, annotation);
-    return annotation;
+    const result = await db.insert(annotations).values(insertAnnotation).returning();
+    return result[0];
   }
 
   async updateAnnotation(id: number, annotation: Partial<InsertAnnotation>): Promise<Annotation | undefined> {
-    const existingAnnotation = this.annotations.get(id);
-    if (!existingAnnotation) return undefined;
-
-    const updatedAnnotation: Annotation = {
-      ...existingAnnotation,
-      ...annotation,
-    };
-    this.annotations.set(id, updatedAnnotation);
-    return updatedAnnotation;
+    const result = await db
+      .update(annotations)
+      .set(annotation)
+      .where(eq(annotations.id, id))
+      .returning();
+    return result[0];
   }
 
   async deleteAnnotation(id: number): Promise<boolean> {
-    return this.annotations.delete(id);
+    const result = await db.delete(annotations).where(eq(annotations.id, id));
+    return result.count > 0;
   }
 
   // Bookmark operations
   async getBookmarks(date: string): Promise<Bookmark[]> {
-    return Array.from(this.bookmarks.values()).filter(
-      (bookmark) => bookmark.date === date
-    ).sort((a, b) => {
-      return a.clipTime.localeCompare(b.clipTime);
-    });
+    return db
+      .select()
+      .from(bookmarks)
+      .where(eq(bookmarks.date, date))
+      .orderBy(bookmarks.clipTime);
   }
 
   async getBookmark(id: number): Promise<Bookmark | undefined> {
-    return this.bookmarks.get(id);
+    const result = await db.select().from(bookmarks).where(eq(bookmarks.id, id));
+    return result[0];
   }
 
   async createBookmark(insertBookmark: InsertBookmark): Promise<Bookmark> {
-    const id = this.bookmarkId++;
-    const now = new Date();
-    const bookmark: Bookmark = { 
-      ...insertBookmark, 
-      id, 
-      createdAt: now 
-    };
-    this.bookmarks.set(id, bookmark);
-    return bookmark;
+    const result = await db.insert(bookmarks).values(insertBookmark).returning();
+    return result[0];
   }
 
   async updateBookmark(id: number, bookmark: Partial<InsertBookmark>): Promise<Bookmark | undefined> {
-    const existingBookmark = this.bookmarks.get(id);
-    if (!existingBookmark) return undefined;
-
-    const updatedBookmark: Bookmark = {
-      ...existingBookmark,
-      ...bookmark,
-    };
-    this.bookmarks.set(id, updatedBookmark);
-    return updatedBookmark;
+    const result = await db
+      .update(bookmarks)
+      .set(bookmark)
+      .where(eq(bookmarks.id, id))
+      .returning();
+    return result[0];
   }
 
   async deleteBookmark(id: number): Promise<boolean> {
-    return this.bookmarks.delete(id);
+    const result = await db.delete(bookmarks).where(eq(bookmarks.id, id));
+    return result.count > 0;
   }
   
   // Share operations
   async getShares(): Promise<Share[]> {
-    return Array.from(this.shares.values()).sort((a, b) => {
-      // Sort shares by creation date (most recent first)
-      if (a.createdAt && b.createdAt) {
-        return b.createdAt.getTime() - a.createdAt.getTime();
-      }
-      return 0;
-    });
+    return db
+      .select()
+      .from(shares)
+      .orderBy(shares.createdAt, { direction: 'desc' });
   }
 
   async getShareByToken(token: string): Promise<Share | undefined> {
-    return Array.from(this.shares.values()).find(
-      (share) => share.token === token
-    );
+    const result = await db.select().from(shares).where(eq(shares.token, token));
+    return result[0];
   }
 
   async createShare(insertShare: InsertShare, token: string): Promise<Share> {
-    const id = this.shareId++;
-    const now = new Date();
-    
-    // Create share by explicitly setting each property to avoid type issues
-    const share: Share = {
-      id,
-      token,
-      createdAt: now,
-      date: insertShare.date,
-      clipTime: insertShare.clipTime,
-      clipKey: insertShare.clipKey,
-      recipient: insertShare.recipient,
-      type: insertShare.type,
-      message: insertShare.message || null,
-      expiresAt: insertShare.expiresAt
-    };
-    
-    this.shares.set(id, share);
-    return share;
+    const result = await db
+      .insert(shares)
+      .values({
+        ...insertShare,
+        token
+      })
+      .returning();
+    return result[0];
   }
 
   async deleteShare(id: number): Promise<boolean> {
-    return this.shares.delete(id);
+    const result = await db.delete(shares).where(eq(shares.id, id));
+    return result.count > 0;
   }
 }
 
-export const storage = new MemStorage();
+// Switch from in-memory storage to database storage
+export const storage = new DatabaseStorage();
