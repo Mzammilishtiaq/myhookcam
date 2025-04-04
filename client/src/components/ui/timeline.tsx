@@ -280,89 +280,6 @@ export function Timeline({
         </div>
       </div>
       
-      {/* Smart Zoom Presets */}
-      <div className="zoom-presets flex flex-wrap items-center gap-2 mb-2">
-        {ZOOM_PRESETS.map(preset => (
-          <Button
-            key={preset.id}
-            variant={activePreset === preset.id ? "default" : "outline"}
-            size="sm"
-            onClick={() => {
-              setActivePreset(preset.id);
-              setZoomLevel(preset.level);
-              if (preset.focus !== null) {
-                setFocusHour(preset.focus);
-              }
-            }}
-            className={`
-              ${activePreset === preset.id 
-                ? 'bg-[#FBBC05] text-[#000000] hover:bg-[#FBBC05]/90' 
-                : 'text-[#555555] border-[#BCBBBB] hover:bg-[#FBBC05]/10'
-              }
-            `}
-            title={preset.description}
-          >
-            <span>{preset.label}</span>
-          </Button>
-        ))}
-      </div>
-      
-      {/* Zoom Controls */}
-      <div className="zoom-controls flex items-center gap-2 mb-2">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleZoomOut}
-          disabled={zoomLevel <= 1}
-          className="text-[#555555] border-[#BCBBBB] hover:bg-[#FBBC05]/10"
-        >
-          <ZoomOut className="h-4 w-4 mr-1" />
-          <span>Zoom Out</span>
-        </Button>
-        
-        <div className="flex-1 px-4">
-          <Slider
-            defaultValue={[focusHour]}
-            max={23}
-            step={1}
-            value={[focusHour]}
-            onValueChange={(value) => {
-              setFocusHour(value[0]);
-              // Reset active preset when manually adjusting
-              setActivePreset('custom');
-            }}
-            disabled={zoomLevel <= 1}
-            className="w-full"
-          />
-        </div>
-        
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => {
-            handleZoomIn();
-            // Reset active preset when manually zooming
-            setActivePreset('custom');
-          }}
-          disabled={zoomLevel >= 4}
-          className="text-[#555555] border-[#BCBBBB] hover:bg-[#FBBC05]/10"
-        >
-          <ZoomIn className="h-4 w-4 mr-1" />
-          <span>Zoom In</span>
-        </Button>
-        
-        <div className="text-sm text-[#555555]">
-          {zoomLevel > 1 ? (
-            <span>
-              {activePreset === 'custom' && <span className="text-xs bg-[#FBBC05]/20 px-1 py-0.5 rounded mr-1">Custom</span>}
-              Focus: {focusHour > 12 ? focusHour - 12 : focusHour}{focusHour >= 12 ? 'PM' : 'AM'} | {zoomLevel.toFixed(1)}x
-            </span>
-          ) : (
-            <span>Full Day View</span>
-          )}
-        </div>
-      </div>
-      
       {isLoading ? (
         <div className="flex items-center justify-center h-24 bg-[#FFFFFF] rounded-lg shadow border border-[#BCBBBB]">
           <Loader2 className="h-8 w-8 text-[#FBBC05] animate-spin" />
@@ -610,6 +527,89 @@ export function Timeline({
           </div>
         </div>
       )}
+      
+      {/* Smart Zoom Presets */}
+      <div className="zoom-presets flex flex-wrap items-center gap-2 mt-3 mb-2">
+        {ZOOM_PRESETS.map(preset => (
+          <Button
+            key={preset.id}
+            variant={activePreset === preset.id ? "default" : "outline"}
+            size="sm"
+            onClick={() => {
+              setActivePreset(preset.id);
+              setZoomLevel(preset.level);
+              if (preset.focus !== null) {
+                setFocusHour(preset.focus);
+              }
+            }}
+            className={`
+              ${activePreset === preset.id 
+                ? 'bg-[#FBBC05] text-[#000000] hover:bg-[#FBBC05]/90' 
+                : 'text-[#555555] border-[#BCBBBB] hover:bg-[#FBBC05]/10'
+              }
+            `}
+            title={preset.description}
+          >
+            <span>{preset.label}</span>
+          </Button>
+        ))}
+      </div>
+      
+      {/* Zoom Controls */}
+      <div className="zoom-controls flex items-center gap-2 mb-2">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleZoomOut}
+          disabled={zoomLevel <= 1}
+          className="text-[#555555] border-[#BCBBBB] hover:bg-[#FBBC05]/10"
+        >
+          <ZoomOut className="h-4 w-4 mr-1" />
+          <span>Zoom Out</span>
+        </Button>
+        
+        <div className="flex-1 px-4">
+          <Slider
+            defaultValue={[focusHour]}
+            max={23}
+            step={1}
+            value={[focusHour]}
+            onValueChange={(value) => {
+              setFocusHour(value[0]);
+              // Reset active preset when manually adjusting
+              setActivePreset('custom');
+            }}
+            disabled={zoomLevel <= 1}
+            className="w-full"
+          />
+        </div>
+        
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => {
+            handleZoomIn();
+            // Reset active preset when manually zooming
+            setActivePreset('custom');
+          }}
+          disabled={zoomLevel >= 4}
+          className="text-[#555555] border-[#BCBBBB] hover:bg-[#FBBC05]/10"
+        >
+          <ZoomIn className="h-4 w-4 mr-1" />
+          <span>Zoom In</span>
+        </Button>
+        
+        <div className="text-sm text-[#555555]">
+          {zoomLevel > 1 ? (
+            <span>
+              {activePreset === 'custom' && <span className="text-xs bg-[#FBBC05]/20 px-1 py-0.5 rounded mr-1">Custom</span>}
+              Focus: {focusHour > 12 ? focusHour - 12 : focusHour}{focusHour >= 12 ? 'PM' : 'AM'} | {zoomLevel.toFixed(1)}x
+            </span>
+          ) : (
+            <span>Full Day View</span>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
