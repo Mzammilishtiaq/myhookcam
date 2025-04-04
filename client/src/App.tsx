@@ -1,4 +1,4 @@
-import { useState, useEffect, createContext, useContext } from "react";
+import React, { useState, useEffect, createContext, useContext } from "react";
 import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -13,20 +13,26 @@ import SystemStatus from "@/pages/SystemStatus";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 
-// This Context will be used to share selected jobsites/cameras across the app
-export const AppContext = createContext<{
+// Context type
+type AppContextType = {
   selectedCameras: number[];
   selectedJobsites: number[];
   isSidebarOpen: boolean;
   toggleSidebar: () => void;
   handleSelectionChange: (jobsiteIds: number[], cameraIds: number[]) => void;
-}>({
+};
+
+// Default context
+const defaultAppContext: AppContextType = {
   selectedCameras: [],
   selectedJobsites: [],
   isSidebarOpen: true,
   toggleSidebar: () => {},
   handleSelectionChange: () => {},
-});
+};
+
+// This Context will be used to share selected jobsites/cameras across the app
+export const AppContext = createContext<AppContextType>(defaultAppContext);
 
 function MainNavigation() {
   const [location, setLocation] = useLocation();
@@ -40,7 +46,7 @@ function MainNavigation() {
             <Button 
               variant="ghost" 
               size="sm" 
-              className="mr-2 text-white md:hidden" 
+              className="mr-2 text-white" 
               onClick={toggleSidebar}
             >
               {isSidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -108,8 +114,8 @@ function Router() {
       <MainNavigation />
       
       <main className="flex-grow flex">
-        {/* Sidebar - visible on medium+ screens or when toggled on mobile */}
-        {(isSidebarOpen || !isMobileView) && (
+        {/* Sidebar - visible when toggled */}
+        {isSidebarOpen && (
           <div className={`${
             isMobileView ? 'fixed inset-0 z-50 bg-black/50' : 'w-1/4 md:w-1/5 lg:w-1/6 xl:w-1/5'
           }`}>
@@ -123,9 +129,9 @@ function Router() {
           </div>
         )}
         
-        {/* Main content area - takes remaining space */}
-        <div className={`${
-          isSidebarOpen && !isMobileView 
+        {/* Main content area - takes full space when sidebar is closed */}
+        <div className={`transition-all duration-300 ${
+          isSidebarOpen 
             ? 'w-3/4 md:w-4/5 lg:w-5/6 xl:w-4/5' 
             : 'w-full'
         }`}>

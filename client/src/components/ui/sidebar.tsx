@@ -225,9 +225,13 @@ export function Sidebar({ onSelectionChange }: SidebarProps) {
                   >
                     <Camera className="h-4 w-4 text-gray-500" />
                     <span className="flex-grow text-sm">{camera.name}</span>
-                    <Checkbox 
-                      checked={camera.isActive}
-                      onCheckedChange={() => toggleCamera(jobsite.id, camera.id)}
+                    <div 
+                      className={`h-4 w-4 rounded border ${
+                        camera.isActive
+                          ? 'bg-[#FBBC05] border-[#FBBC05]' 
+                          : 'border-gray-400'
+                      }`}
+                      onClick={() => toggleCamera(jobsite.id, camera.id)}
                     />
                   </div>
                 ))}
