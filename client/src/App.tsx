@@ -43,14 +43,6 @@ function MainNavigation() {
       <div className="w-full">
         <div className="flex justify-between items-center mb-4">
           <div className="flex items-center">
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="mr-2 text-white p-0" 
-              onClick={toggleSidebar}
-            >
-              <Menu className="h-5 w-5" />
-            </Button>
             <h1 className="text-xl font-semibold">
               <span className="text-[#FBBC05]">HookCam</span> System
             </h1>
