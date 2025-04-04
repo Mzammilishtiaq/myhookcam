@@ -4,6 +4,7 @@ import { storage } from "./storage";
 import { 
   insertAnnotationSchema, 
   insertBookmarkSchema,
+  insertNoteFlagSchema,
   clipSchema,
   insertShareSchema,
   insertDeviceSchema,
@@ -337,6 +338,100 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error deleting bookmark:", error);
       return res.status(500).json({ message: "Failed to delete bookmark" });
+    }
+  });
+  
+  // Notes/Flags API Routes (combined notes and bookmarks)
+  app.get("/api/notes-flags", async (req: Request, res: Response) => {
+    try {
+      const date = req.query.date as string;
+      if (!date) {
+        return res.status(400).json({ message: "Date parameter is required" });
+      }
+      const notesFlags = await storage.getNotesFlags(date);
+      return res.status(200).json(notesFlags);
+    } catch (error) {
+      console.error("Error getting notes/flags:", error);
+      return res.status(500).json({ message: "Failed to get notes/flags" });
+    }
+  });
+  
+  app.get("/api/notes-flags/:id", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid note/flag ID" });
+      }
+      
+      const noteFlag = await storage.getNoteFlag(id);
+      if (!noteFlag) {
+        return res.status(404).json({ message: "Note/flag not found" });
+      }
+      
+      return res.status(200).json(noteFlag);
+    } catch (error) {
+      console.error("Error getting note/flag:", error);
+      return res.status(500).json({ message: "Failed to get note/flag" });
+    }
+  });
+  
+  app.post("/api/notes-flags", async (req: Request, res: Response) => {
+    try {
+      const result = insertNoteFlagSchema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ 
+          message: "Invalid data", 
+          details: result.error.format() 
+        });
+      }
+      
+      const newNoteFlag = await storage.createNoteFlag(result.data);
+      return res.status(201).json(newNoteFlag);
+    } catch (error) {
+      console.error("Error creating note/flag:", error);
+      return res.status(500).json({ message: "Failed to create note/flag" });
+    }
+  });
+  
+  app.patch("/api/notes-flags/:id", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid note/flag ID" });
+      }
+      
+      const noteFlag = await storage.getNoteFlag(id);
+      if (!noteFlag) {
+        return res.status(404).json({ message: "Note/flag not found" });
+      }
+      
+      const updatedNoteFlag = await storage.updateNoteFlag(id, req.body);
+      return res.status(200).json(updatedNoteFlag);
+    } catch (error) {
+      console.error("Error updating note/flag:", error);
+      return res.status(500).json({ message: "Failed to update note/flag" });
+    }
+  });
+  
+  app.delete("/api/notes-flags/:id", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid note/flag ID" });
+      }
+      
+      const success = await storage.deleteNoteFlag(id);
+      if (!success) {
+        return res.status(404).json({ message: "Note/flag not found" });
+      }
+      
+      return res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting note/flag:", error);
+      return res.status(500).json({ message: "Failed to delete note/flag" });
     }
   });
   

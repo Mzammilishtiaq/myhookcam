@@ -13,6 +13,7 @@ export const insertUserSchema = createInsertSchema(users).pick({
   password: true,
 });
 
+// Legacy tables kept for backwards compatibility
 export const annotations = pgTable("annotations", {
   id: serial("id").primaryKey(),
   videoTime: text("video_time").notNull(), // Format: HH:MM:SS
@@ -34,6 +35,22 @@ export const bookmarks = pgTable("bookmarks", {
   date: text("date").notNull(), // Format: YYYY-MM-DD
   label: text("label").notNull(),
   createdAt: timestamp("created_at").defaultNow(),
+});
+
+// New combined notes and flags table
+export const notesFlags = pgTable("notes_flags", {
+  id: serial("id").primaryKey(),
+  videoTime: text("video_time").notNull(), // Format: HH:MM:SS
+  clipTime: text("clip_time").notNull(), // Format: HH:MM (time of day)
+  date: text("date").notNull(), // Format: YYYY-MM-DD
+  content: text("content"), // Optional content (null for flags with no notes)
+  isFlag: boolean("is_flag").notNull().default(false), // Indicates if this is a flag (bookmark)
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertNoteFlagSchema = createInsertSchema(notesFlags).omit({
+  id: true,
+  createdAt: true,
 });
 
 export const insertBookmarkSchema = createInsertSchema(bookmarks).omit({
@@ -127,6 +144,9 @@ export type Annotation = typeof annotations.$inferSelect;
 
 export type InsertBookmark = z.infer<typeof insertBookmarkSchema>;
 export type Bookmark = typeof bookmarks.$inferSelect;
+
+export type InsertNoteFlag = z.infer<typeof insertNoteFlagSchema>;
+export type NoteFlag = typeof notesFlags.$inferSelect;
 
 export type InsertShare = z.infer<typeof insertShareSchema>;
 export type Share = typeof shares.$inferSelect;

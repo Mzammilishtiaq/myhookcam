@@ -2,6 +2,7 @@ import {
   users, type User, type InsertUser, 
   annotations, type Annotation, type InsertAnnotation,
   bookmarks, type Bookmark, type InsertBookmark,
+  notesFlags, type NoteFlag, type InsertNoteFlag,
   shares, type Share, type InsertShare,
   devices, type Device, type InsertDevice,
   deviceStatus, type DeviceStatus, type InsertDeviceStatus,
@@ -18,19 +19,26 @@ export interface IStorage {
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   
-  // Annotation operations
+  // Annotation operations (legacy)
   getAnnotations(date: string): Promise<Annotation[]>;
   getAnnotation(id: number): Promise<Annotation | undefined>;
   createAnnotation(annotation: InsertAnnotation): Promise<Annotation>;
   updateAnnotation(id: number, annotation: Partial<InsertAnnotation>): Promise<Annotation | undefined>;
   deleteAnnotation(id: number): Promise<boolean>;
   
-  // Bookmark operations
+  // Bookmark operations (legacy)
   getBookmarks(date: string): Promise<Bookmark[]>;
   getBookmark(id: number): Promise<Bookmark | undefined>;
   createBookmark(bookmark: InsertBookmark): Promise<Bookmark>;
   updateBookmark(id: number, bookmark: Partial<InsertBookmark>): Promise<Bookmark | undefined>;
   deleteBookmark(id: number): Promise<boolean>;
+  
+  // Notes/Flags operations (combined notes and bookmarks)
+  getNotesFlags(date: string): Promise<NoteFlag[]>;
+  getNoteFlag(id: number): Promise<NoteFlag | undefined>;
+  createNoteFlag(noteFlag: InsertNoteFlag): Promise<NoteFlag>;
+  updateNoteFlag(id: number, noteFlag: Partial<InsertNoteFlag>): Promise<NoteFlag | undefined>;
+  deleteNoteFlag(id: number): Promise<boolean>;
   
   // Share operations
   getShares(): Promise<Share[]>;
@@ -131,6 +139,39 @@ export class DatabaseStorage implements IStorage {
 
   async deleteBookmark(id: number): Promise<boolean> {
     const result = await db.delete(bookmarks).where(eq(bookmarks.id, id));
+    return !!result.rowCount;
+  }
+  
+  // Notes/Flags operations (combined notes and bookmarks)
+  async getNotesFlags(date: string): Promise<NoteFlag[]> {
+    return db
+      .select()
+      .from(notesFlags)
+      .where(eq(notesFlags.date, date))
+      .orderBy(notesFlags.clipTime);
+  }
+
+  async getNoteFlag(id: number): Promise<NoteFlag | undefined> {
+    const result = await db.select().from(notesFlags).where(eq(notesFlags.id, id));
+    return result[0];
+  }
+
+  async createNoteFlag(insertNoteFlag: InsertNoteFlag): Promise<NoteFlag> {
+    const result = await db.insert(notesFlags).values(insertNoteFlag).returning();
+    return result[0];
+  }
+
+  async updateNoteFlag(id: number, noteFlag: Partial<InsertNoteFlag>): Promise<NoteFlag | undefined> {
+    const result = await db
+      .update(notesFlags)
+      .set(noteFlag)
+      .where(eq(notesFlags.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async deleteNoteFlag(id: number): Promise<boolean> {
+    const result = await db.delete(notesFlags).where(eq(notesFlags.id, id));
     return !!result.rowCount;
   }
   

@@ -4,7 +4,7 @@ import { format, addDays, subDays, parseISO } from "date-fns";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { VideoPlayer } from "@/components/ui/video-player";
 import { Timeline } from "@/components/ui/timeline";
-import { NoteSidebar } from "@/components/ui/note-sidebar";
+import { NotesFlagsSidebar } from "@/components/ui/notes-flags-sidebar";
 import { ExportModal } from "@/components/ui/export-modal";
 import { useToast } from "@/hooks/use-toast";
 import { fetchClips } from "@/lib/s3";
@@ -107,9 +107,9 @@ export default function Recordings() {
           />
         </div>
         
-        {/* Notes Section - At the bottom of the page */}
+        {/* Notes/Flags Section - At the bottom of the page */}
         <div className="w-full">
-          <NoteSidebar 
+          <NotesFlagsSidebar 
             selectedDate={formattedDate}
             currentClip={currentClip}
             currentVideoTime={currentVideoTime}

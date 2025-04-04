@@ -1,15 +1,14 @@
 import { useRef, useEffect, useState } from "react";
 import { 
   AlertTriangle, Loader2, ZoomIn, ZoomOut, Bookmark, MessageSquare,
-  FileDown, BookmarkPlus, FileEdit, Share2 
+  FileDown, BookmarkPlus, FileEdit, Share2, Flag
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { VideoPreview } from "@/components/ui/video-preview";
-import type { Clip, Annotation, Bookmark as BookmarkType } from "@shared/schema";
-import { useBookmarks } from "@/hooks/use-bookmarks";
-import { useAnnotations } from "@/hooks/use-annotations";
+import type { Clip, NoteFlag } from "@shared/schema";
+import { useNotesFlags } from "@/hooks/use-notes-flags";
 import { useToast } from "@/hooks/use-toast";
 import { formatVideoTime } from "@/lib/time";
 import { ShareModal } from "@/components/ui/share-modal";
@@ -65,9 +64,13 @@ export function Timeline({
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const { toast } = useToast();
   
-  // Fetch bookmarks and annotations for the selected date
-  const { bookmarks = [], addBookmark } = useBookmarks(selectedDate);
-  const { data: annotations = [], createAnnotation } = useAnnotations(selectedDate);
+  // Fetch notes and flags for the selected date
+  const { 
+    notesFlags = [], 
+    flags = [], 
+    notes = [], 
+    createNoteFlag 
+  } = useNotesFlags(selectedDate);
   
   // Generate segments for a 24-hour timeline with emphasis on working hours (7am-5pm)
   // Each segment represents a 5-minute interval (288 segments in a day)
@@ -86,25 +89,26 @@ export function Timeline({
     };
   });
   
-  // Helper function to find annotations and bookmarks for a segment
+  // Helper function to find notes and flags for a segment
   const findItemsForSegment = (clipTime: string) => {
-    // Find annotations for this segment
-    const segmentAnnotations = annotations.filter((anno: Annotation) => {
-      // Check if the annotation clipTime matches the segment
-      return anno.clipTime === clipTime;
+    // Find items for this segment
+    const segmentItems = notesFlags.filter((item: NoteFlag) => {
+      // Check if the clipTime matches the segment
+      return item.clipTime === clipTime;
     });
     
-    // Find bookmarks for this segment
-    const segmentBookmarks = bookmarks.filter((bookmark: BookmarkType) => {
-      // Check if the bookmark clipTime matches the segment
-      return bookmark.clipTime === clipTime; 
-    });
+    // Find notes (any item with content)
+    const segmentNotes = segmentItems.filter(item => item.content);
+    
+    // Find flags (items where isFlag is true)
+    const segmentFlags = segmentItems.filter(item => item.isFlag);
     
     return {
-      annotations: segmentAnnotations,
-      bookmarks: segmentBookmarks,
-      hasAnnotations: segmentAnnotations.length > 0,
-      hasBookmarks: segmentBookmarks.length > 0
+      notesFlags: segmentItems,
+      notes: segmentNotes,
+      flags: segmentFlags,
+      hasNotes: segmentNotes.length > 0,
+      hasFlags: segmentFlags.length > 0
     };
   };
   
@@ -140,8 +144,8 @@ export function Timeline({
         const timeKey = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
         const displayTime = formatTimeDisplay(hour, minute);
         
-        // Find annotations and bookmarks for this segment
-        const { hasAnnotations, hasBookmarks, annotations: segmentAnnotations, bookmarks: segmentBookmarks } = findItemsForSegment(timeKey);
+        // Find notes and flags for this segment
+        const { hasNotes, hasFlags, notes: segmentNotes, flags: segmentFlags } = findItemsForSegment(timeKey);
         
         segments.push({
           time: timeKey,
@@ -150,10 +154,10 @@ export function Timeline({
           clip: segmentMap.get(timeKey),
           isCurrent: currentClip && currentClip.startTime === timeKey,
           isWorkingHour,
-          hasAnnotations,
-          hasBookmarks,
-          annotations: segmentAnnotations,
-          bookmarks: segmentBookmarks
+          hasNotes,
+          hasFlags,
+          notes: segmentNotes,
+          flags: segmentFlags
         });
       }
     }
@@ -331,11 +335,11 @@ export function Timeline({
                   key={index}
                   className={`timeline-segment hover:opacity-80 transition-opacity relative group
                     ${segment.hasClip 
-                      ? segment.hasBookmarks && segment.hasAnnotations 
+                      ? segment.hasFlags && segment.hasNotes 
                         ? 'bg-gradient-to-tr from-[#FBBC05] to-[#ff9900] border border-[#000000]/20' 
-                        : segment.hasBookmarks 
+                        : segment.hasFlags 
                           ? 'bg-[#ff9900] border border-[#000000]/20'
-                          : segment.hasAnnotations
+                          : segment.hasNotes
                             ? 'bg-[#ffa833] border border-[#000000]/20'
                             : 'bg-[#FBBC05] border border-[#000000]/20'
                       : 'bg-[#555555]'
@@ -395,54 +399,54 @@ export function Timeline({
                   )}
                   
                   {/* Info tooltip */}
-                  {(segment.hasBookmarks || segment.hasAnnotations) && (
+                  {(segment.hasFlags || segment.hasNotes) && (
                     <div className="absolute bottom-full mb-1 left-1/2 transform -translate-x-1/2 bg-[#000000] text-[#FFFFFF] px-3 py-2 rounded text-xs opacity-0 group-hover:opacity-100 transition-opacity z-10 shadow-lg max-w-[300px]">
                       <div className="font-bold text-center mb-1 pb-1 border-b border-gray-700">
                         {segment.displayTime} - Details
                       </div>
                       <div className="flex flex-col gap-2">
-                        {segment.hasBookmarks && segment.bookmarks && segment.bookmarks.length > 0 && (
+                        {segment.hasFlags && segment.flags && segment.flags.length > 0 && (
                           <div>
                             <div className="flex items-center mb-1">
                               <Bookmark className="h-3 w-3 mr-1 text-[#FBBC05] fill-[#FBBC05]" />
                               <span className="font-semibold">
-                                {segment.bookmarks.length > 1 
-                                  ? `${segment.bookmarks.length} Bookmarks` 
-                                  : 'Bookmark'}
+                                {segment.flags.length > 1 
+                                  ? `${segment.flags.length} Flags` 
+                                  : 'Flag'}
                               </span>
                             </div>
                             <ul className="list-disc list-inside pl-2">
-                              {segment.bookmarks.map((bookmark: BookmarkType, i: number) => (
+                              {segment.flags.map((noteFlag: NoteFlag, i: number) => (
                                 <li key={i} className="cursor-pointer hover:text-[#FBBC05] truncate" onClick={(e) => {
                                   e.stopPropagation();
                                   const clip = findClipByTime(segment.time);
                                   if (clip) onSelectClip(clip);
                                 }}>
-                                  {bookmark.label || 'Untitled bookmark'}
+                                  {noteFlag.content || 'Untitled flag'}
                                 </li>
                               ))}
                             </ul>
                           </div>
                         )}
                         
-                        {segment.hasAnnotations && segment.annotations && segment.annotations.length > 0 && (
+                        {segment.hasNotes && segment.notes && segment.notes.length > 0 && (
                           <div>
                             <div className="flex items-center mb-1">
                               <MessageSquare className="h-3 w-3 mr-1 text-[#FBBC05] fill-[#FBBC05]" />
                               <span className="font-semibold">
-                                {segment.annotations.length > 1 
-                                  ? `${segment.annotations.length} Annotations` 
-                                  : 'Annotation'}
+                                {segment.notes.length > 1 
+                                  ? `${segment.notes.length} Notes` 
+                                  : 'Note'}
                               </span>
                             </div>
                             <ul className="list-disc list-inside pl-2">
-                              {segment.annotations.map((annotation: Annotation, i: number) => (
+                              {segment.notes.map((noteFlag: NoteFlag, i: number) => (
                                 <li key={i} className="cursor-pointer hover:text-[#FBBC05] truncate" onClick={(e) => {
                                   e.stopPropagation();
                                   const clip = findClipByTime(segment.time);
                                   if (clip) onSelectClip(clip);
                                 }}>
-                                  {annotation.content?.substring(0, 30) + (annotation.content?.length > 30 ? '...' : '') || 'No content'}
+                                  {noteFlag.content?.substring(0, 30) + (noteFlag.content?.length > 30 ? '...' : '') || 'No content'}
                                 </li>
                               ))}
                             </ul>
@@ -453,21 +457,21 @@ export function Timeline({
                   )}
                   
                   {/* Count indicators */}
-                  {(segment.hasBookmarks || segment.hasAnnotations) && (
+                  {(segment.hasFlags || segment.hasNotes) && (
                     <div className="absolute top-0 right-0 flex gap-1 p-0.5">
-                      {segment.bookmarks && segment.bookmarks.length > 0 && (
+                      {segment.flags && segment.flags.length > 0 && (
                         <div className="flex items-center">
                           <Bookmark className="h-2.5 w-2.5 text-[#000000] fill-[#000000]" />
                           <span className="text-[9px] font-bold text-[#000000] bg-white/90 px-0.5 rounded">
-                            {segment.bookmarks.length}
+                            {segment.flags.length}
                           </span>
                         </div>
                       )}
-                      {segment.annotations && segment.annotations.length > 0 && (
+                      {segment.notes && segment.notes.length > 0 && (
                         <div className="flex items-center">
                           <MessageSquare className="h-2.5 w-2.5 text-[#000000] fill-[#000000]" />
                           <span className="text-[9px] font-bold text-[#000000] bg-white/90 px-0.5 rounded">
-                            {segment.annotations.length}
+                            {segment.notes.length}
                           </span>
                         </div>
                       )}
@@ -599,41 +603,26 @@ export function Timeline({
                 if (!currentClip) {
                   toast({
                     title: "No clip selected",
-                    description: "Please select a clip to bookmark",
+                    description: "Please select a clip to add a flag",
                     variant: "destructive"
                   });
                   return;
                 }
                 
-                const label = prompt("Enter a label for this bookmark:");
+                const content = prompt("Enter a label for this flag (optional):");
                 
-                if (label) {
-                  addBookmark.mutate({
-                    videoTime: formatVideoTime(0), // Default to start of clip
-                    clipTime: currentClip.startTime,
-                    date: selectedDate,
-                    label
-                  }, {
-                    onSuccess: () => {
-                      toast({
-                        title: "Bookmark added",
-                        description: `Bookmark created at ${currentClip.startTime}`
-                      });
-                    },
-                    onError: () => {
-                      toast({
-                        title: "Error",
-                        description: "Failed to create bookmark",
-                        variant: "destructive"
-                      });
-                    }
-                  });
-                }
+                createNoteFlag({
+                  videoTime: formatVideoTime(0), // Default to start of clip
+                  clipTime: currentClip.startTime,
+                  date: selectedDate,
+                  content: content || null,
+                  isFlag: true
+                });
               }}
               disabled={!currentClip}
             >
               <BookmarkPlus className="mr-1 h-4 w-4" />
-              <span>Bookmark</span>
+              <span>Add Flag</span>
             </Button>
             
             <Button
@@ -643,20 +632,21 @@ export function Timeline({
                 if (!currentClip) {
                   toast({
                     title: "No clip selected",
-                    description: "Please select a clip to annotate",
+                    description: "Please select a clip to add a note",
                     variant: "destructive"
                   });
                   return;
                 }
                 
-                const content = prompt("Enter your annotation:");
+                const content = prompt("Enter your note:");
                 
                 if (content) {
-                  createAnnotation({
+                  createNoteFlag({
                     videoTime: formatVideoTime(0), // Default to start of clip
                     clipTime: currentClip.startTime,
                     date: selectedDate,
-                    content
+                    content,
+                    isFlag: false
                   });
                 }
               }}
