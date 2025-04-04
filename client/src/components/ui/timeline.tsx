@@ -224,7 +224,7 @@ export function Timeline({
           <span className="ml-2 text-[#555555]">Error loading timeline data</span>
         </div>
       ) : (
-        <div className="timeline-scroll-container overflow-x-auto bg-[#FFFFFF] rounded-lg shadow border border-[#BCBBBB]">
+        <div className="timeline-scroll-container overflow-x-auto bg-[#FFFFFF] rounded-lg shadow border border-[#BCBBBB] h-[150px]">
           <div 
             ref={timelineRef}
             className="timeline-wrapper relative min-w-max p-4"
@@ -258,7 +258,7 @@ export function Timeline({
                       {marker.label}
                     </div>
                   </div>
-              ))}
+                ))}
             </div>
             
             {/* Timeline segments */}
