@@ -282,10 +282,10 @@ export function Timeline({
           scrollbarWidth: 'auto',
           scrollbarColor: '#BCBBBB #FFFFFF',
           overflowY: 'hidden',
-          paddingBottom: '20px',
+          paddingBottom: '25px',
           paddingTop: '2px',
           marginBottom: '10px',
-          paddingRight: '20px'
+          paddingRight: '25px'
         }}>
           <div 
             ref={timelineRef}
