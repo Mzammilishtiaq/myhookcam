@@ -179,25 +179,25 @@ export function Sidebar({ onSelectionChange }: SidebarProps) {
   const userName = "John Smith";
 
   return (
-    <Card className="h-full flex flex-col">
+    <Card className="h-full flex flex-col rounded-r-xl shadow-lg w-[280px]">
       {/* Customer Logo and User Section */}
-      <div className="px-4 py-6 bg-[#555555] text-white">
-        <div className="flex items-center justify-between mb-3">
+      <div className="px-6 py-8 bg-[#555555] text-white rounded-tr-xl">
+        <div className="flex items-center justify-between mb-4">
           <div className="flex items-center">
-            <div className="flex-shrink-0 w-10 h-10 bg-[#FBBC05] rounded-full flex items-center justify-center mr-3">
-              <span className="font-bold text-lg text-white">HC</span>
+            <div className="flex-shrink-0 w-12 h-12 bg-[#FBBC05] rounded-full flex items-center justify-center mr-3">
+              <span className="font-bold text-lg text-white">AC</span>
             </div>
             <div>
               <div className="text-xl font-bold">
-                <span className="text-[#FBBC05]">HookCam</span>
+                <span className="text-[#FBBC05]">ACME</span> Construction
               </div>
-              <div className="text-xs text-gray-300">Construction Monitoring</div>
+              <div className="text-xs text-gray-300">powered by <span className="text-[#FBBC05]">HookCam</span></div>
             </div>
           </div>
           <Button
             variant="ghost"
             size="sm"
-            className="text-white p-1"
+            className="text-white p-1 hover:bg-[#666666] transition-colors"
             onClick={toggleSidebar}
           >
             <Menu className="h-5 w-5" />

@@ -36,12 +36,21 @@ export const AppContext = createContext<AppContextType>(defaultAppContext);
 
 function MainNavigation() {
   const [location, setLocation] = useLocation();
+  const { isSidebarOpen, toggleSidebar } = useContext(AppContext);
   
   return (
     <div className="bg-[#555555] text-[#FFFFFF] px-4 pt-4 shadow-md">
       <div className="w-full">
         <div className="flex justify-between items-center mb-4">
           <div className="flex items-center">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="mr-2 text-white p-0" 
+              onClick={toggleSidebar}
+            >
+              {isSidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </Button>
             <h1 className="text-xl font-semibold">
               <span className="text-[#FBBC05]">HookCam</span> System
             </h1>
@@ -102,30 +111,26 @@ function Router() {
   
   return (
     <div className="min-h-screen flex bg-[#FFFFFF]">
-      {/* Sidebar - fixed position on mobile, fixed width on desktop */}
-      {isSidebarOpen && (
+      {/* Sidebar - fixed position on mobile, auto width on desktop */}
+      <div className={`${
+        isMobileView 
+          ? isSidebarOpen ? 'fixed inset-0 z-50 bg-black/50' : 'hidden' 
+          : 'min-h-screen transition-all duration-300 ease-in-out overflow-hidden'
+      } ${!isSidebarOpen && !isMobileView ? 'w-0' : ''}`}>
         <div className={`${
           isMobileView 
-            ? 'fixed inset-0 z-50 bg-black/50' 
-            : 'w-1/4 md:w-1/5 lg:w-1/6 xl:w-1/5 min-h-screen'
-        }`}>
-          <div className={`${
-            isMobileView 
-              ? 'h-full w-3/4 max-w-xs bg-white' 
-              : 'h-screen bg-white border-r'
-          }`}>
-            <Sidebar 
-              onSelectionChange={handleSelectionChange}
-            />
-          </div>
+            ? 'h-full w-[280px] max-w-xs' 
+            : 'h-screen transition-all duration-300'
+        } ${!isSidebarOpen && !isMobileView ? 'transform -translate-x-full' : ''}`}>
+          <Sidebar 
+            onSelectionChange={handleSelectionChange}
+          />
         </div>
-      )}
+      </div>
       
       {/* Main content column - includes header, tabs, content, footer */}
       <div className={`flex flex-col transition-all duration-300 ${
-        isSidebarOpen 
-          ? isMobileView ? 'w-full' : 'w-3/4 md:w-4/5 lg:w-5/6 xl:w-4/5' 
-          : 'w-full'
+        isSidebarOpen && !isMobileView ? 'w-[calc(100%-280px)]' : 'w-full'
       }`}>
         {/* Header and tab navigation */}
         <MainNavigation />
