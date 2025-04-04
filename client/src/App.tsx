@@ -54,9 +54,10 @@ function MainNavigation() {
     return () => window.removeEventListener('resize', checkScreenSize);
   }, []);
   
-  // Handle toggle with debug log
+  // Handle toggle with detailed debug log
   const handleMenuClick = () => {
-    console.log("Menu button clicked in header");
+    console.log("Sidebar toggle button clicked");
+    console.log("Zustand toggle called");
     toggle();
   };
   
@@ -65,8 +66,8 @@ function MainNavigation() {
       <div className="w-full">
         <div className="flex justify-between items-center mb-4">
           <div className="flex items-center">
-            {/* Mobile menu button */}
-            {isMobileView && !isOpen && (
+            {/* Menu button - always visible on mobile and when sidebar is collapsed on desktop */}
+            {(!isOpen || isMobileView) && (
               <Button 
                 variant="ghost" 
                 size="sm"
@@ -148,7 +149,7 @@ function Layout() {
       <div 
         className="w-full bg-[#555555] z-40 relative"
         style={{
-          marginLeft: isOpen && !isMobileView ? '280px' : (!isOpen && !isMobileView ? '50px' : '0'),
+          marginLeft: isOpen && !isMobileView ? '280px' : '0',
           transition: 'margin-left 0.3s ease-in-out'
         }}
       >
@@ -157,19 +158,7 @@ function Layout() {
       
       {/* Main content area with sidebar and content */}
       <div className="flex flex-1">
-        {/* Hamburger menu toggle button - always visible on desktop when sidebar is collapsed */}
-        {!isMobileView && !isOpen && (
-          <div className="h-screen fixed left-0 top-0 z-50 flex items-start justify-center" style={{ width: '50px' }}>
-            <Button
-              variant="ghost" 
-              size="sm"
-              className="mt-[84px] text-[#555555] hover:bg-[#FBBC05]/10 transition-colors rounded-md h-10 w-10 flex items-center justify-center shadow-md"
-              onClick={handleToggleClick}
-            >
-              <Menu className="h-6 w-6" />
-            </Button>
-          </div>
-        )}
+        {/* Hamburger menu toggle button moved to header */}
         
         {/* Sidebar - fixed position on mobile, auto width on desktop */}
         {isMobileView ? (
@@ -222,7 +211,7 @@ function Layout() {
           flexDirection: 'column',
           width: '100%',
           transition: 'margin-left 0.3s ease-in-out',
-          marginLeft: isOpen && !isMobileView ? '280px' : (!isOpen && !isMobileView ? '50px' : '0') // Add space for the sidebar or toggle button
+          marginLeft: isOpen && !isMobileView ? '280px' : '0' // Add space for the sidebar
         }}>
           {/* Content area - header is now placed outside this div so it can extend full width */}
           
