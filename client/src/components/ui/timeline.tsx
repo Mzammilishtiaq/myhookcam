@@ -283,7 +283,7 @@ export function Timeline({
           scrollbarColor: '#BCBBBB #FFFFFF',
           overflowY: 'hidden',
           paddingBottom: '25px',
-          paddingTop: '10px',
+          paddingTop: '5px',
           marginBottom: '10px',
           paddingRight: '25px'
         }}>
@@ -293,7 +293,7 @@ export function Timeline({
             style={{ width: "150%" }}
           >
             {/* Hour markers - filter based on zoom level */}
-            <div className="hour-markers relative h-8">
+            <div className="hour-markers relative h-6">
               {hourMarkers
                 .filter(marker => {
                   if (zoomLevel <= 1) return true;
@@ -325,7 +325,7 @@ export function Timeline({
             </div>
             
             {/* Timeline segments */}
-            <div className="timeline-segments flex h-5 mt-8">
+            <div className="timeline-segments flex h-5 mt-6">
               {visibleSegments.map((segment, index) => (
                 <div
                   key={index}
