@@ -39,11 +39,41 @@ function MainNavigation() {
   const appContext = useContext(AppContext);
   const { isSidebarOpen, toggleSidebar } = appContext;
   
+  // Get isMobile status for this component
+  const [isMobileView, setIsMobileView] = useState(false);
+  
+  useEffect(() => {
+    // Check screen size on mount and when window resizes
+    const checkScreenSize = () => {
+      setIsMobileView(window.innerWidth < 768); 
+    };
+    
+    // Initial check
+    checkScreenSize();
+    
+    // Add resize listener
+    window.addEventListener('resize', checkScreenSize);
+    
+    // Clean up
+    return () => window.removeEventListener('resize', checkScreenSize);
+  }, []);
+  
   return (
     <div className="bg-[#555555] text-[#FFFFFF] px-4 pt-4 shadow-md">
       <div className="w-full">
         <div className="flex justify-between items-center mb-4">
           <div className="flex items-center">
+            {/* Mobile menu button */}
+            {isMobileView && !isSidebarOpen && (
+              <Button 
+                variant="ghost" 
+                size="sm"
+                className="mr-3 text-white hover:bg-[#666666] transition-colors"
+                onClick={toggleSidebar}
+              >
+                <Menu className="h-5 w-5" />
+              </Button>
+            )}
             <h1 className="text-xl font-semibold">
               <span className="text-[#FBBC05]">HookCam</span> System
             </h1>
@@ -105,13 +135,13 @@ function Router() {
   
   return (
     <div className="min-h-screen flex bg-[#FFFFFF]">
-      {/* Hamburger menu toggle button - always visible on desktop */}
+      {/* Hamburger menu toggle button - always visible on desktop when sidebar is collapsed */}
       {!isMobileView && !isSidebarOpen && (
-        <div className="h-screen flex items-start">
+        <div className="h-screen flex items-start absolute left-0 top-0 z-10">
           <Button
             variant="ghost" 
             size="sm"
-            className="m-2 text-[#555555] hover:bg-[#FBBC05]/10 transition-colors rounded-md h-10 w-10 flex items-center justify-center"
+            className="m-2 text-[#555555] hover:bg-[#FBBC05]/10 transition-colors rounded-md h-10 w-10 flex items-center justify-center shadow-md"
             onClick={toggleSidebar}
           >
             <Menu className="h-6 w-6" />
@@ -120,21 +150,38 @@ function Router() {
       )}
       
       {/* Sidebar - fixed position on mobile, auto width on desktop */}
-      <div className={`${
-        isMobileView 
-          ? isSidebarOpen ? 'fixed inset-0 z-50 bg-black/50' : 'hidden' 
-          : 'min-h-screen transition-all duration-300 ease-in-out overflow-hidden'
-      } ${!isSidebarOpen && !isMobileView ? 'w-0' : ''}`}>
-        <div className={`${
-          isMobileView 
-            ? 'h-full w-[280px] max-w-xs' 
-            : 'h-screen transition-all duration-300'
-        } ${!isSidebarOpen && !isMobileView ? 'transform -translate-x-full' : ''}`}>
-          <Sidebar 
-            onSelectionChange={handleSelectionChange}
-          />
+      {isMobileView ? (
+        // Mobile sidebar with overlay
+        isSidebarOpen && (
+          <>
+            <div className="fixed inset-0 z-50 bg-black/50">
+              <div className="h-full w-[280px] max-w-xs">
+                <Sidebar onSelectionChange={handleSelectionChange} />
+              </div>
+            </div>
+            
+            {/* Mobile close button */}
+            <Button
+              variant="ghost"
+              size="sm"
+              className="fixed top-4 right-4 z-[60] bg-white rounded-full h-8 w-8 p-0 shadow-md"
+              onClick={toggleSidebar}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </>
+        )
+      ) : (
+        // Desktop sidebar with width transition
+        <div 
+          className={`min-h-screen overflow-hidden transition-all duration-300 ease-in-out
+            ${isSidebarOpen ? 'w-[280px]' : 'w-0'}`}
+        >
+          <div className={`h-screen transition-all duration-300 ${!isSidebarOpen ? 'transform -translate-x-full' : ''}`}>
+            <Sidebar onSelectionChange={handleSelectionChange} />
+          </div>
         </div>
-      </div>
+      )}
       
       {/* Main content column - includes header, tabs, content, footer */}
       <div className={`flex flex-col transition-all duration-300 ${
