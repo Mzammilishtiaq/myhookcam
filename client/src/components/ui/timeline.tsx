@@ -283,17 +283,17 @@ export function Timeline({
           scrollbarColor: '#BCBBBB #FFFFFF',
           overflowY: 'hidden',
           paddingBottom: '25px',
-          paddingTop: '2px',
+          paddingTop: '10px',
           marginBottom: '10px',
           paddingRight: '25px'
         }}>
           <div 
             ref={timelineRef}
-            className="timeline-wrapper relative p-1"
+            className="timeline-wrapper relative p-1 pt-0"
             style={{ width: "150%" }}
           >
             {/* Hour markers - filter based on zoom level */}
-            <div className="hour-markers relative h-5">
+            <div className="hour-markers relative h-8">
               {hourMarkers
                 .filter(marker => {
                   if (zoomLevel <= 1) return true;
@@ -325,7 +325,7 @@ export function Timeline({
             </div>
             
             {/* Timeline segments */}
-            <div className="timeline-segments flex h-5 mt-5">
+            <div className="timeline-segments flex h-5 mt-8">
               {visibleSegments.map((segment, index) => (
                 <div
                   key={index}
@@ -517,13 +517,13 @@ export function Timeline({
         </div>
       )}
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 bg-[#FFFFFF] p-3 rounded-lg shadow border border-[#BCBBBB] mt-2">
-        <h2 className="text-md font-semibold text-[#555555] col-span-full mb-1">Timeline and Clip Controls</h2>
-        <div className="timeline-controls">
+      <div className="flex flex-col gap-2 bg-[#FFFFFF] p-3 pt-2 rounded-lg shadow border border-[#BCBBBB] mt-2">
+        <h2 className="text-md font-semibold text-[#555555] mb-1">Timeline and Clip Controls</h2>
+        <div className="timeline-controls w-full">
           <h3 className="text-sm font-medium mb-1 text-[#555555]">Timeline Controls</h3>
           
           {/* Zoom Controls */}
-          <div className="zoom-controls flex items-center gap-1 mb-1">
+          <div className="zoom-controls flex items-center gap-1 mb-3">
             <Button
               variant="outline"
               size="sm"
@@ -579,7 +579,7 @@ export function Timeline({
           </div>
         </div>
         
-        <div className="actions">
+        <div className="actions w-full border-t border-[#BCBBBB] pt-2">
           <h3 className="text-sm font-medium mb-1 text-[#555555]">Actions</h3>
           <div className="flex flex-wrap gap-1">
             <Button
