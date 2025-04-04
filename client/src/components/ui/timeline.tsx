@@ -75,6 +75,7 @@ export function Timeline({
   const [activePreset, setActivePreset] = useState<string>('full-day'); // Default preset
   const [hoveredSegment, setHoveredSegment] = useState<string | null>(null); // Track hovered segment by time key
   const [previewPosition, setPreviewPosition] = useState<number>(50); // Position within clip (as percentage)
+  const [mousePosition, setMousePosition] = useState<{x: number, y: number}>({x: 0, y: 0}); // Track mouse position for preview
   const selectedDate = currentClip?.date || new Date().toISOString().split('T')[0];
   
   // Fetch bookmarks and annotations for the selected date
@@ -441,22 +442,35 @@ export function Timeline({
                   title={segment.displayTime}
                   onClick={() => segment.hasClip && segment.clip && onSelectClip(segment.clip)}
                   onMouseEnter={(e) => {
-                    if (segment.hasClip && segment.clip) {
-                      setHoveredSegment(segment.time);
-                      // Calculate relative position in segment (0-100%)
-                      const rect = e.currentTarget.getBoundingClientRect();
-                      const relativeX = e.clientX - rect.left;
-                      const percentage = (relativeX / rect.width) * 100;
-                      setPreviewPosition(percentage);
-                    }
+                    // Always set hovered segment for feedback, regardless of clip presence
+                    setHoveredSegment(segment.time);
+                    console.log("Hovering segment:", segment.time, "Has clip:", segment.hasClip, "Clip:", segment.clip);
+                    
+                    // Calculate relative position in segment (0-100%)
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    const relativeX = e.clientX - rect.left;
+                    const percentage = (relativeX / rect.width) * 100;
+                    setPreviewPosition(percentage);
+                    
+                    // Update mouse position for preview positioning
+                    setMousePosition({
+                      x: e.clientX,
+                      y: e.clientY
+                    });
                   }}
                   onMouseMove={(e) => {
-                    if (segment.hasClip && segment.clip && hoveredSegment === segment.time) {
+                    if (hoveredSegment === segment.time) {
                       // Update position on mouse move
                       const rect = e.currentTarget.getBoundingClientRect();
                       const relativeX = e.clientX - rect.left;
                       const percentage = (relativeX / rect.width) * 100;
                       setPreviewPosition(percentage);
+                      
+                      // Update mouse position for preview positioning
+                      setMousePosition({
+                        x: e.clientX,
+                        y: e.clientY
+                      });
                     }
                   }}
                   onMouseLeave={() => {
@@ -558,24 +572,42 @@ export function Timeline({
             </div>
           </div>
           
-          {/* Video Preview (only show when hovering a segment with clips) */}
-          {hoveredSegment && visibleSegments.find(s => s.time === hoveredSegment && s.hasClip && s.clip) && (
-            <div 
-              className="absolute bottom-full left-0 mb-2 z-20 transform -translate-x-1/2"
-              style={{ 
-                left: `${timelineRef.current ? 
-                  // Position video preview at mouse position
-                  (visibleSegments.findIndex(s => s.time === hoveredSegment) * segmentWidth) + 
-                  (segmentWidth / 2) : 50}%`
-              }}
-            >
-              <VideoPreview 
-                clip={visibleSegments.find(s => s.time === hoveredSegment)?.clip!}
-                position={previewPosition}
-                onPositionChange={setPreviewPosition}
-              />
-            </div>
-          )}
+          {/* Video Preview */}
+          <div 
+            className={`fixed transform -translate-x-1/2 z-50 transition-all duration-200 ${
+              hoveredSegment ? 'opacity-100' : 'opacity-0 pointer-events-none'
+            }`}
+            style={{ 
+              left: hoveredSegment ? `${
+                timelineRef.current ? 
+                mousePosition.x : window.innerWidth / 2}px` : '50%',
+              top: hoveredSegment ? `${
+                timelineRef.current ? 
+                mousePosition.y - 150 : window.innerHeight / 2}px` : '50%'
+            }}
+          >
+            {hoveredSegment && (
+              <>
+                {visibleSegments.find(s => s.time === hoveredSegment && s.hasClip && s.clip) ? (
+                  <div className="relative">
+                    <VideoPreview 
+                      clip={visibleSegments.find(s => s.time === hoveredSegment && s.hasClip)?.clip!}
+                      position={previewPosition}
+                      onPositionChange={setPreviewPosition}
+                    />
+                    <div className="w-0 h-0 border-l-8 border-r-8 border-t-8 border-transparent border-t-black mx-auto mt-[-1px]"></div>
+                  </div>
+                ) : (
+                  <div className="relative">
+                    <div className="bg-black rounded-md shadow-lg flex items-center justify-center text-white p-3 border border-[#555555]" style={{ width: '240px', height: '135px' }}>
+                      <span className="text-[#FBBC05]">No footage available for {hoveredSegment}</span>
+                    </div>
+                    <div className="w-0 h-0 border-l-8 border-r-8 border-t-8 border-transparent border-t-black mx-auto mt-[-1px]"></div>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
         </div>
       )}
     </div>

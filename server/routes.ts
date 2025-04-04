@@ -158,7 +158,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Generate a mock video URL or return a previously generated one
       if (!mockVideoUrls.has(key)) {
         // In a real implementation, this would be a pre-signed S3 URL
-        mockVideoUrls.set(key, `https://example.com/mock-video/${key}`);
+        // For now, use a public video as a placeholder
+        mockVideoUrls.set(key, `https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4`);
+        console.log(`Generated mock URL for clip: ${key}`);
       }
       
       return res.status(200).json({ url: mockVideoUrls.get(key) });

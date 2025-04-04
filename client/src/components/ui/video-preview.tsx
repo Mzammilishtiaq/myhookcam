@@ -24,7 +24,7 @@ export function VideoPreview({
     data: clipUrl, 
     isLoading: isLoadingUrl 
   } = useQuery({
-    queryKey: ['/api/clips/url/preview', clip.key],
+    queryKey: [`/api/clips/${clip.key}/url`],
     queryFn: () => getClipUrl(clip.key),
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
@@ -69,28 +69,32 @@ export function VideoPreview({
       width: '240px', 
       height: '135px'
     }}>
-      {isLoadingUrl ? (
-        <div className="absolute inset-0 flex items-center justify-center bg-[#000000] bg-opacity-70 z-10">
-          <Loader2 className="h-6 w-6 text-[#FBBC05] animate-spin" />
-        </div>
-      ) : (
-        <>
-          <video 
-            ref={videoRef}
-            className="w-full h-full object-cover"
-            src={clipUrl}
-            muted
-            preload="auto"
-            onLoadedData={handleLoadedData}
-            onTimeUpdate={handleTimeUpdate}
-          />
-          
-          {/* Video info overlay */}
-          <div className="absolute top-1 left-1 bg-[#000000] bg-opacity-70 text-[#FFFFFF] px-1.5 py-0.5 rounded text-xs font-mono border border-[#FBBC05]">
-            <span>{clipTimeDisplay}</span>
-          </div>
-        </>
-      )}
+      {/* Loading overlay */}
+      <div className={`absolute inset-0 flex items-center justify-center bg-[#000000] bg-opacity-70 z-10 transition-opacity duration-300 ${isLoadingUrl ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+        <Loader2 className="h-6 w-6 text-[#FBBC05] animate-spin" />
+      </div>
+      
+      {/* Video element */}
+      <video 
+        ref={videoRef}
+        className="w-full h-full object-cover"
+        src={clipUrl}
+        muted
+        preload="auto"
+        onLoadedData={handleLoadedData}
+        onTimeUpdate={handleTimeUpdate}
+        style={{ opacity: isLoadingUrl ? 0 : 1 }}
+      />
+      
+      {/* Video info overlay */}
+      <div className="absolute top-1 left-1 bg-[#000000] bg-opacity-70 text-[#FFFFFF] px-1.5 py-0.5 rounded text-xs font-mono border border-[#FBBC05]">
+        <span>{clipTimeDisplay}</span>
+      </div>
+      
+      {/* Debug info */}
+      <div className="absolute bottom-1 right-1 bg-[#000000] bg-opacity-70 text-[#FFFFFF] px-1.5 py-0.5 rounded text-xs font-mono opacity-50 hover:opacity-100">
+        <span>{Math.round(position)}%</span>
+      </div>
     </div>
   );
 }
