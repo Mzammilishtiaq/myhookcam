@@ -307,9 +307,9 @@ export function Timeline({
       ) : (
         <div className="timeline-scroll-container overflow-x-scroll bg-[#FFFFFF] rounded-lg shadow border border-[#BCBBBB] h-[80px] flex-1 relative" style={{
           scrollbarWidth: 'auto',
-          scrollbarColor: '#555555 #FFFFFF',
+          scrollbarColor: '#BCBBBB #FFFFFF',
           overflowY: 'hidden',
-          paddingBottom: '2px',
+          paddingBottom: '6px',
           paddingTop: '2px'
         }}>
           <div 
