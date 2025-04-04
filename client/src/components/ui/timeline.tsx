@@ -34,41 +34,14 @@ type ZoomPreset = {
 };
 
 const ZOOM_PRESETS: ZoomPreset[] = [
-  { 
-    id: 'full-day', 
-    label: 'Full Day',
-    level: 1,
-    focus: null,
-    description: 'View the entire 24-hour timeline'
-  },
-  { 
-    id: 'working-hours', 
+  {
+    id: 'working-hours',
     label: 'Working Hours',
     level: 2,
-    focus: 12, // Noon as focus point
-    description: 'Focus on 7am-5pm working hours'
+    focus: 11, // Mid-morning as focus point
+    description: 'Focus on 6:30am-5:30pm working hours'
   },
-  { 
-    id: 'morning', 
-    label: 'Morning',
-    level: 3,
-    focus: 9, // 9am
-    description: 'Focus on morning hours (7am-12pm)'
-  },
-  { 
-    id: 'afternoon', 
-    label: 'Afternoon',
-    level: 3,
-    focus: 14, // 2pm
-    description: 'Focus on afternoon hours (12pm-5pm)'
-  },
-  { 
-    id: 'detail', 
-    label: 'Detailed View',
-    level: 4,
-    focus: null, // Will use current focus or default to 9am
-    description: 'Maximum detail for precise navigation'
-  }
+  // No additional presets - only the working hours preset
 ];
 
 export function Timeline({
@@ -81,9 +54,9 @@ export function Timeline({
   selectedDate
 }: TimelineProps) {
   const timelineRef = useRef<HTMLDivElement>(null);
-  const [zoomLevel, setZoomLevel] = useState<number>(1); // Default zoom level
-  const [focusHour, setFocusHour] = useState<number>(9); // Default focus on 9 AM
-  const [activePreset, setActivePreset] = useState<string>('full-day'); // Default preset
+  const [zoomLevel, setZoomLevel] = useState<number>(2); // Default zoom level - zoomed in for working hours
+  const [focusHour, setFocusHour] = useState<number>(11); // Default focus centered on the working day
+  const [activePreset, setActivePreset] = useState<string>('working-hours'); // Default preset
   const [hoveredSegment, setHoveredSegment] = useState<string | null>(null); // Track hovered segment by time key
   const [previewPosition, setPreviewPosition] = useState<number>(50); // Position within clip (as percentage)
   const [mousePosition, setMousePosition] = useState<{x: number, y: number}>({x: 0, y: 0}); // Track mouse position for preview
@@ -309,8 +282,9 @@ export function Timeline({
           scrollbarWidth: 'auto',
           scrollbarColor: '#BCBBBB #FFFFFF',
           overflowY: 'hidden',
-          paddingBottom: '6px',
-          paddingTop: '2px'
+          paddingBottom: '12px',
+          paddingTop: '2px',
+          marginBottom: '10px'
         }}>
           <div 
             ref={timelineRef}
@@ -546,32 +520,6 @@ export function Timeline({
         <h2 className="text-md font-semibold text-[#555555] col-span-full mb-1">Timeline and Clip Controls</h2>
         <div className="timeline-controls">
           <h3 className="text-sm font-medium mb-1 text-[#555555]">Timeline Controls</h3>
-          {/* Smart Zoom Presets */}
-          <div className="zoom-presets flex flex-wrap items-center gap-1 mb-1">
-            {ZOOM_PRESETS.map(preset => (
-              <Button
-                key={preset.id}
-                variant={activePreset === preset.id ? "default" : "outline"}
-                size="sm"
-                onClick={() => {
-                  setActivePreset(preset.id);
-                  setZoomLevel(preset.level);
-                  if (preset.focus !== null) {
-                    setFocusHour(preset.focus);
-                  }
-                }}
-                className={`
-                  ${activePreset === preset.id 
-                    ? 'bg-[#FBBC05] text-[#000000] hover:bg-[#FBBC05]/90' 
-                    : 'text-[#555555] border-[#BCBBBB] hover:bg-[#FBBC05]/10'
-                  }
-                `}
-                title={preset.description}
-              >
-                <span>{preset.label}</span>
-              </Button>
-            ))}
-          </div>
           
           {/* Zoom Controls */}
           <div className="zoom-controls flex items-center gap-1 mb-1">
@@ -630,8 +578,8 @@ export function Timeline({
           </div>
         </div>
         
-        <div className="clip-controls">
-          <h3 className="text-sm font-medium mb-1 text-[#555555]">Clip Controls</h3>
+        <div className="actions">
+          <h3 className="text-sm font-medium mb-1 text-[#555555]">Actions</h3>
           <div className="flex flex-wrap gap-1">
             <Button
               variant="default"
@@ -786,7 +734,7 @@ export function Timeline({
       {/* Share Modal */}
       {isShareModalOpen && currentClip && (
         <ShareModal
-          clip={currentClip}
+          clip={currentClip!}
           onClose={() => setIsShareModalOpen(false)}
         />
       )}
