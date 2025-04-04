@@ -191,27 +191,38 @@ export default function SystemStatus() {
                 </div>
               </div>
               
-              {/* Status Chart */}
-              <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={cameraHourlyData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis 
-                      dataKey="hour" 
-                      tick={{fontSize: 12}}
-                      interval={1}
-                      angle={-45}
-                      textAnchor="end"
-                      height={60}
-                    />
-                    <YAxis 
-                      label={{ value: 'Uptime %', angle: -90, position: 'insideLeft' }}
-                      domain={[0, 100]}
-                    />
-                    <Tooltip />
-                    <Bar dataKey="uptime" fill="#FBBC05" name="Uptime %" />
-                  </BarChart>
-                </ResponsiveContainer>
+              {/* Status Chart - Horizontal Timeline */}
+              <div className="my-4">
+                <h5 className="text-sm font-medium mb-2">Daily Status Timeline (5-min increments)</h5>
+                <div className="h-16 relative">
+                  <div className="absolute top-0 left-0 w-full h-6 bg-gray-200 rounded"></div>
+                  {cameraStatusData.map((point, index) => {
+                    const totalPoints = cameraStatusData.length;
+                    const width = `${100 / totalPoints}%`;
+                    const left = `${(index / totalPoints) * 100}%`;
+                    return (
+                      <div 
+                        key={`camera-${point.time}`}
+                        className={`absolute top-0 h-6 ${point.status === 'online' ? 'bg-green-500' : 'bg-gray-400'}`}
+                        style={{ 
+                          width, 
+                          left, 
+                          transition: 'all 0.2s ease'
+                        }}
+                        title={`${point.time} - ${point.status}`}
+                      />
+                    );
+                  })}
+                  
+                  {/* Time markers */}
+                  <div className="absolute top-8 left-0 w-full flex justify-between text-xs text-gray-500">
+                    <span>00:00</span>
+                    <span>06:00</span>
+                    <span>12:00</span>
+                    <span>18:00</span>
+                    <span>23:59</span>
+                  </div>
+                </div>
               </div>
             </Card>
             
@@ -233,27 +244,38 @@ export default function SystemStatus() {
                 </div>
               </div>
               
-              {/* Status Chart */}
-              <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={displayHourlyData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis 
-                      dataKey="hour" 
-                      tick={{fontSize: 12}}
-                      interval={1}
-                      angle={-45}
-                      textAnchor="end"
-                      height={60}
-                    />
-                    <YAxis 
-                      label={{ value: 'Uptime %', angle: -90, position: 'insideLeft' }}
-                      domain={[0, 100]}
-                    />
-                    <Tooltip />
-                    <Bar dataKey="uptime" fill="#FBBC05" name="Uptime %" />
-                  </BarChart>
-                </ResponsiveContainer>
+              {/* Status Chart - Horizontal Timeline */}
+              <div className="my-4">
+                <h5 className="text-sm font-medium mb-2">Daily Status Timeline (5-min increments)</h5>
+                <div className="h-16 relative">
+                  <div className="absolute top-0 left-0 w-full h-6 bg-gray-200 rounded"></div>
+                  {displayStatusData.map((point, index) => {
+                    const totalPoints = displayStatusData.length;
+                    const width = `${100 / totalPoints}%`;
+                    const left = `${(index / totalPoints) * 100}%`;
+                    return (
+                      <div 
+                        key={`display-${point.time}`}
+                        className={`absolute top-0 h-6 ${point.status === 'online' ? 'bg-green-500' : 'bg-gray-400'}`}
+                        style={{ 
+                          width, 
+                          left, 
+                          transition: 'all 0.2s ease'
+                        }}
+                        title={`${point.time} - ${point.status}`}
+                      />
+                    );
+                  })}
+                  
+                  {/* Time markers */}
+                  <div className="absolute top-8 left-0 w-full flex justify-between text-xs text-gray-500">
+                    <span>00:00</span>
+                    <span>06:00</span>
+                    <span>12:00</span>
+                    <span>18:00</span>
+                    <span>23:59</span>
+                  </div>
+                </div>
               </div>
             </Card>
           </div>
