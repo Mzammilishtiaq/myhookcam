@@ -258,16 +258,20 @@ export function Timeline({
             <span className="text-[#555555]">Available Clips</span>
           </div>
           <div className="flex items-center">
+            <div className="w-3 h-3 bg-[#ff9900] rounded-full mr-1"></div>
+            <span className="text-[#555555]">Clips with Bookmarks</span>
+          </div>
+          <div className="flex items-center">
+            <div className="w-3 h-3 bg-[#ffa833] rounded-full mr-1"></div>
+            <span className="text-[#555555]">Clips with Annotations</span>
+          </div>
+          <div className="flex items-center">
+            <div className="w-3 h-3 bg-gradient-to-tr from-[#FBBC05] to-[#ff9900] rounded-full mr-1"></div>
+            <span className="text-[#555555]">Clips with Both</span>
+          </div>
+          <div className="flex items-center">
             <div className="w-3 h-3 bg-[#555555] rounded-full mr-1"></div>
             <span className="text-[#555555]">No Footage</span>
-          </div>
-          <div className="flex items-center">
-            <Bookmark className="h-4 w-4 text-[#000000] fill-[#FBBC05] mr-1" />
-            <span className="text-[#555555]">Bookmark</span>
-          </div>
-          <div className="flex items-center">
-            <MessageSquare className="h-4 w-4 text-[#000000] fill-[#FBBC05] mr-1" />
-            <span className="text-[#555555]">Annotation</span>
           </div>
         </div>
       </div>
@@ -415,13 +419,21 @@ export function Timeline({
               {visibleSegments.map((segment, index) => (
                 <div
                   key={index}
-                  className={`timeline-segment hover:opacity-80 transition-opacity ${
-                    segment.hasClip ? 'bg-[#FBBC05]' : 'bg-[#555555]'
-                  } ${
-                    segment.isCurrent ? 'ring-2 ring-[#000000]' : ''
-                  } ${
-                    segment.isWorkingHour ? 'h-8' : 'h-6 mt-1'
-                  }`}
+                  className={`timeline-segment hover:opacity-80 transition-opacity relative group
+                    ${segment.hasClip 
+                      ? segment.hasBookmarks && segment.hasAnnotations 
+                        ? 'bg-gradient-to-tr from-[#FBBC05] to-[#ff9900]' 
+                        : segment.hasBookmarks 
+                          ? 'bg-[#ff9900]'
+                          : segment.hasAnnotations
+                            ? 'bg-[#ffa833]'
+                            : 'bg-[#FBBC05]'
+                      : 'bg-[#555555]'
+                    } ${
+                      segment.isCurrent ? 'ring-2 ring-[#000000]' : ''
+                    } ${
+                      segment.isWorkingHour ? 'h-8' : 'h-6 mt-1'
+                    }`}
                   style={{ width: `${segmentWidth}%` }}
                   title={segment.displayTime}
                   onClick={() => segment.hasClip && segment.clip && onSelectClip(segment.clip)}
@@ -437,50 +449,81 @@ export function Timeline({
                     </div>
                   )}
                   
-                  {/* Bookmark indicator */}
-                  {segment.hasBookmarks && (
-                    <div 
-                      className="absolute bottom-0 left-0 w-full h-full cursor-pointer z-10 group"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        const clip = findClipByTime(segment.time);
-                        if (clip) onSelectClip(clip);
-                      }}
-                    >
-                      <div className="absolute bottom-0 left-0 w-full flex justify-center items-center">
-                        <Bookmark className="h-5 w-5 text-[#000000] fill-[#FBBC05] stroke-[1.5]" />
-                        {segment.bookmarks && segment.bookmarks.length > 1 && (
-                          <span className="absolute top-0 right-0 bg-[#000000] text-[#FFFFFF] text-[10px] px-1 rounded-full">
-                            {segment.bookmarks.length}
-                          </span>
+                  {/* Info tooltip */}
+                  {(segment.hasBookmarks || segment.hasAnnotations) && (
+                    <div className="absolute bottom-full mb-1 left-1/2 transform -translate-x-1/2 bg-[#000000] text-[#FFFFFF] px-3 py-2 rounded text-xs opacity-0 group-hover:opacity-100 transition-opacity z-10 shadow-lg max-w-[300px]">
+                      <div className="font-bold text-center mb-1 pb-1 border-b border-gray-700">
+                        {segment.displayTime} - Details
+                      </div>
+                      <div className="flex flex-col gap-2">
+                        {segment.hasBookmarks && segment.bookmarks && segment.bookmarks.length > 0 && (
+                          <div>
+                            <div className="flex items-center mb-1">
+                              <Bookmark className="h-3 w-3 mr-1 text-[#FBBC05] fill-[#FBBC05]" />
+                              <span className="font-semibold">
+                                {segment.bookmarks.length > 1 
+                                  ? `${segment.bookmarks.length} Bookmarks` 
+                                  : 'Bookmark'}
+                              </span>
+                            </div>
+                            <ul className="list-disc list-inside pl-2">
+                              {segment.bookmarks.map((bookmark, i) => (
+                                <li key={i} className="cursor-pointer hover:text-[#FBBC05] truncate" onClick={(e) => {
+                                  e.stopPropagation();
+                                  const clip = findClipByTime(segment.time);
+                                  if (clip) onSelectClip(clip);
+                                }}>
+                                  {bookmark.label || 'Untitled bookmark'}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                        
+                        {segment.hasAnnotations && segment.annotations && segment.annotations.length > 0 && (
+                          <div>
+                            <div className="flex items-center mb-1">
+                              <MessageSquare className="h-3 w-3 mr-1 text-[#FBBC05] fill-[#FBBC05]" />
+                              <span className="font-semibold">
+                                {segment.annotations.length > 1 
+                                  ? `${segment.annotations.length} Annotations` 
+                                  : 'Annotation'}
+                              </span>
+                            </div>
+                            <ul className="list-disc list-inside pl-2">
+                              {segment.annotations.map((annotation, i) => (
+                                <li key={i} className="cursor-pointer hover:text-[#FBBC05] truncate" onClick={(e) => {
+                                  e.stopPropagation();
+                                  const clip = findClipByTime(segment.time);
+                                  if (clip) onSelectClip(clip);
+                                }}>
+                                  {annotation.content?.substring(0, 30) + (annotation.content?.length > 30 ? '...' : '') || 'No content'}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
                         )}
                       </div>
-                      {segment.bookmarks && segment.bookmarks.length > 0 && (
-                        <div className="absolute bottom-full mb-1 left-1/2 transform -translate-x-1/2 bg-[#000000] text-[#FFFFFF] px-2 py-1 rounded text-xs whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity">
-                          {segment.bookmarks.length > 1 
-                            ? `${segment.bookmarks.length} bookmarks` 
-                            : segment.bookmarks[0].label || 'Bookmark'}
-                        </div>
-                      )}
                     </div>
                   )}
                   
-                  {/* Annotation indicator */}
-                  {segment.hasAnnotations && (
-                    <div 
-                      className="absolute top-0 left-1/2 transform -translate-x-1/2 -mt-6 cursor-pointer z-10 group"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        const clip = findClipByTime(segment.time);
-                        if (clip) onSelectClip(clip);
-                      }}
-                    >
-                      <MessageSquare className="h-5 w-5 text-[#000000] fill-[#FBBC05] stroke-[1.5]" />
+                  {/* Count indicators */}
+                  {(segment.hasBookmarks || segment.hasAnnotations) && (
+                    <div className="absolute top-0 right-0 flex gap-1 p-0.5">
+                      {segment.bookmarks && segment.bookmarks.length > 0 && (
+                        <div className="flex items-center">
+                          <Bookmark className="h-2.5 w-2.5 text-[#000000] fill-[#000000]" />
+                          <span className="text-[9px] font-bold text-[#000000] bg-white/90 px-0.5 rounded">
+                            {segment.bookmarks.length}
+                          </span>
+                        </div>
+                      )}
                       {segment.annotations && segment.annotations.length > 0 && (
-                        <div className="absolute top-full mt-1 left-1/2 transform -translate-x-1/2 bg-[#000000] text-[#FFFFFF] px-2 py-1 rounded text-xs whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity">
-                          {segment.annotations.length > 1 
-                            ? `${segment.annotations.length} annotations` 
-                            : segment.annotations[0].content?.substring(0, 20) + (segment.annotations[0].content?.length > 20 ? '...' : '') || 'Annotation'}
+                        <div className="flex items-center">
+                          <MessageSquare className="h-2.5 w-2.5 text-[#000000] fill-[#000000]" />
+                          <span className="text-[9px] font-bold text-[#000000] bg-white/90 px-0.5 rounded">
+                            {segment.annotations.length}
+                          </span>
                         </div>
                       )}
                     </div>
