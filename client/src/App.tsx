@@ -49,7 +49,7 @@ function MainNavigation() {
               className="mr-2 text-white p-0" 
               onClick={toggleSidebar}
             >
-              {isSidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+              <Menu className="h-5 w-5" />
             </Button>
             <h1 className="text-xl font-semibold">
               <span className="text-[#FBBC05]">HookCam</span> System
