@@ -4,7 +4,6 @@ import { format, addDays, subDays, parseISO } from "date-fns";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { VideoPlayer } from "@/components/ui/video-player";
 import { Timeline } from "@/components/ui/timeline";
-import { ClipControls } from "@/components/ui/clip-controls";
 import { NoteSidebar } from "@/components/ui/note-sidebar";
 import { ExportModal } from "@/components/ui/export-modal";
 import { useToast } from "@/hooks/use-toast";
@@ -103,10 +102,6 @@ export default function Recordings() {
             isLoading={isLoading}
             isError={isError}
             onSelectClip={setCurrentClip}
-          />
-          
-          <ClipControls 
-            currentClip={currentClip}
             onExportCurrentClip={handleExportCurrentClip}
             selectedDate={formattedDate}
           />

@@ -1,229 +1,236 @@
 import { useState } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogDescription, 
+  DialogHeader, 
+  DialogTitle,
+  DialogFooter 
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Clipboard, Mail, MessageSquare, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { cn } from "@/lib/utils";
-
-interface SpinnerProps extends React.HTMLAttributes<HTMLDivElement> {}
-
-function Spinner({ className, ...props }: SpinnerProps) {
-  return (
-    <div
-      className={cn("animate-spin rounded-full border-2 border-current border-t-transparent h-4 w-4", className)}
-      {...props}
-    />
-  );
-}
-
 import type { Clip } from "@shared/schema";
 
-// Share form schema
-const shareFormSchema = z.object({
-  recipient: z.string().refine((value) => {
-    // Email regex
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    // Phone number regex - simplified for demonstration
-    const phoneRegex = /^\+?[0-9]{10,15}$/;
-    return emailRegex.test(value) || phoneRegex.test(value);
-  }, {
-    message: "Please enter a valid email or phone number",
-  }),
-  type: z.enum(["email", "sms"]),
-  message: z.string().optional(),
-});
-
-type ShareFormValues = z.infer<typeof shareFormSchema>;
-
 interface ShareModalProps {
-  clip?: Clip;
+  clip: Clip;
   onClose: () => void;
 }
 
 export function ShareModal({ clip, onClose }: ShareModalProps) {
   const { toast } = useToast();
-  const queryClient = useQueryClient();
-  const [isOpen, setIsOpen] = useState(true);
-
-  // Initialize form with default values
-  const form = useForm<ShareFormValues>({
-    resolver: zodResolver(shareFormSchema),
-    defaultValues: {
-      recipient: "",
-      type: "email",
-      message: "",
-    },
-  });
-
-  // Create share mutation
-  const shareClipMutation = useMutation({
-    mutationFn: async (data: ShareFormValues & { clipKey: string; date: string; clipTime: string }) => {
-      return apiRequest(
-        "POST",
-        "/api/shares", 
-        {
-          ...data,
-          // Set expiration date to 7 days from now
-          expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-        }
-      );
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/shares"] });
-      toast({
-        title: "Success!",
-        description: "Video clip has been shared successfully.",
-      });
-      handleClose();
-    },
-    onError: (error) => {
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [shareMethod, setShareMethod] = useState<"email" | "sms" | "link">("email");
+  const [isSharing, setIsSharing] = useState(false);
+  
+  // Generate a shareable link
+  const shareLink = `${window.location.origin}/shared-clip/${clip.key}`;
+  
+  // Handle share submission
+  const handleShare = async () => {
+    setIsSharing(true);
+    
+    try {
+      // Create different API requests based on share method
+      if (shareMethod === "email" && email) {
+        // Share via email
+        const response = await fetch("/api/shares", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            clipKey: clip.key,
+            recipientEmail: email,
+            shareMethod: "email"
+          }),
+        });
+        
+        if (!response.ok) throw new Error("Failed to share via email");
+        
+        toast({
+          title: "Clip shared!",
+          description: `Email sent to ${email}`,
+        });
+      } 
+      else if (shareMethod === "sms" && phone) {
+        // Share via SMS
+        const response = await fetch("/api/shares", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            clipKey: clip.key,
+            recipientPhone: phone,
+            shareMethod: "sms"
+          }),
+        });
+        
+        if (!response.ok) throw new Error("Failed to share via SMS");
+        
+        toast({
+          title: "Clip shared!",
+          description: `SMS sent to ${phone}`,
+        });
+      }
+      else if (shareMethod === "link") {
+        // Copy link to clipboard
+        await navigator.clipboard.writeText(shareLink);
+        
+        toast({
+          title: "Link copied!",
+          description: "Share link copied to clipboard",
+        });
+      }
+      
+      onClose();
+    } catch (error) {
       console.error("Share error:", error);
       toast({
-        title: "Failed to share",
-        description: "There was an error sharing the video clip. Please try again.",
+        title: "Share failed",
+        description: "There was an error sharing this clip",
         variant: "destructive",
       });
-    },
-  });
-
-  // Handle form submission
-  const onSubmit = (values: ShareFormValues) => {
-    if (!clip) return;
-
-    // Add clip data to the form values
-    shareClipMutation.mutate({
-      ...values,
-      clipKey: clip.key,
-      date: clip.date,
-      clipTime: clip.startTime,
-    });
+    } finally {
+      setIsSharing(false);
+    }
   };
-
-  const handleClose = () => {
-    setIsOpen(false);
-    onClose();
+  
+  // Format clip time for display
+  const formatClipTime = (timeString: string) => {
+    const [hours, minutes] = timeString.split(':').map(Number);
+    const amPm = hours >= 12 ? 'PM' : 'AM';
+    const displayHours = hours % 12 || 12;
+    return `${displayHours}:${minutes.toString().padStart(2, '0')} ${amPm}`;
   };
-
+  
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
-      <DialogContent className="sm:max-w-md">
+    <Dialog open={true} onOpenChange={() => onClose()}>
+      <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Share Video Clip</DialogTitle>
+          <DialogTitle className="flex items-center">
+            <span className="text-[#555555]">Share Clip</span>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={onClose}
+              className="ml-auto h-6 w-6"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </DialogTitle>
           <DialogDescription>
-            Share this video clip via email or SMS.
+            Share clip from {formatClipTime(clip.startTime)} on {clip.date}
           </DialogDescription>
         </DialogHeader>
-
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            {clip && (
-              <div className="p-3 bg-secondary rounded-md text-sm mb-4">
-                <div className="font-medium">Selected Clip:</div>
-                <div>Date: {clip.date}</div>
-                <div>Time: {clip.startTime}</div>
+        
+        <Tabs defaultValue="email" className="w-full" onValueChange={(v) => setShareMethod(v as any)}>
+          <TabsList className="grid grid-cols-3 mb-4">
+            <TabsTrigger value="email" className="data-[state=active]:bg-[#FBBC05] data-[state=active]:text-[#000000]">
+              <Mail className="h-4 w-4 mr-2" />
+              Email
+            </TabsTrigger>
+            <TabsTrigger value="sms" className="data-[state=active]:bg-[#FBBC05] data-[state=active]:text-[#000000]">
+              <MessageSquare className="h-4 w-4 mr-2" />
+              SMS
+            </TabsTrigger>
+            <TabsTrigger value="link" className="data-[state=active]:bg-[#FBBC05] data-[state=active]:text-[#000000]">
+              <Clipboard className="h-4 w-4 mr-2" />
+              Copy Link
+            </TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="email" className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="email" className="text-[#555555]">Email address</Label>
+              <Input 
+                id="email" 
+                type="email" 
+                placeholder="name@example.com" 
+                value={email} 
+                onChange={(e) => setEmail(e.target.value)}
+                className="border-[#BCBBBB] focus:border-[#FBBC05] focus:ring-[#FBBC05]"
+              />
+              <p className="text-xs text-[#555555]">
+                The recipient will receive an email with a link to view this clip.
+              </p>
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="sms" className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="phone" className="text-[#555555]">Phone number</Label>
+              <Input 
+                id="phone" 
+                type="tel" 
+                placeholder="(555) 123-4567" 
+                value={phone} 
+                onChange={(e) => setPhone(e.target.value)}
+                className="border-[#BCBBBB] focus:border-[#FBBC05] focus:ring-[#FBBC05]"
+              />
+              <p className="text-xs text-[#555555]">
+                The recipient will receive a text message with a link to view this clip.
+              </p>
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="link" className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="link" className="text-[#555555]">Shareable link</Label>
+              <div className="flex items-center space-x-2">
+                <Input 
+                  id="link" 
+                  readOnly 
+                  value={shareLink}
+                  className="border-[#BCBBBB] focus:border-[#FBBC05] focus:ring-[#FBBC05]"
+                />
+                <Button 
+                  type="button"
+                  size="icon"
+                  onClick={() => {
+                    navigator.clipboard.writeText(shareLink);
+                    toast({
+                      title: "Link copied!",
+                      description: "Share link copied to clipboard",
+                    });
+                  }}
+                  className="bg-[#FBBC05] hover:bg-[#FBBC05]/90 text-[#000000]"
+                >
+                  <Clipboard className="h-4 w-4" />
+                </Button>
               </div>
-            )}
-
-            <FormField
-              control={form.control}
-              name="type"
-              render={({ field }) => (
-                <FormItem className="space-y-3">
-                  <FormLabel>Share via</FormLabel>
-                  <FormControl>
-                    <RadioGroup
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                      className="flex space-x-2"
-                    >
-                      <FormItem className="flex items-center space-x-1 space-y-0">
-                        <FormControl>
-                          <RadioGroupItem value="email" />
-                        </FormControl>
-                        <FormLabel className="font-normal cursor-pointer">Email</FormLabel>
-                      </FormItem>
-                      <FormItem className="flex items-center space-x-1 space-y-0">
-                        <FormControl>
-                          <RadioGroupItem value="sms" />
-                        </FormControl>
-                        <FormLabel className="font-normal cursor-pointer">SMS</FormLabel>
-                      </FormItem>
-                    </RadioGroup>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="recipient"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>
-                    {form.watch("type") === "email" ? "Email address" : "Phone number"}
-                  </FormLabel>
-                  <FormControl>
-                    <Input 
-                      placeholder={form.watch("type") === "email" ? "Email address" : "Phone number"}
-                      {...field} 
-                    />
-                  </FormControl>
-                  <FormDescription>
-                    {form.watch("type") === "email" 
-                      ? "The recipient's email address" 
-                      : "The recipient's phone number (e.g., +1234567890)"}
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="message"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Message (optional)</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="Add a personal message..."
-                      className="resize-none"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormDescription>
-                    Include an optional message to the recipient.
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <DialogFooter className="gap-2 sm:gap-0">
-              <Button type="button" variant="secondary" onClick={handleClose}>
-                Cancel
-              </Button>
-              <Button 
-                type="submit" 
-                disabled={shareClipMutation.isPending}
-              >
-                {shareClipMutation.isPending && (
-                  <Spinner className="mr-2" />
-                )}
-                Share
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
+              <p className="text-xs text-[#555555]">
+                This link provides temporary access to view this clip.
+              </p>
+            </div>
+          </TabsContent>
+        </Tabs>
+        
+        <DialogFooter>
+          <Button 
+            variant="outline" 
+            onClick={onClose}
+            className="border-[#555555] text-[#555555] hover:bg-[#FBBC05]/10"
+          >
+            Cancel
+          </Button>
+          <Button 
+            onClick={handleShare}
+            disabled={
+              (shareMethod === "email" && !email) || 
+              (shareMethod === "sms" && !phone) || 
+              isSharing
+            }
+            className="bg-[#FBBC05] hover:bg-[#FBBC05]/90 text-[#000000]"
+          >
+            {isSharing ? "Sharing..." : "Share"}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

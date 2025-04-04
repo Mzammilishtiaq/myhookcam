@@ -1,11 +1,18 @@
 import { useRef, useEffect, useState } from "react";
-import { AlertTriangle, Loader2, ZoomIn, ZoomOut, Bookmark, MessageSquare } from "lucide-react";
+import { 
+  AlertTriangle, Loader2, ZoomIn, ZoomOut, Bookmark, MessageSquare,
+  FileDown, BookmarkPlus, FileEdit, Share2 
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { VideoPreview } from "@/components/ui/video-preview";
 import type { Clip, Annotation, Bookmark as BookmarkType } from "@shared/schema";
 import { useBookmarks } from "@/hooks/use-bookmarks";
 import { useAnnotations } from "@/hooks/use-annotations";
+import { useToast } from "@/hooks/use-toast";
+import { formatVideoTime } from "@/lib/time";
+import { ShareModal } from "@/components/ui/share-modal";
 
 interface TimelineProps {
   clips: Clip[];
@@ -13,6 +20,8 @@ interface TimelineProps {
   isLoading: boolean;
   isError: boolean;
   onSelectClip: (clip: Clip) => void;
+  onExportCurrentClip: () => void;
+  selectedDate: string;
 }
 
 // Smart zoom level presets
@@ -67,7 +76,9 @@ export function Timeline({
   currentClip,
   isLoading,
   isError,
-  onSelectClip
+  onSelectClip,
+  onExportCurrentClip,
+  selectedDate
 }: TimelineProps) {
   const timelineRef = useRef<HTMLDivElement>(null);
   const [zoomLevel, setZoomLevel] = useState<number>(1); // Default zoom level
@@ -76,11 +87,14 @@ export function Timeline({
   const [hoveredSegment, setHoveredSegment] = useState<string | null>(null); // Track hovered segment by time key
   const [previewPosition, setPreviewPosition] = useState<number>(50); // Position within clip (as percentage)
   const [mousePosition, setMousePosition] = useState<{x: number, y: number}>({x: 0, y: 0}); // Track mouse position for preview
-  const selectedDate = currentClip?.date || new Date().toISOString().split('T')[0];
+  const [exportFormat, setExportFormat] = useState<string>("mp4");
+  const [exportQuality, setExportQuality] = useState<string>("high");
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const { toast } = useToast();
   
   // Fetch bookmarks and annotations for the selected date
-  const { bookmarks = [] } = useBookmarks(selectedDate);
-  const { data: annotations = [] } = useAnnotations(selectedDate);
+  const { bookmarks = [], addBookmark } = useBookmarks(selectedDate);
+  const { data: annotations = [], createAnnotation } = useAnnotations(selectedDate);
   
   // Generate segments for a 24-hour timeline with emphasis on working hours (7am-5pm)
   // Each segment represents a 5-minute interval (288 segments in a day)
@@ -528,88 +542,254 @@ export function Timeline({
         </div>
       )}
       
-      {/* Smart Zoom Presets */}
-      <div className="zoom-presets flex flex-wrap items-center gap-2 mt-3 mb-2">
-        {ZOOM_PRESETS.map(preset => (
-          <Button
-            key={preset.id}
-            variant={activePreset === preset.id ? "default" : "outline"}
-            size="sm"
-            onClick={() => {
-              setActivePreset(preset.id);
-              setZoomLevel(preset.level);
-              if (preset.focus !== null) {
-                setFocusHour(preset.focus);
-              }
-            }}
-            className={`
-              ${activePreset === preset.id 
-                ? 'bg-[#FBBC05] text-[#000000] hover:bg-[#FBBC05]/90' 
-                : 'text-[#555555] border-[#BCBBBB] hover:bg-[#FBBC05]/10'
-              }
-            `}
-            title={preset.description}
-          >
-            <span>{preset.label}</span>
-          </Button>
-        ))}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-[#FFFFFF] p-4 rounded-lg shadow border border-[#BCBBBB] mt-3">
+        <h2 className="text-lg font-semibold text-[#555555] col-span-full mb-2">Timeline and Clip Controls</h2>
+        <div className="timeline-controls">
+          <h3 className="text-md font-medium mb-2 text-[#555555]">Timeline Controls</h3>
+          {/* Smart Zoom Presets */}
+          <div className="zoom-presets flex flex-wrap items-center gap-2 mb-2">
+            {ZOOM_PRESETS.map(preset => (
+              <Button
+                key={preset.id}
+                variant={activePreset === preset.id ? "default" : "outline"}
+                size="sm"
+                onClick={() => {
+                  setActivePreset(preset.id);
+                  setZoomLevel(preset.level);
+                  if (preset.focus !== null) {
+                    setFocusHour(preset.focus);
+                  }
+                }}
+                className={`
+                  ${activePreset === preset.id 
+                    ? 'bg-[#FBBC05] text-[#000000] hover:bg-[#FBBC05]/90' 
+                    : 'text-[#555555] border-[#BCBBBB] hover:bg-[#FBBC05]/10'
+                  }
+                `}
+                title={preset.description}
+              >
+                <span>{preset.label}</span>
+              </Button>
+            ))}
+          </div>
+          
+          {/* Zoom Controls */}
+          <div className="zoom-controls flex items-center gap-2 mb-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleZoomOut}
+              disabled={zoomLevel <= 1}
+              className="text-[#555555] border-[#BCBBBB] hover:bg-[#FBBC05]/10"
+            >
+              <ZoomOut className="h-4 w-4 mr-1" />
+              <span>Zoom Out</span>
+            </Button>
+            
+            <div className="flex-1 px-4">
+              <Slider
+                defaultValue={[focusHour]}
+                max={23}
+                step={1}
+                value={[focusHour]}
+                onValueChange={(value) => {
+                  setFocusHour(value[0]);
+                  // Reset active preset when manually adjusting
+                  setActivePreset('custom');
+                }}
+                disabled={zoomLevel <= 1}
+                className="w-full"
+              />
+            </div>
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                handleZoomIn();
+                // Reset active preset when manually zooming
+                setActivePreset('custom');
+              }}
+              disabled={zoomLevel >= 4}
+              className="text-[#555555] border-[#BCBBBB] hover:bg-[#FBBC05]/10"
+            >
+              <ZoomIn className="h-4 w-4 mr-1" />
+              <span>Zoom In</span>
+            </Button>
+            
+            <div className="text-sm text-[#555555]">
+              {zoomLevel > 1 ? (
+                <span>
+                  {activePreset === 'custom' && <span className="text-xs bg-[#FBBC05]/20 px-1 py-0.5 rounded mr-1">Custom</span>}
+                  Focus: {focusHour > 12 ? focusHour - 12 : focusHour}{focusHour >= 12 ? 'PM' : 'AM'} | {zoomLevel.toFixed(1)}x
+                </span>
+              ) : (
+                <span>Full Day View</span>
+              )}
+            </div>
+          </div>
+        </div>
+        
+        <div className="clip-controls">
+          <h3 className="text-md font-medium mb-2 text-[#555555]">Clip Controls</h3>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              variant="default"
+              className="bg-[#FBBC05] hover:bg-[#FBBC05]/90 text-[#000000]"
+              onClick={onExportCurrentClip}
+              disabled={!currentClip}
+            >
+              <FileDown className="mr-1 h-4 w-4" />
+              <span>Export Current</span>
+            </Button>
+            
+            <Button
+              variant="outline"
+              className="border-[#555555] text-[#555555] hover:bg-[#FBBC05]/10"
+              onClick={() => {
+                if (!currentClip) {
+                  toast({
+                    title: "No clip selected",
+                    description: "Please select a clip to bookmark",
+                    variant: "destructive"
+                  });
+                  return;
+                }
+                
+                const label = prompt("Enter a label for this bookmark:");
+                
+                if (label) {
+                  addBookmark.mutate({
+                    videoTime: formatVideoTime(0), // Default to start of clip
+                    clipTime: currentClip.startTime,
+                    date: selectedDate,
+                    label
+                  }, {
+                    onSuccess: () => {
+                      toast({
+                        title: "Bookmark added",
+                        description: `Bookmark created at ${currentClip.startTime}`
+                      });
+                    },
+                    onError: () => {
+                      toast({
+                        title: "Error",
+                        description: "Failed to create bookmark",
+                        variant: "destructive"
+                      });
+                    }
+                  });
+                }
+              }}
+              disabled={!currentClip}
+            >
+              <BookmarkPlus className="mr-1 h-4 w-4" />
+              <span>Bookmark</span>
+            </Button>
+            
+            <Button
+              variant="outline"
+              className="border-[#555555] text-[#555555] hover:bg-[#FBBC05]/10"
+              onClick={() => {
+                if (!currentClip) {
+                  toast({
+                    title: "No clip selected",
+                    description: "Please select a clip to annotate",
+                    variant: "destructive"
+                  });
+                  return;
+                }
+                
+                const content = prompt("Enter your annotation:");
+                
+                if (content) {
+                  createAnnotation({
+                    videoTime: formatVideoTime(0), // Default to start of clip
+                    clipTime: currentClip.startTime,
+                    date: selectedDate,
+                    content
+                  });
+                }
+              }}
+              disabled={!currentClip}
+            >
+              <FileEdit className="mr-1 h-4 w-4" />
+              <span>Add Note</span>
+            </Button>
+            
+            <Button
+              variant="outline"
+              className="border-[#555555] text-[#555555] hover:bg-[#FBBC05]/10"
+              onClick={() => {
+                if (!currentClip) {
+                  toast({
+                    title: "No clip selected",
+                    description: "Please select a clip to share",
+                    variant: "destructive"
+                  });
+                  return;
+                }
+                
+                setIsShareModalOpen(true);
+              }}
+              disabled={!currentClip}
+            >
+              <Share2 className="mr-1 h-4 w-4" />
+              <span>Share</span>
+            </Button>
+          </div>
+          
+          <div className="export-options mt-2">
+            <div className="flex flex-wrap gap-2">
+              <Select
+                value={exportFormat}
+                onValueChange={setExportFormat}
+              >
+                <SelectTrigger className="w-[140px] border-[#BCBBBB] text-[#555555] focus:ring-[#FBBC05]">
+                  <SelectValue placeholder="Format" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="mp4">MP4</SelectItem>
+                  <SelectItem value="webm">WebM</SelectItem>
+                  <SelectItem value="mov">MOV</SelectItem>
+                </SelectContent>
+              </Select>
+              
+              <Select
+                value={exportQuality}
+                onValueChange={setExportQuality}
+              >
+                <SelectTrigger className="w-[160px] border-[#BCBBBB] text-[#555555] focus:ring-[#FBBC05]">
+                  <SelectValue placeholder="Quality" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="high">High Quality</SelectItem>
+                  <SelectItem value="medium">Medium Quality</SelectItem>
+                  <SelectItem value="low">Low Quality</SelectItem>
+                </SelectContent>
+              </Select>
+              
+              <Button 
+                variant="default"
+                className="bg-[#555555] hover:bg-[#555555]/90 text-[#FFFFFF]"
+                disabled={!currentClip}
+                onClick={onExportCurrentClip}
+              >
+                <FileDown className="mr-1 h-4 w-4" />
+                <span>Export Range</span>
+              </Button>
+            </div>
+          </div>
+        </div>
       </div>
       
-      {/* Zoom Controls */}
-      <div className="zoom-controls flex items-center gap-2 mb-2">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleZoomOut}
-          disabled={zoomLevel <= 1}
-          className="text-[#555555] border-[#BCBBBB] hover:bg-[#FBBC05]/10"
-        >
-          <ZoomOut className="h-4 w-4 mr-1" />
-          <span>Zoom Out</span>
-        </Button>
-        
-        <div className="flex-1 px-4">
-          <Slider
-            defaultValue={[focusHour]}
-            max={23}
-            step={1}
-            value={[focusHour]}
-            onValueChange={(value) => {
-              setFocusHour(value[0]);
-              // Reset active preset when manually adjusting
-              setActivePreset('custom');
-            }}
-            disabled={zoomLevel <= 1}
-            className="w-full"
-          />
-        </div>
-        
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => {
-            handleZoomIn();
-            // Reset active preset when manually zooming
-            setActivePreset('custom');
-          }}
-          disabled={zoomLevel >= 4}
-          className="text-[#555555] border-[#BCBBBB] hover:bg-[#FBBC05]/10"
-        >
-          <ZoomIn className="h-4 w-4 mr-1" />
-          <span>Zoom In</span>
-        </Button>
-        
-        <div className="text-sm text-[#555555]">
-          {zoomLevel > 1 ? (
-            <span>
-              {activePreset === 'custom' && <span className="text-xs bg-[#FBBC05]/20 px-1 py-0.5 rounded mr-1">Custom</span>}
-              Focus: {focusHour > 12 ? focusHour - 12 : focusHour}{focusHour >= 12 ? 'PM' : 'AM'} | {zoomLevel.toFixed(1)}x
-            </span>
-          ) : (
-            <span>Full Day View</span>
-          )}
-        </div>
-      </div>
+      {/* Share Modal */}
+      {isShareModalOpen && currentClip && (
+        <ShareModal
+          clip={currentClip}
+          onClose={() => setIsShareModalOpen(false)}
+        />
+      )}
     </div>
   );
 }
