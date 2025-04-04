@@ -202,7 +202,7 @@ export function Timeline({
   }, [currentClip]);
   
   // Calculate width for each segment - adjust based on zoom level
-  const baseSegmentWidth = 0.35; // Base percentage width
+  const baseSegmentWidth = 0.5; // Base percentage width (increased from 0.35)
   const segmentWidth = baseSegmentWidth * zoomLevel;
   
   // Filter segments based on focus hour and zoom level
@@ -366,16 +366,17 @@ export function Timeline({
           <span className="ml-2 text-[#555555]">Error loading timeline data</span>
         </div>
       ) : (
-        <div className="timeline-scroll-container overflow-x-auto bg-[#FFFFFF] rounded-lg shadow border border-[#BCBBBB] h-[200px] flex-1 relative" style={{
-          scrollbarWidth: 'thin',
-          scrollbarColor: '#BCBBBB transparent',
+        <div className="timeline-scroll-container overflow-x-scroll bg-[#FFFFFF] rounded-lg shadow border border-[#BCBBBB] h-[200px] flex-1 relative" style={{
+          scrollbarWidth: 'auto',
+          scrollbarColor: '#555555 #FFFFFF',
           overflowY: 'visible',
           paddingBottom: '30px',
           paddingTop: '20px'
         }}>
           <div 
             ref={timelineRef}
-            className="timeline-wrapper relative min-w-max p-4"
+            className="timeline-wrapper relative p-4"
+            style={{ width: "150%" }}
           >
             {/* Hour markers - filter based on zoom level */}
             <div className="hour-markers relative h-8">
@@ -439,19 +440,26 @@ export function Timeline({
                   {/* Bookmark indicator */}
                   {segment.hasBookmarks && (
                     <div 
-                      className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 cursor-pointer z-10 group"
+                      className="absolute bottom-0 left-0 w-full h-full cursor-pointer z-10 group"
                       onClick={(e) => {
                         e.stopPropagation();
                         const clip = findClipByTime(segment.time);
                         if (clip) onSelectClip(clip);
                       }}
                     >
-                      <Bookmark className="h-5 w-5 text-[#000000] fill-[#FBBC05] stroke-[1.5]" />
+                      <div className="absolute bottom-0 left-0 w-full flex justify-center items-center">
+                        <Bookmark className="h-5 w-5 text-[#000000] fill-[#FBBC05] stroke-[1.5]" />
+                        {segment.bookmarks && segment.bookmarks.length > 1 && (
+                          <span className="absolute top-0 right-0 bg-[#000000] text-[#FFFFFF] text-[10px] px-1 rounded-full">
+                            {segment.bookmarks.length}
+                          </span>
+                        )}
+                      </div>
                       {segment.bookmarks && segment.bookmarks.length > 0 && (
                         <div className="absolute bottom-full mb-1 left-1/2 transform -translate-x-1/2 bg-[#000000] text-[#FFFFFF] px-2 py-1 rounded text-xs whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity">
                           {segment.bookmarks.length > 1 
                             ? `${segment.bookmarks.length} bookmarks` 
-                            : segment.bookmarks[0].title || 'Bookmark'}
+                            : segment.bookmarks[0].label || 'Bookmark'}
                         </div>
                       )}
                     </div>
