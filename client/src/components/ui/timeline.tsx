@@ -357,12 +357,12 @@ export function Timeline({
                   className={`timeline-segment hover:opacity-80 transition-opacity relative group
                     ${segment.hasClip 
                       ? segment.hasBookmarks && segment.hasAnnotations 
-                        ? 'bg-gradient-to-tr from-[#FBBC05] to-[#ff9900]' 
+                        ? 'bg-gradient-to-tr from-[#FBBC05] to-[#ff9900] border border-[#000000]/20' 
                         : segment.hasBookmarks 
-                          ? 'bg-[#ff9900]'
+                          ? 'bg-[#ff9900] border border-[#000000]/20'
                           : segment.hasAnnotations
-                            ? 'bg-[#ffa833]'
-                            : 'bg-[#FBBC05]'
+                            ? 'bg-[#ffa833] border border-[#000000]/20'
+                            : 'bg-[#FBBC05] border border-[#000000]/20'
                       : 'bg-[#555555]'
                     } ${
                       segment.isCurrent ? 'ring-2 ring-[#000000]' : ''
@@ -505,7 +505,7 @@ export function Timeline({
           
           {/* Video Preview */}
           <div 
-            className={`fixed transform -translate-x-1/2 z-50 transition-all duration-200 ${
+            className={`fixed transform -translate-x-1/2 z-[100] transition-all duration-200 ${
               hoveredSegment ? 'opacity-100' : 'opacity-0 pointer-events-none'
             }`}
             style={{ 
@@ -530,7 +530,7 @@ export function Timeline({
                   </div>
                 ) : (
                   <div className="relative">
-                    <div className="bg-black rounded-md shadow-lg flex items-center justify-center text-white p-3 border border-[#555555]" style={{ width: '240px', height: '135px' }}>
+                    <div className="bg-black rounded-md shadow-lg flex items-center justify-center text-white p-3 border-2 border-[#FBBC05]" style={{ width: '240px', height: '135px' }}>
                       <span className="text-[#FBBC05]">No footage available for {hoveredSegment}</span>
                     </div>
                     <div className="w-0 h-0 border-l-8 border-r-8 border-t-8 border-transparent border-t-black mx-auto mt-[-1px]"></div>

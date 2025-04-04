@@ -65,7 +65,7 @@ export function VideoPreview({
   const clipTimeDisplay = clip ? clip.startTime : "--:--";
   
   return (
-    <div className="video-preview-container relative bg-black rounded-md overflow-hidden shadow-lg" style={{ 
+    <div className="video-preview-container relative bg-black rounded-md overflow-hidden shadow-lg border-2 border-[#FBBC05]" style={{ 
       width: '240px', 
       height: '135px'
     }}>
