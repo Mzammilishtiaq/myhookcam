@@ -293,7 +293,7 @@ export function Timeline({
             style={{ width: "150%" }}
           >
             {/* Hour markers - filter based on zoom level */}
-            <div className="hour-markers relative h-6">
+            <div className="hour-markers relative h-5">
               {hourMarkers
                 .filter(marker => {
                   if (zoomLevel <= 1) return true;
@@ -315,7 +315,7 @@ export function Timeline({
                     }}
                     data-hour={marker.label}
                   >
-                    <div className={`absolute top-4 transform -translate-x-1/2 text-xs font-mono ${
+                    <div className={`absolute top-3 transform -translate-x-1/2 text-xs font-mono ${
                       marker.isWorkingHour ? 'text-[#555555] font-bold' : 'text-[#BCBBBB]'
                     }`}>
                       {marker.label}
@@ -325,7 +325,7 @@ export function Timeline({
             </div>
             
             {/* Timeline segments */}
-            <div className="timeline-segments flex h-5 mt-6">
+            <div className="timeline-segments flex h-5 mt-4">
               {visibleSegments.map((segment, index) => (
                 <div
                   key={index}
@@ -489,7 +489,7 @@ export function Timeline({
                 mousePosition.x : window.innerWidth / 2}px` : '50%',
               top: hoveredSegment ? `${
                 timelineRef.current ? 
-                mousePosition.y - 150 : window.innerHeight / 2}px` : '50%'
+                mousePosition.y - 200 : window.innerHeight / 2}px` : '50%'
             }}
           >
             {hoveredSegment && (
