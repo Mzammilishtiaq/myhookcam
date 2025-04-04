@@ -18,7 +18,7 @@ function MainNavigation() {
       <div className="container mx-auto">
         <div className="flex justify-between items-center mb-4">
           <h1 className="text-xl font-semibold">
-            <span className="text-[#FBBC05]">Hook</span>Cam System
+            <span className="text-[#FBBC05]">HookCam</span> System
           </h1>
         </div>
         
@@ -69,7 +69,7 @@ function Router() {
       
       <footer className="bg-[#BCBBBB] text-[#555555] p-3 text-sm text-center">
         <div className="container mx-auto">
-          <p><span className="font-semibold">HookCam System v1.0</span> | Connected to AWS S3 Storage</p>
+          <p><span className="font-semibold"><span className="text-[#FBBC05]">HookCam</span> System v1.0</span> | Connected to AWS S3 Storage</p>
         </div>
       </footer>
     </div>

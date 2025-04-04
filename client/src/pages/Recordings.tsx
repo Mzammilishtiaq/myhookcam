@@ -56,7 +56,7 @@ export default function Recordings() {
   return (
     <div className="container mx-auto p-4">
       <div className="mb-4 flex justify-between items-center">
-        <h2 className="text-xl font-semibold text-[#555555]">Recording Archive</h2>
+        <h2 className="text-xl font-semibold text-[#555555]"><span className="text-[#FBBC05]">HookCam</span> Recording Archive</h2>
         
         {/* Date Picker */}
         <div className="flex items-center space-x-2">

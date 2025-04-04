@@ -4,7 +4,7 @@ export default function SystemStatus() {
   return (
     <div className="container mx-auto p-4">
       <Card className="p-6">
-        <h2 className="text-2xl font-bold mb-4 text-[#555555]">System Status</h2>
+        <h2 className="text-2xl font-bold mb-4 text-[#555555]"><span className="text-[#FBBC05]">HookCam</span> System Status</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="bg-green-100 p-4 rounded-lg border border-green-500">
             <h3 className="font-semibold text-green-800">Storage Status</h3>
