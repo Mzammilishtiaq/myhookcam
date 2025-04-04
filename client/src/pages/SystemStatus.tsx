@@ -45,7 +45,7 @@ function DeviceTimeline({ deviceName, deviceId, timeframe, date, statusData, run
           <h3 className="font-semibold text-lg">{deviceName}</h3>
           <div className="flex space-x-4 text-sm mt-1">
             <span>Uptime: <strong className="text-yellow-500">{getUptimeFormatted()}</strong></span>
-            <span>Runtime: <strong className="text-yellow-500">{getRuntimeFormatted()}</strong></span>
+            <span>{timeframe === "daily" ? "Daily" : timeframe === "weekly" ? "Weekly" : "Monthly"} Usage: <strong className="text-yellow-500">{getRuntimeFormatted()}</strong></span>
           </div>
         </div>
         <Badge variant={uptimePercentage > 95 ? "outline" : "destructive"}>
@@ -103,7 +103,9 @@ function DeviceTimeline({ deviceName, deviceId, timeframe, date, statusData, run
       {runtimeData && (
         <div className="mt-4">
           <div className="text-sm mb-1 flex justify-between">
-            <span>Runtime</span>
+            <span>{timeframe === "daily" ? "Daily Usage" : 
+                  timeframe === "weekly" ? "Weekly Usage" : 
+                  "Monthly Usage"}</span>
             <span>{getRuntimeFormatted()}</span>
           </div>
           <Progress value={
