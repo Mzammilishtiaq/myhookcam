@@ -201,11 +201,18 @@ export function Sidebar({ onSelectionChange }: SidebarProps) {
               <MapPin className="h-4 w-4 text-[#FBBC05]" />
               <span className="flex-grow">{jobsite.name}</span>
               
-              <Checkbox 
-                checked={areAllCamerasSelected(jobsite.id)}
-                indeterminate={!areAllCamerasSelected(jobsite.id) && isAnyJobsiteCameraSelected(jobsite.id)} 
-                onCheckedChange={(checked) => selectAllCameras(jobsite.id, !!checked)}
-                onClick={(e) => e.stopPropagation()}
+              <div 
+                className={`h-4 w-4 rounded border ${
+                  areAllCamerasSelected(jobsite.id) 
+                    ? 'bg-[#FBBC05] border-[#FBBC05]' 
+                    : isAnyJobsiteCameraSelected(jobsite.id)
+                      ? 'bg-gray-300 border-gray-400' 
+                      : 'border-gray-400'
+                }`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  selectAllCameras(jobsite.id, !areAllCamerasSelected(jobsite.id));
+                }}
               />
             </div>
             
