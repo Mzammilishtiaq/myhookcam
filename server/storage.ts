@@ -6,7 +6,7 @@ import {
   type Clip
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and } from "drizzle-orm";
+import { eq, and, desc } from "drizzle-orm";
 
 // Storage interface for CRUD operations
 export interface IStorage {
@@ -83,7 +83,7 @@ export class DatabaseStorage implements IStorage {
 
   async deleteAnnotation(id: number): Promise<boolean> {
     const result = await db.delete(annotations).where(eq(annotations.id, id));
-    return result.count > 0;
+    return !!result.rowCount;
   }
 
   // Bookmark operations
@@ -116,7 +116,7 @@ export class DatabaseStorage implements IStorage {
 
   async deleteBookmark(id: number): Promise<boolean> {
     const result = await db.delete(bookmarks).where(eq(bookmarks.id, id));
-    return result.count > 0;
+    return !!result.rowCount;
   }
   
   // Share operations
