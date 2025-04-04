@@ -305,12 +305,12 @@ export function Timeline({
           <span className="ml-2 text-[#555555]">Error loading timeline data</span>
         </div>
       ) : (
-        <div className="timeline-scroll-container overflow-x-scroll bg-[#FFFFFF] rounded-lg shadow border border-[#BCBBBB] h-[100px] flex-1 relative" style={{
+        <div className="timeline-scroll-container overflow-x-scroll bg-[#FFFFFF] rounded-lg shadow border border-[#BCBBBB] h-[80px] flex-1 relative" style={{
           scrollbarWidth: 'auto',
           scrollbarColor: '#555555 #FFFFFF',
-          overflowY: 'visible',
-          paddingBottom: '5px',
-          paddingTop: '5px'
+          overflowY: 'hidden',
+          paddingBottom: '2px',
+          paddingTop: '2px'
         }}>
           <div 
             ref={timelineRef}
@@ -318,7 +318,7 @@ export function Timeline({
             style={{ width: "150%" }}
           >
             {/* Hour markers - filter based on zoom level */}
-            <div className="hour-markers relative h-6">
+            <div className="hour-markers relative h-5">
               {hourMarkers
                 .filter(marker => {
                   if (zoomLevel <= 1) return true;
@@ -350,7 +350,7 @@ export function Timeline({
             </div>
             
             {/* Timeline segments */}
-            <div className="timeline-segments flex h-6 mt-6">
+            <div className="timeline-segments flex h-5 mt-5">
               {visibleSegments.map((segment, index) => (
                 <div
                   key={index}
@@ -367,7 +367,7 @@ export function Timeline({
                     } ${
                       segment.isCurrent ? 'ring-2 ring-[#000000]' : ''
                     } ${
-                      segment.isWorkingHour ? 'h-6' : 'h-5 mt-1'
+                      segment.isWorkingHour ? 'h-5' : 'h-4 mt-1'
                     }`}
                   style={{ width: `${segmentWidth}%` }}
                   title={segment.displayTime}
