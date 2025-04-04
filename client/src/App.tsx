@@ -103,6 +103,20 @@ function Router() {
   
   return (
     <div className="min-h-screen flex bg-[#FFFFFF]">
+      {/* Hamburger menu toggle button - always visible on desktop */}
+      {!isMobileView && !isSidebarOpen && (
+        <div className="h-screen flex items-start">
+          <Button
+            variant="ghost" 
+            size="sm"
+            className="m-2 text-[#555555] hover:bg-[#FBBC05]/10 transition-colors rounded-md h-10 w-10 flex items-center justify-center"
+            onClick={toggleSidebar}
+          >
+            <Menu className="h-6 w-6" />
+          </Button>
+        </div>
+      )}
+      
       {/* Sidebar - fixed position on mobile, auto width on desktop */}
       <div className={`${
         isMobileView 
