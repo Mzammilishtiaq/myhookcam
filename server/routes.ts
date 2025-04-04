@@ -4,7 +4,8 @@ import { storage } from "./storage";
 import { 
   insertAnnotationSchema, 
   insertBookmarkSchema,
-  clipSchema
+  clipSchema,
+  insertShareSchema
 } from "@shared/schema";
 import { S3Client, ListObjectsV2Command, GetObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
@@ -330,6 +331,165 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error deleting bookmark:", error);
       return res.status(500).json({ message: "Failed to delete bookmark" });
+    }
+  });
+  
+  // Get all shares
+  app.get("/api/shares", async (req: Request, res: Response) => {
+    try {
+      const shares = await storage.getShares();
+      return res.status(200).json(shares);
+    } catch (error) {
+      console.error("Error fetching shares:", error);
+      return res.status(500).json({ message: "Failed to fetch shares" });
+    }
+  });
+  
+  // Get a specific share by token
+  app.get("/api/shares/:token", async (req: Request, res: Response) => {
+    try {
+      const token = req.params.token;
+      
+      if (!token) {
+        return res.status(400).json({ message: "Token is required" });
+      }
+      
+      const share = await storage.getShareByToken(token);
+      
+      if (!share) {
+        return res.status(404).json({ message: "Share not found" });
+      }
+      
+      return res.status(200).json(share);
+    } catch (error) {
+      console.error("Error fetching share:", error);
+      return res.status(500).json({ message: "Failed to fetch share" });
+    }
+  });
+  
+  // Create a new share
+  app.post("/api/shares", async (req: Request, res: Response) => {
+    try {
+      const parsedBody = insertShareSchema.safeParse(req.body);
+      
+      if (!parsedBody.success) {
+        return res.status(400).json({ message: "Invalid share data", errors: parsedBody.error });
+      }
+      
+      // Generate a unique token for the share
+      const token = Math.random().toString(36).substring(2, 15) + 
+                   Math.random().toString(36).substring(2, 15);
+      
+      const share = await storage.createShare(parsedBody.data, token);
+      
+      // If it's an email share, send the email
+      if (share.type === 'email') {
+        try {
+          const { sendEmail, generateShareEmailHtml } = await import('./email');
+          
+          // Generate share link
+          const baseUrl = process.env.BASE_URL || `http://${req.headers.host}`;
+          const shareLink = `${baseUrl}/shared/${token}`;
+          
+          // Parse clip date and time from the key
+          const clipData = parseClipKey(share.clipKey);
+          
+          // Generate formatted email
+          const html = generateShareEmailHtml(
+            shareLink,
+            clipData?.date || share.date,
+            clipData?.startTime || share.clipTime,
+            share.message || undefined
+          );
+          
+          // Generate plain text version
+          const text = `A video clip has been shared with you from our Video Timeline Portal.
+Date: ${clipData?.date || share.date}
+Time: ${clipData?.startTime || share.clipTime}
+${share.message ? `Message: ${share.message}\n` : ''}
+View here: ${shareLink}`;
+          
+          // Send the email
+          const emailSent = await sendEmail({
+            to: share.recipient,
+            subject: "Video Clip Shared With You",
+            text,
+            html,
+          });
+          
+          if (!emailSent) {
+            console.error("Failed to send email for share:", share.id);
+            // We continue anyway as the share was created successfully
+          }
+        } catch (emailError) {
+          console.error("Email send error:", emailError);
+          // We continue anyway as the share was created successfully
+        }
+      }
+      
+      // If it's an SMS share, send the SMS using our mock functionality
+      if (share.type === 'sms') {
+        try {
+          const { generateShareTextMessage } = await import('./email');
+          const { sendSMS } = await import('./sms');
+          
+          // Generate share link
+          const baseUrl = process.env.BASE_URL || `http://${req.headers.host}`;
+          const shareLink = `${baseUrl}/shared/${token}`;
+          
+          // Parse clip date and time from the key
+          const clipData = parseClipKey(share.clipKey);
+          
+          // Generate SMS message
+          const messageBody = generateShareTextMessage(
+            shareLink,
+            clipData?.date || share.date,
+            clipData?.startTime || share.clipTime,
+            share.message || undefined
+          );
+          
+          // Send the SMS using our mock function
+          const smsSent = await sendSMS({
+            to: share.recipient,
+            body: messageBody
+          });
+          
+          if (!smsSent) {
+            console.error("Failed to send SMS for share:", share.id);
+            // We continue anyway as the share was created successfully
+          }
+        } catch (smsError) {
+          console.error("SMS prepare error:", smsError);
+          // We continue anyway as the share was created successfully
+        }
+      }
+      
+      return res.status(201).json(share);
+    } catch (error) {
+      console.error("Error creating share:", error);
+      return res.status(500).json({ message: "Failed to create share" });
+    }
+  });
+  
+  // Delete a share
+  app.delete("/api/shares/:id", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid share ID" });
+      }
+      
+      const success = await storage.deleteShare(id);
+      
+      if (!success) {
+        return res.status(404).json({ message: "Share not found" });
+      }
+      
+      return res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting share:", error);
+      return res.status(500).json({ message: "Failed to delete share" });
     }
   });
 

@@ -2,6 +2,7 @@ import {
   users, type User, type InsertUser, 
   annotations, type Annotation, type InsertAnnotation,
   bookmarks, type Bookmark, type InsertBookmark,
+  shares, type Share, type InsertShare,
   type Clip
 } from "@shared/schema";
 
@@ -25,23 +26,33 @@ export interface IStorage {
   createBookmark(bookmark: InsertBookmark): Promise<Bookmark>;
   updateBookmark(id: number, bookmark: Partial<InsertBookmark>): Promise<Bookmark | undefined>;
   deleteBookmark(id: number): Promise<boolean>;
+  
+  // Share operations
+  getShares(): Promise<Share[]>;
+  getShareByToken(token: string): Promise<Share | undefined>;
+  createShare(share: InsertShare, token: string): Promise<Share>;
+  deleteShare(id: number): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
   private users: Map<number, User>;
   private annotations: Map<number, Annotation>;
   private bookmarks: Map<number, Bookmark>;
+  private shares: Map<number, Share>;
   private userId: number;
   private annotationId: number;
   private bookmarkId: number;
+  private shareId: number;
 
   constructor() {
     this.users = new Map();
     this.annotations = new Map();
     this.bookmarks = new Map();
+    this.shares = new Map();
     this.userId = 1;
     this.annotationId = 1;
     this.bookmarkId = 1;
+    this.shareId = 1;
   }
 
   // User operations
@@ -142,6 +153,49 @@ export class MemStorage implements IStorage {
 
   async deleteBookmark(id: number): Promise<boolean> {
     return this.bookmarks.delete(id);
+  }
+  
+  // Share operations
+  async getShares(): Promise<Share[]> {
+    return Array.from(this.shares.values()).sort((a, b) => {
+      // Sort shares by creation date (most recent first)
+      if (a.createdAt && b.createdAt) {
+        return b.createdAt.getTime() - a.createdAt.getTime();
+      }
+      return 0;
+    });
+  }
+
+  async getShareByToken(token: string): Promise<Share | undefined> {
+    return Array.from(this.shares.values()).find(
+      (share) => share.token === token
+    );
+  }
+
+  async createShare(insertShare: InsertShare, token: string): Promise<Share> {
+    const id = this.shareId++;
+    const now = new Date();
+    
+    // Create share by explicitly setting each property to avoid type issues
+    const share: Share = {
+      id,
+      token,
+      createdAt: now,
+      date: insertShare.date,
+      clipTime: insertShare.clipTime,
+      clipKey: insertShare.clipKey,
+      recipient: insertShare.recipient,
+      type: insertShare.type,
+      message: insertShare.message || null,
+      expiresAt: insertShare.expiresAt
+    };
+    
+    this.shares.set(id, share);
+    return share;
+  }
+
+  async deleteShare(id: number): Promise<boolean> {
+    return this.shares.delete(id);
   }
 }
 

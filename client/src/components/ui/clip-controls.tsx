@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { FileDown, BookmarkPlus, FileEdit } from "lucide-react";
+import { FileDown, BookmarkPlus, FileEdit, Share2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAnnotations } from "@/hooks/use-annotations";
 import { useBookmarks } from "@/hooks/use-bookmarks";
 import { formatVideoTime } from "@/lib/time";
+import { ShareModal } from "@/components/ui/share-modal";
 import type { Clip } from "@shared/schema";
 
 interface ClipControlsProps {
@@ -22,6 +23,7 @@ export function ClipControls({
   const { toast } = useToast();
   const [exportFormat, setExportFormat] = useState<string>("mp4");
   const [exportQuality, setExportQuality] = useState<string>("high");
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   
   const { addAnnotation } = useAnnotations(selectedDate);
   const { addBookmark } = useBookmarks(selectedDate);
@@ -100,6 +102,20 @@ export function ClipControls({
     }
   };
   
+  // Handle share click
+  const handleShareClick = () => {
+    if (!currentClip) {
+      toast({
+        title: "No clip selected",
+        description: "Please select a clip to share",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    setIsShareModalOpen(true);
+  };
+  
   return (
     <div className="clip-controls mt-8 grid grid-cols-1 md:grid-cols-2 gap-4 bg-[#FFFFFF] p-4 rounded-lg shadow border border-[#BCBBBB]">
       <div>
@@ -133,6 +149,16 @@ export function ClipControls({
           >
             <FileEdit className="mr-1 h-4 w-4" />
             <span>Add Note</span>
+          </Button>
+          
+          <Button
+            variant="outline"
+            className="border-[#555555] text-[#555555] hover:bg-[#FBBC05]/10"
+            onClick={handleShareClick}
+            disabled={!currentClip}
+          >
+            <Share2 className="mr-1 h-4 w-4" />
+            <span>Share</span>
           </Button>
         </div>
       </div>
@@ -179,6 +205,14 @@ export function ClipControls({
           </Button>
         </div>
       </div>
+      
+      {/* Share Modal */}
+      {isShareModalOpen && currentClip && (
+        <ShareModal
+          clip={currentClip}
+          onClose={() => setIsShareModalOpen(false)}
+        />
+      )}
     </div>
   );
 }
