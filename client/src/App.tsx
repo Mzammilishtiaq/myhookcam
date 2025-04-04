@@ -1,4 +1,4 @@
-import React, { useState, useEffect, createContext, useContext } from "react";
+import React, { useState, useEffect, createContext, useContext, useCallback, useMemo } from "react";
 import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -58,6 +58,12 @@ function MainNavigation() {
     return () => window.removeEventListener('resize', checkScreenSize);
   }, []);
   
+  // Custom menu toggle handler with explicit debug logging
+  const handleToggleSidebar = () => {
+    console.log("Sidebar toggle button clicked from MainNavigation");
+    toggleSidebar();
+  };
+  
   return (
     <div className="bg-[#555555] text-[#FFFFFF] px-4 pt-4 shadow-md">
       <div className="w-full">
@@ -69,7 +75,7 @@ function MainNavigation() {
                 variant="ghost" 
                 size="sm"
                 className="mr-3 text-white hover:bg-[#666666] transition-colors"
-                onClick={toggleSidebar}
+                onClick={handleToggleSidebar}
               >
                 <Menu className="h-5 w-5" />
               </Button>
@@ -114,6 +120,9 @@ function Router() {
   const appContext = useContext(AppContext);
   const { isSidebarOpen, toggleSidebar, handleSelectionChange } = appContext;
   
+  // Add debug logging for sidebar state
+  console.log("Router render - isSidebarOpen:", isSidebarOpen);
+  
   // Function to determine if the screen is mobile
   const [isMobileView, setIsMobileView] = useState(false);
   
@@ -133,6 +142,12 @@ function Router() {
     return () => window.removeEventListener('resize', checkScreenSize);
   }, []);
   
+  // Custom menu toggle handler with explicit debug logging
+  const handleToggleSidebar = () => {
+    console.log("Sidebar toggle button clicked");
+    toggleSidebar();
+  };
+  
   return (
     <div className="min-h-screen flex bg-[#FFFFFF]">
       {/* Hamburger menu toggle button - always visible on desktop when sidebar is collapsed */}
@@ -142,7 +157,7 @@ function Router() {
             variant="ghost" 
             size="sm"
             className="m-2 text-[#555555] hover:bg-[#FBBC05]/10 transition-colors rounded-md h-10 w-10 flex items-center justify-center shadow-md"
-            onClick={toggleSidebar}
+            onClick={handleToggleSidebar}
           >
             <Menu className="h-6 w-6" />
           </Button>
@@ -165,7 +180,7 @@ function Router() {
               variant="ghost"
               size="sm"
               className="fixed top-4 right-4 z-[60] bg-white rounded-full h-8 w-8 p-0 shadow-md"
-              onClick={toggleSidebar}
+              onClick={handleToggleSidebar}
             >
               <X className="h-4 w-4" />
             </Button>
@@ -174,19 +189,32 @@ function Router() {
       ) : (
         // Desktop sidebar with width transition
         <div 
-          className={`min-h-screen overflow-hidden transition-all duration-300 ease-in-out
-            ${isSidebarOpen ? 'w-[280px]' : 'w-0'}`}
+          className="min-h-screen overflow-hidden"
+          style={{
+            width: isSidebarOpen ? '280px' : '0',
+            transition: 'width 0.3s ease-in-out'
+          }}
         >
-          <div className={`h-screen transition-all duration-300 ${!isSidebarOpen ? 'transform -translate-x-full' : ''}`}>
+          <div 
+            className="h-screen" 
+            style={{
+              transform: isSidebarOpen ? 'translateX(0)' : 'translateX(-100%)',
+              transition: 'transform 0.3s ease-in-out'
+            }}
+          >
             <Sidebar onSelectionChange={handleSelectionChange} />
           </div>
         </div>
       )}
       
       {/* Main content column - includes header, tabs, content, footer */}
-      <div className={`flex flex-col transition-all duration-300 ${
-        isSidebarOpen && !isMobileView ? 'w-[calc(100%-280px)]' : 'w-full'
-      }`}>
+      <div 
+        className="flex flex-col"
+        style={{
+          width: isSidebarOpen && !isMobileView ? 'calc(100% - 280px)' : '100%',
+          transition: 'width 0.3s ease-in-out'
+        }}
+      >
         {/* Header and tab navigation */}
         <MainNavigation />
         
@@ -215,25 +243,28 @@ function App() {
   const [selectedJobsites, setSelectedJobsites] = useState<number[]>([]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   
-  const toggleSidebar = () => {
+  const toggleSidebar = useCallback(() => {
     console.log("Toggling sidebar from", isSidebarOpen, "to", !isSidebarOpen);
-    setIsSidebarOpen(!isSidebarOpen);
-  };
+    setIsSidebarOpen(prevState => !prevState);
+  }, [isSidebarOpen]);
   
-  const handleSelectionChange = (jobsiteIds: number[], cameraIds: number[]) => {
+  const handleSelectionChange = useCallback((jobsiteIds: number[], cameraIds: number[]) => {
     setSelectedJobsites(jobsiteIds);
     setSelectedCameras(cameraIds);
-  };
+  }, []);
+  
+  // Provide the context value as a memoized object
+  const contextValue = useMemo(() => ({
+    selectedCameras,
+    selectedJobsites,
+    isSidebarOpen,
+    toggleSidebar,
+    handleSelectionChange
+  }), [selectedCameras, selectedJobsites, isSidebarOpen, toggleSidebar, handleSelectionChange]);
   
   return (
     <QueryClientProvider client={queryClient}>
-      <AppContext.Provider value={{
-        selectedCameras,
-        selectedJobsites,
-        isSidebarOpen,
-        toggleSidebar,
-        handleSelectionChange
-      }}>
+      <AppContext.Provider value={contextValue}>
         <Router />
         <Toaster />
       </AppContext.Provider>
