@@ -1,4 +1,4 @@
-import type { Express, Request, Response } from "express";
+import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { 
@@ -21,6 +21,19 @@ const s3Client = new S3Client({
 
 const BUCKET_NAME = process.env.AWS_S3_BUCKET_NAME || "video-timeline-bucket";
 
+// Calculate end time (start + 5 minutes)
+function calculateEndTime(hours: string, minutes: string): string {
+  let endHours = parseInt(hours);
+  let endMinutes = parseInt(minutes) + 5;
+  
+  if (endMinutes >= 60) {
+    endHours = (endHours + 1) % 24;
+    endMinutes = endMinutes % 60;
+  }
+  
+  return `${endHours.toString().padStart(2, '0')}:${endMinutes.toString().padStart(2, '0')}`;
+}
+
 // Generate mock clips for development
 function generateMockClips(date: string) {
   const clips = [];
@@ -41,7 +54,7 @@ function generateMockClips(date: string) {
           key,
           date,
           startTime: `${hours}:${minutes}`,
-          endTime: calculateEndTime(`${hours}`, `${minutes}`),
+          endTime: calculateEndTime(hours, minutes),
           url: ""
         });
       }
@@ -60,7 +73,7 @@ function generateMockClips(date: string) {
       key,
       date,
       startTime: `${hours}:${minutes}`,
-      endTime: calculateEndTime(`${hours}`, `${minutes}`),
+      endTime: calculateEndTime(hours, minutes),
       url: ""
     });
   }
@@ -77,7 +90,7 @@ function generateMockClips(date: string) {
       key,
       date,
       startTime: `${hours}:${minutes}`,
-      endTime: calculateEndTime(`${hours}`, `${minutes}`),
+      endTime: calculateEndTime(hours, minutes),
       url: ""
     });
   }
@@ -100,17 +113,7 @@ function parseClipKey(key: string) {
   
   const [_, date, hours, minutes] = match;
   const startTime = `${hours}:${minutes}`;
-  
-  // Calculate end time (start + 5 minutes)
-  let endHours = parseInt(hours);
-  let endMinutes = parseInt(minutes) + 5;
-  
-  if (endMinutes >= 60) {
-    endHours = (endHours + 1) % 24;
-    endMinutes = endMinutes % 60;
-  }
-  
-  const endTime = `${endHours.toString().padStart(2, '0')}:${endMinutes.toString().padStart(2, '0')}`;
+  const endTime = calculateEndTime(hours, minutes);
   
   return {
     key,
