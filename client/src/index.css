@@ -2,6 +2,26 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Custom scrollbar styles */
+.timeline-scroll-container::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.timeline-scroll-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.timeline-scroll-container::-webkit-scrollbar-thumb {
+  background-color: #BCBBBB;
+  border-radius: 4px;
+  border: 2px solid transparent;
+}
+
+.timeline-scroll-container::-webkit-scrollbar-thumb:hover {
+  background-color: #999999;
+}
+
 @layer base {
   * {
     @apply border-border;

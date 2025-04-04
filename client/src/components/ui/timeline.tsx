@@ -1,8 +1,10 @@
 import { useRef, useEffect, useState } from "react";
-import { AlertTriangle, Loader2, ZoomIn, ZoomOut } from "lucide-react";
+import { AlertTriangle, Loader2, ZoomIn, ZoomOut, Bookmark, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
-import type { Clip } from "@shared/schema";
+import type { Clip, Annotation, Bookmark as BookmarkType } from "@shared/schema";
+import { useBookmarks } from "@/hooks/use-bookmarks";
+import { useAnnotations } from "@/hooks/use-annotations";
 
 interface TimelineProps {
   clips: Clip[];
@@ -22,6 +24,11 @@ export function Timeline({
   const timelineRef = useRef<HTMLDivElement>(null);
   const [zoomLevel, setZoomLevel] = useState<number>(1); // Default zoom level
   const [focusHour, setFocusHour] = useState<number>(9); // Default focus on 9 AM
+  const selectedDate = currentClip?.date || new Date().toISOString().split('T')[0];
+  
+  // Fetch bookmarks and annotations for the selected date
+  const { bookmarks = [] } = useBookmarks(selectedDate);
+  const { annotations = [] } = useAnnotations(selectedDate);
   
   // Generate segments for a 24-hour timeline with emphasis on working hours (7am-5pm)
   // Each segment represents a 5-minute interval (288 segments in a day)
@@ -39,6 +46,33 @@ export function Timeline({
       isWorkingHour
     };
   });
+  
+  // Helper function to find annotations and bookmarks for a segment
+  const findItemsForSegment = (clipTime: string) => {
+    // Find annotations for this segment
+    const segmentAnnotations = annotations.filter(anno => {
+      // Check if the annotation clipTime matches the segment
+      return anno.clipTime === clipTime;
+    });
+    
+    // Find bookmarks for this segment
+    const segmentBookmarks = bookmarks.filter(bookmark => {
+      // Check if the bookmark clipTime matches the segment
+      return bookmark.clipTime === clipTime; 
+    });
+    
+    return {
+      annotations: segmentAnnotations,
+      bookmarks: segmentBookmarks,
+      hasAnnotations: segmentAnnotations.length > 0,
+      hasBookmarks: segmentBookmarks.length > 0
+    };
+  };
+  
+  // Find clip by clipTime for jumping to a specific time
+  const findClipByTime = (clipTime: string): Clip | undefined => {
+    return clips.find(clip => clip.startTime === clipTime);
+  };
   
   // Generate time segments map for the entire day
   const generateTimeSegments = () => {
@@ -67,13 +101,20 @@ export function Timeline({
         const timeKey = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
         const displayTime = formatTimeDisplay(hour, minute);
         
+        // Find annotations and bookmarks for this segment
+        const { hasAnnotations, hasBookmarks, annotations: segmentAnnotations, bookmarks: segmentBookmarks } = findItemsForSegment(timeKey);
+        
         segments.push({
           time: timeKey,
           displayTime,
           hasClip: segmentMap.has(timeKey),
           clip: segmentMap.get(timeKey),
           isCurrent: currentClip && currentClip.startTime === timeKey,
-          isWorkingHour
+          isWorkingHour,
+          hasAnnotations,
+          hasBookmarks,
+          annotations: segmentAnnotations,
+          bookmarks: segmentBookmarks
         });
       }
     }
@@ -165,6 +206,14 @@ export function Timeline({
             <div className="w-3 h-3 bg-[#555555] rounded-full mr-1"></div>
             <span className="text-[#555555]">No Footage</span>
           </div>
+          <div className="flex items-center">
+            <Bookmark className="h-4 w-4 text-[#000000] fill-[#FBBC05] mr-1" />
+            <span className="text-[#555555]">Bookmark</span>
+          </div>
+          <div className="flex items-center">
+            <MessageSquare className="h-4 w-4 text-[#000000] fill-[#FBBC05] mr-1" />
+            <span className="text-[#555555]">Annotation</span>
+          </div>
         </div>
       </div>
       
@@ -224,7 +273,10 @@ export function Timeline({
           <span className="ml-2 text-[#555555]">Error loading timeline data</span>
         </div>
       ) : (
-        <div className="timeline-scroll-container overflow-x-auto bg-[#FFFFFF] rounded-lg shadow border border-[#BCBBBB] h-[150px]">
+        <div className="timeline-scroll-container overflow-x-auto bg-[#FFFFFF] rounded-lg shadow border border-[#BCBBBB] h-[150px] flex-1 relative" style={{
+          scrollbarWidth: 'thin',
+          scrollbarColor: '#BCBBBB transparent'
+        }}>
           <div 
             ref={timelineRef}
             className="timeline-wrapper relative min-w-max p-4"
@@ -285,6 +337,36 @@ export function Timeline({
                   {zoomLevel >= 2.5 && (
                     <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-1 text-[#555555] text-[10px] font-mono whitespace-nowrap">
                       {segment.time.split(':')[1] === '00' ? segment.displayTime : segment.time.split(':')[1]}
+                    </div>
+                  )}
+                  
+                  {/* Bookmark indicator */}
+                  {segment.hasBookmarks && (
+                    <div 
+                      className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-4 cursor-pointer"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        const clip = findClipByTime(segment.time);
+                        if (clip) onSelectClip(clip);
+                      }}
+                      title="Bookmark"
+                    >
+                      <Bookmark className="h-4 w-4 text-[#000000] fill-[#FBBC05]" />
+                    </div>
+                  )}
+                  
+                  {/* Annotation indicator */}
+                  {segment.hasAnnotations && (
+                    <div 
+                      className="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-4 cursor-pointer"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        const clip = findClipByTime(segment.time);
+                        if (clip) onSelectClip(clip);
+                      }}
+                      title={`${segment.annotations?.length || 0} annotation(s)`}
+                    >
+                      <MessageSquare className="h-4 w-4 text-[#000000] fill-[#FBBC05]" />
                     </div>
                   )}
                 </div>
