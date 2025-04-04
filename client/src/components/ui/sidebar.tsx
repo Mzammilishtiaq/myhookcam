@@ -27,6 +27,9 @@ interface SidebarProps {
 }
 
 export function Sidebar({ onSelectionChange }: SidebarProps) {
+  // Get the context for sidebar functionality
+  const { toggleSidebar } = useContext(AppContext);
+  
   // Sample jobsite data - in a real app this would come from an API
   const [jobsites, setJobsites] = useState<Jobsite[]>([
     {
@@ -62,6 +65,15 @@ export function Sidebar({ onSelectionChange }: SidebarProps) {
   const [isAddingCamera, setIsAddingCamera] = useState<number | null>(null);
   const [newJobsiteName, setNewJobsiteName] = useState("");
   const [newCameraName, setNewCameraName] = useState("");
+  
+  // Mocked user data for demo
+  const userName = "John Smith";
+  
+  // Handle sidebar toggle with logging
+  const handleToggleSidebar = () => {
+    console.log("Sidebar toggle button clicked");
+    toggleSidebar();
+  };
 
   // Toggle jobsite expansion
   const toggleJobsite = (jobsiteId: number) => {
@@ -174,10 +186,6 @@ export function Sidebar({ onSelectionChange }: SidebarProps) {
     return jobsite?.cameras.some(cam => cam.isActive) ?? false;
   };
 
-  const { toggleSidebar } = useContext(AppContext);
-  // Mocked user data for demo
-  const userName = "John Smith";
-
   return (
     <Card className="h-full flex flex-col rounded-r-xl shadow-lg w-[280px]">
       {/* Customer Logo and User Section */}
@@ -198,7 +206,7 @@ export function Sidebar({ onSelectionChange }: SidebarProps) {
             variant="ghost"
             size="sm"
             className="text-white p-1 hover:bg-[#666666] transition-colors"
-            onClick={toggleSidebar}
+            onClick={handleToggleSidebar}
           >
             <Menu className="h-5 w-5" />
           </Button>

@@ -36,7 +36,8 @@ export const AppContext = createContext<AppContextType>(defaultAppContext);
 
 function MainNavigation() {
   const [location, setLocation] = useLocation();
-  const { isSidebarOpen, toggleSidebar } = useContext(AppContext);
+  const appContext = useContext(AppContext);
+  const { isSidebarOpen, toggleSidebar } = appContext;
   
   return (
     <div className="bg-[#555555] text-[#FFFFFF] px-4 pt-4 shadow-md">
@@ -80,7 +81,8 @@ function MainNavigation() {
 }
 
 function Router() {
-  const { isSidebarOpen, handleSelectionChange } = useContext(AppContext);
+  const appContext = useContext(AppContext);
+  const { isSidebarOpen, toggleSidebar, handleSelectionChange } = appContext;
   
   // Function to determine if the screen is mobile
   const [isMobileView, setIsMobileView] = useState(false);
@@ -167,6 +169,7 @@ function App() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   
   const toggleSidebar = () => {
+    console.log("Toggling sidebar from", isSidebarOpen, "to", !isSidebarOpen);
     setIsSidebarOpen(!isSidebarOpen);
   };
   
