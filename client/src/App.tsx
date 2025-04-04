@@ -145,7 +145,13 @@ function Layout() {
   return (
     <div className="min-h-screen flex flex-col bg-[#FFFFFF]">
       {/* Header positioned as a fixed-width element at the top */}
-      <div className="w-full bg-[#555555] z-40 relative">
+      <div 
+        className="w-full bg-[#555555] z-40 relative"
+        style={{
+          marginLeft: isOpen && !isMobileView ? '280px' : (!isOpen && !isMobileView ? '50px' : '0'),
+          transition: 'margin-left 0.3s ease-in-out'
+        }}
+      >
         <MainNavigation />
       </div>
       
@@ -188,12 +194,16 @@ function Layout() {
             </>
           )
         ) : (
-          // Desktop sidebar with inline styles for more reliable transitions
+          // Desktop sidebar with inline styles for more reliable transitions - now fixed position
           <div style={{
-            minHeight: '100vh',
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            height: '100vh',
             width: isOpen ? '280px' : '0',
             overflow: 'hidden',
-            transition: 'width 0.3s ease-in-out'
+            transition: 'width 0.3s ease-in-out',
+            zIndex: 30
           }}>
             <div style={{
               height: '100vh',
@@ -210,9 +220,9 @@ function Layout() {
         <div style={{
           display: 'flex',
           flexDirection: 'column',
-          width: isOpen && !isMobileView ? 'calc(100% - 280px)' : '100%',
-          transition: 'width 0.3s ease-in-out',
-          marginLeft: !isOpen && !isMobileView ? '50px' : '0' // Add space for the toggle button when sidebar is collapsed
+          width: '100%',
+          transition: 'margin-left 0.3s ease-in-out',
+          marginLeft: isOpen && !isMobileView ? '280px' : (!isOpen && !isMobileView ? '50px' : '0') // Add space for the sidebar or toggle button
         }}>
           {/* Content area - header is now placed outside this div so it can extend full width */}
           
