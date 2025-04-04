@@ -40,13 +40,14 @@ function MainNavigation() {
   
   return (
     <div className="bg-[#555555] text-[#FFFFFF] px-4 pt-4 shadow-md">
-      <div className="container mx-auto">
+      <div className="w-full">
         <div className="flex justify-between items-center mb-4">
           <div className="flex items-center">
+            {/* Only show toggle button on mobile */}
             <Button 
               variant="ghost" 
               size="sm" 
-              className="mr-2 text-white" 
+              className="mr-2 text-white md:hidden" 
               onClick={toggleSidebar}
             >
               {isSidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -110,48 +111,51 @@ function Router() {
   }, []);
   
   return (
-    <div className="min-h-screen flex flex-col bg-[#FFFFFF]">
-      <MainNavigation />
-      
-      <main className="flex-grow flex">
-        {/* Sidebar - visible when toggled */}
-        {isSidebarOpen && (
-          <div className={`${
-            isMobileView ? 'fixed inset-0 z-50 bg-black/50' : 'w-1/4 md:w-1/5 lg:w-1/6 xl:w-1/5'
-          }`}>
-            <div className={`${
-              isMobileView ? 'h-full w-3/4 max-w-xs bg-white' : 'h-full'
-            }`}>
-              <Sidebar 
-                onSelectionChange={handleSelectionChange}
-              />
-            </div>
-          </div>
-        )}
-        
-        {/* Main content area - takes full space when sidebar is closed */}
-        <div className={`transition-all duration-300 ${
-          isSidebarOpen 
-            ? 'w-3/4 md:w-4/5 lg:w-5/6 xl:w-4/5' 
-            : 'w-full'
+    <div className="min-h-screen flex bg-[#FFFFFF]">
+      {/* Sidebar - fixed position on mobile, fixed width on desktop */}
+      {isSidebarOpen && (
+        <div className={`${
+          isMobileView 
+            ? 'fixed inset-0 z-50 bg-black/50' 
+            : 'w-1/4 md:w-1/5 lg:w-1/6 xl:w-1/5 min-h-screen'
         }`}>
-          <div className="p-4">
-            <Switch>
-              <Route path="/" component={LiveStream} />
-              <Route path="/livestream" component={LiveStream} />
-              <Route path="/recordings" component={Recordings} />
-              <Route path="/system-status" component={SystemStatus} />
-              <Route component={NotFound} />
-            </Switch>
+          <div className={`${
+            isMobileView 
+              ? 'h-full w-3/4 max-w-xs bg-white' 
+              : 'h-screen bg-white border-r'
+          }`}>
+            <Sidebar 
+              onSelectionChange={handleSelectionChange}
+            />
           </div>
         </div>
-      </main>
+      )}
       
-      <footer className="bg-[#BCBBBB] text-[#555555] p-3 text-sm text-center">
-        <div className="container mx-auto">
+      {/* Main content column - includes header, tabs, content, footer */}
+      <div className={`flex flex-col transition-all duration-300 ${
+        isSidebarOpen 
+          ? isMobileView ? 'w-full' : 'w-3/4 md:w-4/5 lg:w-5/6 xl:w-4/5' 
+          : 'w-full'
+      }`}>
+        {/* Header and tab navigation */}
+        <MainNavigation />
+        
+        {/* Main content */}
+        <main className="flex-grow p-4">
+          <Switch>
+            <Route path="/" component={LiveStream} />
+            <Route path="/livestream" component={LiveStream} />
+            <Route path="/recordings" component={Recordings} />
+            <Route path="/system-status" component={SystemStatus} />
+            <Route component={NotFound} />
+          </Switch>
+        </main>
+        
+        {/* Footer */}
+        <footer className="bg-[#BCBBBB] text-[#555555] p-3 text-sm text-center">
           <p><span className="font-semibold"><span className="text-[#FBBC05]">HookCam</span> System v1.0</span> | Connected to AWS S3 Storage</p>
-        </div>
-      </footer>
+        </footer>
+      </div>
     </div>
   );
 }

@@ -177,14 +177,16 @@ export function Sidebar({ onSelectionChange }: SidebarProps) {
     <Card className="h-full">
       <div className="p-3 border-b border-gray-200 bg-[#555555] text-white flex justify-between items-center">
         <h2 className="font-semibold">Jobsites & Cameras</h2>
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          className="text-white hover:bg-[#FBBC05] hover:text-[#000000]"
-          onClick={() => setIsAddingJobsite(true)}
-        >
-          <Plus className="h-4 w-4" />
-        </Button>
+        <div className="flex items-center">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="text-white hover:bg-[#FBBC05] hover:text-[#000000]"
+            onClick={() => setIsAddingJobsite(true)}
+          >
+            <Plus className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
       
       <ScrollArea className="h-[calc(100vh-15rem)] p-2">
