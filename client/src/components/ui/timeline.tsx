@@ -2,6 +2,7 @@ import { useRef, useEffect, useState } from "react";
 import { AlertTriangle, Loader2, ZoomIn, ZoomOut, Bookmark, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
+import { VideoPreview } from "@/components/ui/video-preview";
 import type { Clip, Annotation, Bookmark as BookmarkType } from "@shared/schema";
 import { useBookmarks } from "@/hooks/use-bookmarks";
 import { useAnnotations } from "@/hooks/use-annotations";
@@ -72,11 +73,13 @@ export function Timeline({
   const [zoomLevel, setZoomLevel] = useState<number>(1); // Default zoom level
   const [focusHour, setFocusHour] = useState<number>(9); // Default focus on 9 AM
   const [activePreset, setActivePreset] = useState<string>('full-day'); // Default preset
+  const [hoveredSegment, setHoveredSegment] = useState<string | null>(null); // Track hovered segment by time key
+  const [previewPosition, setPreviewPosition] = useState<number>(50); // Position within clip (as percentage)
   const selectedDate = currentClip?.date || new Date().toISOString().split('T')[0];
   
   // Fetch bookmarks and annotations for the selected date
   const { bookmarks = [] } = useBookmarks(selectedDate);
-  const { annotations = [] } = useAnnotations(selectedDate);
+  const { data: annotations = [] } = useAnnotations(selectedDate);
   
   // Generate segments for a 24-hour timeline with emphasis on working hours (7am-5pm)
   // Each segment represents a 5-minute interval (288 segments in a day)
@@ -98,13 +101,13 @@ export function Timeline({
   // Helper function to find annotations and bookmarks for a segment
   const findItemsForSegment = (clipTime: string) => {
     // Find annotations for this segment
-    const segmentAnnotations = annotations.filter(anno => {
+    const segmentAnnotations = annotations.filter((anno: Annotation) => {
       // Check if the annotation clipTime matches the segment
       return anno.clipTime === clipTime;
     });
     
     // Find bookmarks for this segment
-    const segmentBookmarks = bookmarks.filter(bookmark => {
+    const segmentBookmarks = bookmarks.filter((bookmark: BookmarkType) => {
       // Check if the bookmark clipTime matches the segment
       return bookmark.clipTime === clipTime; 
     });
@@ -437,6 +440,28 @@ export function Timeline({
                   style={{ width: `${segmentWidth}%` }}
                   title={segment.displayTime}
                   onClick={() => segment.hasClip && segment.clip && onSelectClip(segment.clip)}
+                  onMouseEnter={(e) => {
+                    if (segment.hasClip && segment.clip) {
+                      setHoveredSegment(segment.time);
+                      // Calculate relative position in segment (0-100%)
+                      const rect = e.currentTarget.getBoundingClientRect();
+                      const relativeX = e.clientX - rect.left;
+                      const percentage = (relativeX / rect.width) * 100;
+                      setPreviewPosition(percentage);
+                    }
+                  }}
+                  onMouseMove={(e) => {
+                    if (segment.hasClip && segment.clip && hoveredSegment === segment.time) {
+                      // Update position on mouse move
+                      const rect = e.currentTarget.getBoundingClientRect();
+                      const relativeX = e.clientX - rect.left;
+                      const percentage = (relativeX / rect.width) * 100;
+                      setPreviewPosition(percentage);
+                    }
+                  }}
+                  onMouseLeave={() => {
+                    setHoveredSegment(null);
+                  }}
                 >
                   {segment.isCurrent && (
                     <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-1 bg-[#000000] text-[#FFFFFF] px-2 py-1 rounded text-xs font-mono whitespace-nowrap">
@@ -467,7 +492,7 @@ export function Timeline({
                               </span>
                             </div>
                             <ul className="list-disc list-inside pl-2">
-                              {segment.bookmarks.map((bookmark, i) => (
+                              {segment.bookmarks.map((bookmark: BookmarkType, i: number) => (
                                 <li key={i} className="cursor-pointer hover:text-[#FBBC05] truncate" onClick={(e) => {
                                   e.stopPropagation();
                                   const clip = findClipByTime(segment.time);
@@ -491,7 +516,7 @@ export function Timeline({
                               </span>
                             </div>
                             <ul className="list-disc list-inside pl-2">
-                              {segment.annotations.map((annotation, i) => (
+                              {segment.annotations.map((annotation: Annotation, i: number) => (
                                 <li key={i} className="cursor-pointer hover:text-[#FBBC05] truncate" onClick={(e) => {
                                   e.stopPropagation();
                                   const clip = findClipByTime(segment.time);
@@ -532,6 +557,25 @@ export function Timeline({
               ))}
             </div>
           </div>
+          
+          {/* Video Preview (only show when hovering a segment with clips) */}
+          {hoveredSegment && visibleSegments.find(s => s.time === hoveredSegment && s.hasClip && s.clip) && (
+            <div 
+              className="absolute bottom-full left-0 mb-2 z-20 transform -translate-x-1/2"
+              style={{ 
+                left: `${timelineRef.current ? 
+                  // Position video preview at mouse position
+                  (visibleSegments.findIndex(s => s.time === hoveredSegment) * segmentWidth) + 
+                  (segmentWidth / 2) : 50}%`
+              }}
+            >
+              <VideoPreview 
+                clip={visibleSegments.find(s => s.time === hoveredSegment)?.clip!}
+                position={previewPosition}
+                onPositionChange={setPreviewPosition}
+              />
+            </div>
+          )}
         </div>
       )}
     </div>
