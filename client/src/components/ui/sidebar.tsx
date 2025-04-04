@@ -1,10 +1,11 @@
-import { useState } from "react";
-import { ChevronDown, ChevronRight, MapPin, Camera, X, Plus } from "lucide-react";
+import { useState, useContext } from "react";
+import { ChevronDown, ChevronRight, MapPin, Camera, X, Plus, User, Menu } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
+import { AppContext } from "../../App";
 
 // Define the jobsite and camera types
 interface Camera {
@@ -173,15 +174,57 @@ export function Sidebar({ onSelectionChange }: SidebarProps) {
     return jobsite?.cameras.some(cam => cam.isActive) ?? false;
   };
 
+  const { toggleSidebar } = useContext(AppContext);
+  // Mocked user data for demo
+  const userName = "John Smith";
+
   return (
-    <Card className="h-full">
-      <div className="p-3 border-b border-gray-200 bg-[#555555] text-white flex justify-between items-center">
-        <h2 className="font-semibold">Jobsites & Cameras</h2>
-        <div className="flex items-center">
+    <Card className="h-full flex flex-col">
+      {/* Customer Logo and User Section */}
+      <div className="px-4 py-6 bg-[#555555] text-white">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center">
+            <div className="flex-shrink-0 w-10 h-10 bg-[#FBBC05] rounded-full flex items-center justify-center mr-3">
+              <span className="font-bold text-lg text-white">HC</span>
+            </div>
+            <div>
+              <div className="text-xl font-bold">
+                <span className="text-[#FBBC05]">HookCam</span>
+              </div>
+              <div className="text-xs text-gray-300">Construction Monitoring</div>
+            </div>
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-white p-1"
+            onClick={toggleSidebar}
+          >
+            <Menu className="h-5 w-5" />
+          </Button>
+        </div>
+        
+        <div className="flex items-center mt-4 pb-3">
+          <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center mr-2">
+            <User className="h-4 w-4 text-gray-600" />
+          </div>
+          <div>
+            <div className="text-sm font-medium">{userName}</div>
+            <div className="text-xs text-gray-300">Project Manager</div>
+          </div>
+        </div>
+      </div>
+      
+      <Separator className="bg-gray-600" />
+      
+      {/* Navigation Section */}
+      <div className="p-4 pb-2">
+        <div className="flex justify-between items-center mb-2">
+          <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider">Jobsites</h3>
           <Button 
             variant="ghost" 
-            size="sm" 
-            className="text-white hover:bg-[#FBBC05] hover:text-[#000000]"
+            size="sm"
+            className="h-7 w-7 p-0"
             onClick={() => setIsAddingJobsite(true)}
           >
             <Plus className="h-4 w-4" />
@@ -189,97 +232,101 @@ export function Sidebar({ onSelectionChange }: SidebarProps) {
         </div>
       </div>
       
-      <ScrollArea className="h-[calc(100vh-15rem)] p-2">
-        {jobsites.map(jobsite => (
-          <div key={jobsite.id} className="mb-2">
-            <div 
-              className="flex items-center space-x-2 p-2 rounded hover:bg-gray-100 cursor-pointer"
-              onClick={() => toggleJobsite(jobsite.id)}
-            >
-              {jobsite.isExpanded 
-                ? <ChevronDown className="h-4 w-4 text-gray-500" /> 
-                : <ChevronRight className="h-4 w-4 text-gray-500" />
-              }
-              <MapPin className="h-4 w-4 text-[#FBBC05]" />
-              <span className="flex-grow">{jobsite.name}</span>
-              
+      <ScrollArea className="flex-1 px-2">
+        {/* Jobsites List */}
+        <div className="space-y-1 mb-4">
+          {jobsites.map(jobsite => (
+            <div key={jobsite.id} className="mb-3">
               <div 
-                className={`h-4 w-4 rounded border ${
-                  areAllCamerasSelected(jobsite.id) 
-                    ? 'bg-[#FBBC05] border-[#FBBC05]' 
-                    : isAnyJobsiteCameraSelected(jobsite.id)
-                      ? 'bg-gray-300 border-gray-400' 
-                      : 'border-gray-400'
-                }`}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  selectAllCameras(jobsite.id, !areAllCamerasSelected(jobsite.id));
-                }}
-              />
-            </div>
-            
-            {jobsite.isExpanded && (
-              <div className="ml-8 space-y-1 mt-1">
-                {jobsite.cameras.map(camera => (
-                  <div 
-                    key={camera.id}
-                    className="flex items-center space-x-2 p-1 rounded hover:bg-gray-100"
-                  >
-                    <Camera className="h-4 w-4 text-gray-500" />
-                    <span className="flex-grow text-sm">{camera.name}</span>
-                    <div 
-                      className={`h-4 w-4 rounded border ${
-                        camera.isActive
-                          ? 'bg-[#FBBC05] border-[#FBBC05]' 
-                          : 'border-gray-400'
-                      }`}
-                      onClick={() => toggleCamera(jobsite.id, camera.id)}
-                    />
-                  </div>
-                ))}
+                className="flex items-center space-x-2 p-2 rounded-md hover:bg-gray-100 cursor-pointer transition-colors"
+                onClick={() => toggleJobsite(jobsite.id)}
+              >
+                {jobsite.isExpanded 
+                  ? <ChevronDown className="h-4 w-4 text-gray-500" /> 
+                  : <ChevronRight className="h-4 w-4 text-gray-500" />
+                }
+                <MapPin className="h-4 w-4 text-[#FBBC05]" />
+                <span className="flex-grow font-medium text-sm">{jobsite.name}</span>
                 
-                {isAddingCamera === jobsite.id ? (
-                  <div className="flex items-center space-x-1 mt-1">
-                    <Input 
-                      value={newCameraName}
-                      onChange={(e) => setNewCameraName(e.target.value)}
-                      placeholder="Camera name"
-                      className="text-sm h-7"
-                    />
-                    <Button 
-                      size="sm" 
-                      className="h-7 px-2"
-                      onClick={() => addNewCamera(jobsite.id)}
-                    >
-                      Add
-                    </Button>
-                    <Button 
-                      size="sm" 
-                      variant="ghost" 
-                      className="h-7 px-2"
-                      onClick={() => setIsAddingCamera(null)}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ) : (
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="text-xs py-1 h-6 mt-1"
-                    onClick={() => setIsAddingCamera(jobsite.id)}
-                  >
-                    <Plus className="h-3 w-3 mr-1" />
-                    Add Camera
-                  </Button>
-                )}
+                <div 
+                  className={`h-4 w-4 rounded border ${
+                    areAllCamerasSelected(jobsite.id) 
+                      ? 'bg-[#FBBC05] border-[#FBBC05]' 
+                      : isAnyJobsiteCameraSelected(jobsite.id)
+                        ? 'bg-gray-300 border-gray-400' 
+                        : 'border-gray-400'
+                  }`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    selectAllCameras(jobsite.id, !areAllCamerasSelected(jobsite.id));
+                  }}
+                />
               </div>
-            )}
-          </div>
-        ))}
+              
+              {jobsite.isExpanded && (
+                <div className="ml-8 space-y-1 mt-1 pl-2 border-l border-gray-200">
+                  {jobsite.cameras.map(camera => (
+                    <div 
+                      key={camera.id}
+                      className="flex items-center space-x-2 p-1.5 rounded-md hover:bg-gray-100 transition-colors"
+                    >
+                      <Camera className="h-4 w-4 text-gray-500" />
+                      <span className="flex-grow text-sm">{camera.name}</span>
+                      <div 
+                        className={`h-4 w-4 rounded border ${
+                          camera.isActive
+                            ? 'bg-[#FBBC05] border-[#FBBC05]' 
+                            : 'border-gray-400'
+                        }`}
+                        onClick={() => toggleCamera(jobsite.id, camera.id)}
+                      />
+                    </div>
+                  ))}
+                  
+                  {isAddingCamera === jobsite.id ? (
+                    <div className="flex items-center space-x-1 mt-1 p-1">
+                      <Input 
+                        value={newCameraName}
+                        onChange={(e) => setNewCameraName(e.target.value)}
+                        placeholder="Camera name"
+                        className="text-sm h-7"
+                      />
+                      <Button 
+                        size="sm" 
+                        className="h-7 px-2 bg-[#FBBC05] hover:bg-[#FBBC05]/80"
+                        onClick={() => addNewCamera(jobsite.id)}
+                      >
+                        Add
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="ghost" 
+                        className="h-7 w-7 p-0"
+                        onClick={() => setIsAddingCamera(null)}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="text-xs py-1 h-6 mt-1 w-full justify-start text-gray-500"
+                      onClick={() => setIsAddingCamera(jobsite.id)}
+                    >
+                      <Plus className="h-3 w-3 mr-1" />
+                      Add Camera
+                    </Button>
+                  )}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
         
         {isAddingJobsite && (
-          <div className="mt-2 p-2 border rounded">
+          <div className="mt-2 p-3 border rounded-md shadow-sm bg-white">
+            <h4 className="text-sm font-medium mb-2">Add New Jobsite</h4>
             <Input 
               value={newJobsiteName}
               onChange={(e) => setNewJobsiteName(e.target.value)}
@@ -290,6 +337,7 @@ export function Sidebar({ onSelectionChange }: SidebarProps) {
               <Button 
                 size="sm" 
                 onClick={addNewJobsite}
+                className="bg-[#FBBC05] hover:bg-[#FBBC05]/80"
               >
                 Add
               </Button>
@@ -304,6 +352,12 @@ export function Sidebar({ onSelectionChange }: SidebarProps) {
           </div>
         )}
       </ScrollArea>
+      
+      <div className="p-4 mt-auto">
+        <div className="text-xs text-center text-gray-400">
+          © 2025 HookCam System
+        </div>
+      </div>
     </Card>
   );
 }

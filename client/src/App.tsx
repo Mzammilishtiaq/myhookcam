@@ -36,22 +36,12 @@ export const AppContext = createContext<AppContextType>(defaultAppContext);
 
 function MainNavigation() {
   const [location, setLocation] = useLocation();
-  const { isSidebarOpen, toggleSidebar } = useContext(AppContext);
   
   return (
     <div className="bg-[#555555] text-[#FFFFFF] px-4 pt-4 shadow-md">
       <div className="w-full">
         <div className="flex justify-between items-center mb-4">
           <div className="flex items-center">
-            {/* Only show toggle button on mobile */}
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="mr-2 text-white md:hidden" 
-              onClick={toggleSidebar}
-            >
-              {isSidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-            </Button>
             <h1 className="text-xl font-semibold">
               <span className="text-[#FBBC05]">HookCam</span> System
             </h1>
