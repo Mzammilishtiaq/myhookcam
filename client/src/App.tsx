@@ -146,11 +146,11 @@ function Layout() {
     <div className="min-h-screen flex bg-[#FFFFFF]">
       {/* Hamburger menu toggle button - always visible on desktop when sidebar is collapsed */}
       {!isMobileView && !isOpen && (
-        <div className="h-screen flex items-start absolute left-0 top-0 z-10">
+        <div className="h-screen fixed left-0 top-0 z-50 flex items-start justify-center" style={{ width: '50px' }}>
           <Button
             variant="ghost" 
             size="sm"
-            className="m-2 text-[#555555] hover:bg-[#FBBC05]/10 transition-colors rounded-md h-10 w-10 flex items-center justify-center shadow-md"
+            className="mt-4 text-[#555555] hover:bg-[#FBBC05]/10 transition-colors rounded-md h-10 w-10 flex items-center justify-center shadow-md"
             onClick={handleToggleClick}
           >
             <Menu className="h-6 w-6" />
@@ -204,7 +204,8 @@ function Layout() {
         display: 'flex',
         flexDirection: 'column',
         width: isOpen && !isMobileView ? 'calc(100% - 280px)' : '100%',
-        transition: 'width 0.3s ease-in-out'
+        transition: 'width 0.3s ease-in-out',
+        marginLeft: !isOpen && !isMobileView ? '50px' : '0' // Add space for the toggle button when sidebar is collapsed
       }}>
         {/* Header and tab navigation */}
         <MainNavigation />
