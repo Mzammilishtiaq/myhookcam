@@ -266,29 +266,29 @@ export function Timeline({
   };
   
   return (
-    <div className="timeline-container mt-8">
-      <div className="flex items-center mb-2">
+    <div className="timeline-container mt-4">
+      <div className="flex items-center mb-1">
         <h2 className="text-lg font-medium text-[#555555]">Timeline - Working Hours (7am-5pm)</h2>
         
-        <div className="ml-auto flex space-x-4 text-sm">
+        <div className="ml-auto flex flex-wrap gap-2 text-xs">
           <div className="flex items-center">
-            <div className="w-3 h-3 bg-[#FBBC05] rounded-full mr-1"></div>
-            <span className="text-[#555555]">Available Clips</span>
+            <div className="w-2 h-2 bg-[#FBBC05] rounded-full mr-1"></div>
+            <span className="text-[#555555]">Available</span>
           </div>
           <div className="flex items-center">
-            <div className="w-3 h-3 bg-[#ff9900] rounded-full mr-1"></div>
-            <span className="text-[#555555]">Clips with Bookmarks</span>
+            <div className="w-2 h-2 bg-[#ff9900] rounded-full mr-1"></div>
+            <span className="text-[#555555]">Bookmarks</span>
           </div>
           <div className="flex items-center">
-            <div className="w-3 h-3 bg-[#ffa833] rounded-full mr-1"></div>
-            <span className="text-[#555555]">Clips with Annotations</span>
+            <div className="w-2 h-2 bg-[#ffa833] rounded-full mr-1"></div>
+            <span className="text-[#555555]">Notes</span>
           </div>
           <div className="flex items-center">
-            <div className="w-3 h-3 bg-gradient-to-tr from-[#FBBC05] to-[#ff9900] rounded-full mr-1"></div>
-            <span className="text-[#555555]">Clips with Both</span>
+            <div className="w-2 h-2 bg-gradient-to-tr from-[#FBBC05] to-[#ff9900] rounded-full mr-1"></div>
+            <span className="text-[#555555]">Both</span>
           </div>
           <div className="flex items-center">
-            <div className="w-3 h-3 bg-[#555555] rounded-full mr-1"></div>
+            <div className="w-2 h-2 bg-[#555555] rounded-full mr-1"></div>
             <span className="text-[#555555]">No Footage</span>
           </div>
         </div>
@@ -305,16 +305,16 @@ export function Timeline({
           <span className="ml-2 text-[#555555]">Error loading timeline data</span>
         </div>
       ) : (
-        <div className="timeline-scroll-container overflow-x-scroll bg-[#FFFFFF] rounded-lg shadow border border-[#BCBBBB] h-[200px] flex-1 relative" style={{
+        <div className="timeline-scroll-container overflow-x-scroll bg-[#FFFFFF] rounded-lg shadow border border-[#BCBBBB] h-[120px] flex-1 relative" style={{
           scrollbarWidth: 'auto',
           scrollbarColor: '#555555 #FFFFFF',
           overflowY: 'visible',
-          paddingBottom: '30px',
-          paddingTop: '20px'
+          paddingBottom: '15px',
+          paddingTop: '10px'
         }}>
           <div 
             ref={timelineRef}
-            className="timeline-wrapper relative p-4"
+            className="timeline-wrapper relative p-2"
             style={{ width: "150%" }}
           >
             {/* Hour markers - filter based on zoom level */}
@@ -542,12 +542,12 @@ export function Timeline({
         </div>
       )}
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-[#FFFFFF] p-4 rounded-lg shadow border border-[#BCBBBB] mt-3">
-        <h2 className="text-lg font-semibold text-[#555555] col-span-full mb-2">Timeline and Clip Controls</h2>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 bg-[#FFFFFF] p-3 rounded-lg shadow border border-[#BCBBBB] mt-2">
+        <h2 className="text-md font-semibold text-[#555555] col-span-full mb-1">Timeline and Clip Controls</h2>
         <div className="timeline-controls">
-          <h3 className="text-md font-medium mb-2 text-[#555555]">Timeline Controls</h3>
+          <h3 className="text-sm font-medium mb-1 text-[#555555]">Timeline Controls</h3>
           {/* Smart Zoom Presets */}
-          <div className="zoom-presets flex flex-wrap items-center gap-2 mb-2">
+          <div className="zoom-presets flex flex-wrap items-center gap-1 mb-1">
             {ZOOM_PRESETS.map(preset => (
               <Button
                 key={preset.id}
@@ -574,7 +574,7 @@ export function Timeline({
           </div>
           
           {/* Zoom Controls */}
-          <div className="zoom-controls flex items-center gap-2 mb-2">
+          <div className="zoom-controls flex items-center gap-1 mb-1">
             <Button
               variant="outline"
               size="sm"
@@ -631,8 +631,8 @@ export function Timeline({
         </div>
         
         <div className="clip-controls">
-          <h3 className="text-md font-medium mb-2 text-[#555555]">Clip Controls</h3>
-          <div className="flex flex-wrap gap-2">
+          <h3 className="text-sm font-medium mb-1 text-[#555555]">Clip Controls</h3>
+          <div className="flex flex-wrap gap-1">
             <Button
               variant="default"
               className="bg-[#FBBC05] hover:bg-[#FBBC05]/90 text-[#000000]"
@@ -739,8 +739,8 @@ export function Timeline({
             </Button>
           </div>
           
-          <div className="export-options mt-2">
-            <div className="flex flex-wrap gap-2">
+          <div className="export-options mt-1">
+            <div className="flex flex-wrap gap-1">
               <Select
                 value={exportFormat}
                 onValueChange={setExportFormat}
