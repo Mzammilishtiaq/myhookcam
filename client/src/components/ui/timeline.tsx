@@ -603,36 +603,7 @@ export function Timeline({
                 if (!currentClip) {
                   toast({
                     title: "No clip selected",
-                    description: "Please select a clip to add a flag",
-                    variant: "destructive"
-                  });
-                  return;
-                }
-                
-                const content = prompt("Enter a label for this flag (optional):");
-                
-                createNoteFlag({
-                  videoTime: formatVideoTime(0), // Default to start of clip
-                  clipTime: currentClip.startTime,
-                  date: selectedDate,
-                  content: content || null,
-                  isFlag: true
-                });
-              }}
-              disabled={!currentClip}
-            >
-              <BookmarkPlus className="mr-1 h-4 w-4" />
-              <span>Add Flag</span>
-            </Button>
-            
-            <Button
-              variant="outline"
-              className="border-[#555555] text-[#555555] hover:bg-[#FBBC05]/10"
-              onClick={() => {
-                if (!currentClip) {
-                  toast({
-                    title: "No clip selected",
-                    description: "Please select a clip to add a note",
+                    description: "Please select a clip to add a note or flag",
                     variant: "destructive"
                   });
                   return;
@@ -640,20 +611,39 @@ export function Timeline({
                 
                 const content = prompt("Enter your note:");
                 
-                if (content) {
-                  createNoteFlag({
-                    videoTime: formatVideoTime(0), // Default to start of clip
-                    clipTime: currentClip.startTime,
-                    date: selectedDate,
-                    content,
-                    isFlag: false
-                  });
+                if (content === null) {
+                  // User cancelled the prompt
+                  return;
                 }
+                
+                const isFlag = confirm("Flag this timestamp? (OK = Yes, Cancel = No)");
+                
+                createNoteFlag.mutate({
+                  videoTime: formatVideoTime(0), // Default to start of clip
+                  clipTime: currentClip.startTime,
+                  date: selectedDate,
+                  content: content || null,
+                  isFlag
+                }, {
+                  onSuccess: () => {
+                    toast({
+                      title: isFlag ? (content ? "Note & Flag added" : "Flag added") : "Note added",
+                      description: `Added to clip at ${currentClip.startTime}`
+                    });
+                  },
+                  onError: () => {
+                    toast({
+                      title: "Error",
+                      description: "Failed to save note/flag",
+                      variant: "destructive"
+                    });
+                  }
+                });
               }}
               disabled={!currentClip}
             >
               <FileEdit className="mr-1 h-4 w-4" />
-              <span>Add Note</span>
+              <span>Note / Flag</span>
             </Button>
             
             <Button
