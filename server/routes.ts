@@ -21,6 +21,74 @@ const s3Client = new S3Client({
 
 const BUCKET_NAME = process.env.AWS_S3_BUCKET_NAME || "video-timeline-bucket";
 
+// Generate mock clips for development
+function generateMockClips(date: string) {
+  const clips = [];
+  
+  // Create clips every 5 minutes from 7am to 5pm (working hours)
+  // With some random gaps to simulate missing footage
+  for (let hour = 7; hour <= 17; hour++) {
+    for (let minute = 0; minute < 60; minute += 5) {
+      // Randomly skip some time slots (30% chance)
+      if (Math.random() > 0.3) {
+        const hours = hour.toString().padStart(2, '0');
+        const minutes = minute.toString().padStart(2, '0');
+        
+        // Create a unique key for the clip
+        const key = `${date}_${hours}${minutes}.mp4`;
+        
+        clips.push({
+          key,
+          date,
+          startTime: `${hours}:${minutes}`,
+          endTime: calculateEndTime(`${hours}`, `${minutes}`),
+          url: ""
+        });
+      }
+    }
+  }
+  
+  // Add a few more clips outside working hours
+  for (let hour = 0; hour < 7; hour += 2) {
+    const minute = Math.floor(Math.random() * 12) * 5; // Random 5-minute interval
+    const hours = hour.toString().padStart(2, '0');
+    const minutes = minute.toString().padStart(2, '0');
+    
+    const key = `${date}_${hours}${minutes}.mp4`;
+    
+    clips.push({
+      key,
+      date,
+      startTime: `${hours}:${minutes}`,
+      endTime: calculateEndTime(`${hours}`, `${minutes}`),
+      url: ""
+    });
+  }
+  
+  // And a few more clips after working hours
+  for (let hour = 18; hour < 24; hour += 2) {
+    const minute = Math.floor(Math.random() * 12) * 5; // Random 5-minute interval
+    const hours = hour.toString().padStart(2, '0');
+    const minutes = minute.toString().padStart(2, '0');
+    
+    const key = `${date}_${hours}${minutes}.mp4`;
+    
+    clips.push({
+      key,
+      date,
+      startTime: `${hours}:${minutes}`,
+      endTime: calculateEndTime(`${hours}`, `${minutes}`),
+      url: ""
+    });
+  }
+  
+  // Sort clips by start time
+  return clips.sort((a, b) => a.startTime.localeCompare(b.startTime));
+}
+
+// Cache for mock video URLs
+const mockVideoUrls = new Map<string, string>();
+
 // Parse video clip key to extract metadata
 function parseClipKey(key: string) {
   // Assuming filename format: YYYY-MM-DD_HHMM.mp4
@@ -58,28 +126,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get video clips for a specific date
   app.get("/api/clips", async (req: Request, res: Response) => {
     try {
-      const date = req.query.date as string;
+      const date = req.query.date as string || new Date().toISOString().split('T')[0];
       
       if (!date) {
         return res.status(400).json({ message: "Date parameter is required" });
       }
       
-      // List objects in the S3 bucket with the date prefix
-      const command = new ListObjectsV2Command({
-        Bucket: BUCKET_NAME,
-        Prefix: date,
-      });
-      
-      const response = await s3Client.send(command);
-      
-      // Parse clip metadata from the keys
-      const clips = (response.Contents || [])
-        .map(obj => parseClipKey(obj.Key || ""))
-        .filter(Boolean)
-        .map(clipData => ({
-          ...clipData,
-          url: "" // Will be populated with signed URLs when needed
-        }));
+      // For development, use mock clips instead of accessing S3
+      const clips = generateMockClips(date);
       
       return res.status(200).json(clips);
     } catch (error) {
@@ -88,24 +142,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Get signed URL for a specific clip
+  // Get mock URL for a specific clip
   app.get("/api/clips/:key/url", async (req: Request, res: Response) => {
     try {
       const key = decodeURIComponent(req.params.key);
       
-      // Create a GetObject command
-      const command = new GetObjectCommand({
-        Bucket: BUCKET_NAME,
-        Key: key,
-      });
+      // Generate a mock video URL or return a previously generated one
+      if (!mockVideoUrls.has(key)) {
+        // In a real implementation, this would be a pre-signed S3 URL
+        mockVideoUrls.set(key, `https://example.com/mock-video/${key}`);
+      }
       
-      // Generate a signed URL that's valid for 1 hour
-      const signedUrl = await getSignedUrl(s3Client, command, { expiresIn: 3600 });
-      
-      return res.status(200).json({ url: signedUrl });
+      return res.status(200).json({ url: mockVideoUrls.get(key) });
     } catch (error) {
-      console.error("Error generating signed URL:", error);
-      return res.status(500).json({ message: "Failed to generate video URL" });
+      console.error("Error generating mock URL:", error);
+      return res.status(500).json({ message: "Failed to generate URL" });
     }
   });
   

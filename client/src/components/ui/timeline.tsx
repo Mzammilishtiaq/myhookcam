@@ -1,5 +1,7 @@
-import { useRef, useEffect } from "react";
-import { AlertTriangle, Loader2 } from "lucide-react";
+import { useRef, useEffect, useState } from "react";
+import { AlertTriangle, Loader2, ZoomIn, ZoomOut } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Slider } from "@/components/ui/slider";
 import type { Clip } from "@shared/schema";
 
 interface TimelineProps {
@@ -18,6 +20,8 @@ export function Timeline({
   onSelectClip
 }: TimelineProps) {
   const timelineRef = useRef<HTMLDivElement>(null);
+  const [zoomLevel, setZoomLevel] = useState<number>(1); // Default zoom level
+  const [focusHour, setFocusHour] = useState<number>(9); // Default focus on 9 AM
   
   // Generate segments for a 24-hour timeline with emphasis on working hours (7am-5pm)
   // Each segment represents a 5-minute interval (288 segments in a day)
@@ -108,8 +112,44 @@ export function Timeline({
     }
   }, [currentClip]);
   
-  // Calculate width for each segment
-  const segmentWidth = 0.35; // Percentage width of the container
+  // Calculate width for each segment - adjust based on zoom level
+  const baseSegmentWidth = 0.35; // Base percentage width
+  const segmentWidth = baseSegmentWidth * zoomLevel;
+  
+  // Filter segments based on focus hour and zoom level
+  const getVisibleSegments = () => {
+    // For zoom level 1, show all segments
+    if (zoomLevel <= 1) {
+      return timeSegments;
+    }
+    
+    // For higher zoom levels, focus on segments around the focus hour
+    // The range narrows as zoom level increases
+    const rangeSize = Math.max(4, 24 / zoomLevel);
+    const startHour = Math.max(0, focusHour - rangeSize / 2);
+    const endHour = Math.min(24, focusHour + rangeSize / 2);
+    
+    return timeSegments.filter(segment => {
+      const [hours] = segment.time.split(':').map(Number);
+      return hours >= startHour && hours < endHour;
+    });
+  };
+  
+  const visibleSegments = getVisibleSegments();
+  
+  // Handle zoom in/out
+  const handleZoomIn = () => {
+    setZoomLevel(prev => Math.min(prev + 0.5, 4)); // Max zoom level is 4x
+  };
+  
+  const handleZoomOut = () => {
+    setZoomLevel(prev => Math.max(prev - 0.5, 1)); // Min zoom level is 1x
+  };
+  
+  // Handle focus hour change
+  const handleFocusChange = (value: number[]) => {
+    setFocusHour(value[0]);
+  };
   
   return (
     <div className="timeline-container mt-8">
@@ -125,6 +165,51 @@ export function Timeline({
             <div className="w-3 h-3 bg-[#555555] rounded-full mr-1"></div>
             <span className="text-[#555555]">No Footage</span>
           </div>
+        </div>
+      </div>
+      
+      {/* Zoom Controls */}
+      <div className="zoom-controls flex items-center gap-2 mb-2">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleZoomOut}
+          disabled={zoomLevel <= 1}
+          className="text-[#555555] border-[#BCBBBB] hover:bg-[#FBBC05]/10"
+        >
+          <ZoomOut className="h-4 w-4 mr-1" />
+          <span>Zoom Out</span>
+        </Button>
+        
+        <div className="flex-1 px-4">
+          <Slider
+            defaultValue={[focusHour]}
+            max={23}
+            step={1}
+            value={[focusHour]}
+            onValueChange={handleFocusChange}
+            disabled={zoomLevel <= 1}
+            className="w-full"
+          />
+        </div>
+        
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleZoomIn}
+          disabled={zoomLevel >= 4}
+          className="text-[#555555] border-[#BCBBBB] hover:bg-[#FBBC05]/10"
+        >
+          <ZoomIn className="h-4 w-4 mr-1" />
+          <span>Zoom In</span>
+        </Button>
+        
+        <div className="text-sm text-[#555555]">
+          {zoomLevel > 1 ? (
+            <span>Focus: {focusHour > 12 ? focusHour - 12 : focusHour}{focusHour >= 12 ? 'PM' : 'AM'} | {zoomLevel.toFixed(1)}x</span>
+          ) : (
+            <span>Full Day View</span>
+          )}
         </div>
       </div>
       
@@ -144,29 +229,41 @@ export function Timeline({
             ref={timelineRef}
             className="timeline-wrapper relative min-w-max p-4"
           >
-            {/* Hour markers */}
+            {/* Hour markers - filter based on zoom level */}
             <div className="hour-markers relative h-8">
-              {hourMarkers.map((marker) => (
-                <div 
-                  key={marker.hour}
-                  className={`hour-marker absolute border-l ${
-                    marker.isWorkingHour ? 'border-[#555555] border-l-2' : 'border-[#BCBBBB]'
-                  }`}
-                  style={{ left: `${marker.position}%` }}
-                  data-hour={marker.label}
-                >
-                  <div className={`absolute top-4 transform -translate-x-1/2 text-xs font-mono ${
-                    marker.isWorkingHour ? 'text-[#555555] font-bold' : 'text-[#BCBBBB]'
-                  }`}>
-                    {marker.label}
+              {hourMarkers
+                .filter(marker => {
+                  if (zoomLevel <= 1) return true;
+                  const rangeSize = Math.max(4, 24 / zoomLevel);
+                  const startHour = Math.max(0, focusHour - rangeSize / 2);
+                  const endHour = Math.min(24, focusHour + rangeSize / 2);
+                  return marker.hour >= startHour && marker.hour < endHour;
+                })
+                .map((marker) => (
+                  <div 
+                    key={marker.hour}
+                    className={`hour-marker absolute border-l ${
+                      marker.isWorkingHour ? 'border-[#555555] border-l-2' : 'border-[#BCBBBB]'
+                    }`}
+                    style={{ 
+                      left: zoomLevel <= 1 
+                        ? `${marker.position}%` 
+                        : `${(marker.hour - Math.max(0, focusHour - Math.max(4, 24 / zoomLevel) / 2)) / Math.min(24, Math.max(4, 24 / zoomLevel)) * 100}%` 
+                    }}
+                    data-hour={marker.label}
+                  >
+                    <div className={`absolute top-4 transform -translate-x-1/2 text-xs font-mono ${
+                      marker.isWorkingHour ? 'text-[#555555] font-bold' : 'text-[#BCBBBB]'
+                    }`}>
+                      {marker.label}
+                    </div>
                   </div>
-                </div>
               ))}
             </div>
             
             {/* Timeline segments */}
             <div className="timeline-segments flex h-8 mt-8">
-              {timeSegments.map((segment, index) => (
+              {visibleSegments.map((segment, index) => (
                 <div
                   key={index}
                   className={`timeline-segment hover:opacity-80 transition-opacity ${
@@ -177,12 +274,17 @@ export function Timeline({
                     segment.isWorkingHour ? 'h-8' : 'h-6 mt-1'
                   }`}
                   style={{ width: `${segmentWidth}%` }}
-                  data-time={segment.displayTime}
+                  title={segment.displayTime}
                   onClick={() => segment.hasClip && segment.clip && onSelectClip(segment.clip)}
                 >
                   {segment.isCurrent && (
                     <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-1 bg-[#000000] text-[#FFFFFF] px-2 py-1 rounded text-xs font-mono whitespace-nowrap">
                       Now Playing
+                    </div>
+                  )}
+                  {zoomLevel >= 2.5 && (
+                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-1 text-[#555555] text-[10px] font-mono whitespace-nowrap">
+                      {segment.time.split(':')[1] === '00' ? segment.displayTime : segment.time.split(':')[1]}
                     </div>
                   )}
                 </div>
