@@ -73,6 +73,52 @@ export const insertShareSchema = createInsertSchema(shares)
     expiresAt: z.string().transform((val) => new Date(val)),
   });
 
+// Health IoT device monitoring schemas
+export const devices = pgTable("devices", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  ipAddress: text("ip_address").notNull().unique(),
+  description: text("description"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertDeviceSchema = createInsertSchema(devices).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const deviceStatus = pgTable("device_status", {
+  id: serial("id").primaryKey(),
+  deviceId: integer("device_id").notNull(),
+  timestamp: timestamp("timestamp").notNull(),
+  status: text("status").notNull(), // 'online' or 'offline'
+  date: text("date").notNull(), // Format: YYYY-MM-DD
+  timePoint: text("time_point").notNull(), // Format: HH:MM (5-minute increments)
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertDeviceStatusSchema = createInsertSchema(deviceStatus).omit({
+  id: true,
+  createdAt: true,
+});
+
+// Schema for runtime statistics
+export const deviceRuntimes = pgTable("device_runtimes", {
+  id: serial("id").primaryKey(),
+  deviceId: integer("device_id").notNull(),
+  date: text("date").notNull(), // Format: YYYY-MM-DD
+  weekStartDate: text("week_start_date"), // Start date of the week
+  month: text("month"), // Format: YYYY-MM
+  runtimeMinutes: integer("runtime_minutes").notNull(),
+  type: text("type").notNull(), // 'daily', 'weekly', or 'monthly'
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertDeviceRuntimeSchema = createInsertSchema(deviceRuntimes).omit({
+  id: true,
+  updatedAt: true,
+});
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 
@@ -86,3 +132,13 @@ export type InsertShare = z.infer<typeof insertShareSchema>;
 export type Share = typeof shares.$inferSelect;
 
 export type Clip = z.infer<typeof clipSchema>;
+
+// Health IoT types
+export type InsertDevice = z.infer<typeof insertDeviceSchema>;
+export type Device = typeof devices.$inferSelect;
+
+export type InsertDeviceStatus = z.infer<typeof insertDeviceStatusSchema>;
+export type DeviceStatus = typeof deviceStatus.$inferSelect;
+
+export type InsertDeviceRuntime = z.infer<typeof insertDeviceRuntimeSchema>;
+export type DeviceRuntime = typeof deviceRuntimes.$inferSelect;
