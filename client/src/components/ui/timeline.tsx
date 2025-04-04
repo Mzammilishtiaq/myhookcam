@@ -14,6 +14,53 @@ interface TimelineProps {
   onSelectClip: (clip: Clip) => void;
 }
 
+// Smart zoom level presets
+type ZoomPreset = {
+  id: string;
+  label: string;
+  level: number;
+  focus: number | null; // null means no specific focus
+  description: string;
+};
+
+const ZOOM_PRESETS: ZoomPreset[] = [
+  { 
+    id: 'full-day', 
+    label: 'Full Day',
+    level: 1,
+    focus: null,
+    description: 'View the entire 24-hour timeline'
+  },
+  { 
+    id: 'working-hours', 
+    label: 'Working Hours',
+    level: 2,
+    focus: 12, // Noon as focus point
+    description: 'Focus on 7am-5pm working hours'
+  },
+  { 
+    id: 'morning', 
+    label: 'Morning',
+    level: 3,
+    focus: 9, // 9am
+    description: 'Focus on morning hours (7am-12pm)'
+  },
+  { 
+    id: 'afternoon', 
+    label: 'Afternoon',
+    level: 3,
+    focus: 14, // 2pm
+    description: 'Focus on afternoon hours (12pm-5pm)'
+  },
+  { 
+    id: 'detail', 
+    label: 'Detailed View',
+    level: 4,
+    focus: null, // Will use current focus or default to 9am
+    description: 'Maximum detail for precise navigation'
+  }
+];
+
 export function Timeline({
   clips,
   currentClip,
@@ -24,6 +71,7 @@ export function Timeline({
   const timelineRef = useRef<HTMLDivElement>(null);
   const [zoomLevel, setZoomLevel] = useState<number>(1); // Default zoom level
   const [focusHour, setFocusHour] = useState<number>(9); // Default focus on 9 AM
+  const [activePreset, setActivePreset] = useState<string>('full-day'); // Default preset
   const selectedDate = currentClip?.date || new Date().toISOString().split('T')[0];
   
   // Fetch bookmarks and annotations for the selected date
@@ -185,6 +233,13 @@ export function Timeline({
   
   const handleZoomOut = () => {
     setZoomLevel(prev => Math.max(prev - 0.5, 1)); // Min zoom level is 1x
+    if (zoomLevel <= 1.5) {
+      // When zooming out to near default, reset to full day preset
+      setActivePreset('full-day');
+    } else {
+      // Otherwise, indicate custom zoom
+      setActivePreset('custom');
+    }
   };
   
   // Handle focus hour change
@@ -217,6 +272,33 @@ export function Timeline({
         </div>
       </div>
       
+      {/* Smart Zoom Presets */}
+      <div className="zoom-presets flex flex-wrap items-center gap-2 mb-2">
+        {ZOOM_PRESETS.map(preset => (
+          <Button
+            key={preset.id}
+            variant={activePreset === preset.id ? "default" : "outline"}
+            size="sm"
+            onClick={() => {
+              setActivePreset(preset.id);
+              setZoomLevel(preset.level);
+              if (preset.focus !== null) {
+                setFocusHour(preset.focus);
+              }
+            }}
+            className={`
+              ${activePreset === preset.id 
+                ? 'bg-[#FBBC05] text-[#000000] hover:bg-[#FBBC05]/90' 
+                : 'text-[#555555] border-[#BCBBBB] hover:bg-[#FBBC05]/10'
+              }
+            `}
+            title={preset.description}
+          >
+            <span>{preset.label}</span>
+          </Button>
+        ))}
+      </div>
+      
       {/* Zoom Controls */}
       <div className="zoom-controls flex items-center gap-2 mb-2">
         <Button
@@ -236,7 +318,11 @@ export function Timeline({
             max={23}
             step={1}
             value={[focusHour]}
-            onValueChange={handleFocusChange}
+            onValueChange={(value) => {
+              setFocusHour(value[0]);
+              // Reset active preset when manually adjusting
+              setActivePreset('custom');
+            }}
             disabled={zoomLevel <= 1}
             className="w-full"
           />
@@ -245,7 +331,11 @@ export function Timeline({
         <Button
           variant="outline"
           size="sm"
-          onClick={handleZoomIn}
+          onClick={() => {
+            handleZoomIn();
+            // Reset active preset when manually zooming
+            setActivePreset('custom');
+          }}
           disabled={zoomLevel >= 4}
           className="text-[#555555] border-[#BCBBBB] hover:bg-[#FBBC05]/10"
         >
@@ -255,7 +345,10 @@ export function Timeline({
         
         <div className="text-sm text-[#555555]">
           {zoomLevel > 1 ? (
-            <span>Focus: {focusHour > 12 ? focusHour - 12 : focusHour}{focusHour >= 12 ? 'PM' : 'AM'} | {zoomLevel.toFixed(1)}x</span>
+            <span>
+              {activePreset === 'custom' && <span className="text-xs bg-[#FBBC05]/20 px-1 py-0.5 rounded mr-1">Custom</span>}
+              Focus: {focusHour > 12 ? focusHour - 12 : focusHour}{focusHour >= 12 ? 'PM' : 'AM'} | {zoomLevel.toFixed(1)}x
+            </span>
           ) : (
             <span>Full Day View</span>
           )}
@@ -273,9 +366,12 @@ export function Timeline({
           <span className="ml-2 text-[#555555]">Error loading timeline data</span>
         </div>
       ) : (
-        <div className="timeline-scroll-container overflow-x-auto bg-[#FFFFFF] rounded-lg shadow border border-[#BCBBBB] h-[150px] flex-1 relative" style={{
+        <div className="timeline-scroll-container overflow-x-auto bg-[#FFFFFF] rounded-lg shadow border border-[#BCBBBB] h-[200px] flex-1 relative" style={{
           scrollbarWidth: 'thin',
-          scrollbarColor: '#BCBBBB transparent'
+          scrollbarColor: '#BCBBBB transparent',
+          overflowY: 'visible',
+          paddingBottom: '30px',
+          paddingTop: '20px'
         }}>
           <div 
             ref={timelineRef}
@@ -343,30 +439,42 @@ export function Timeline({
                   {/* Bookmark indicator */}
                   {segment.hasBookmarks && (
                     <div 
-                      className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-4 cursor-pointer"
+                      className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 cursor-pointer z-10 group"
                       onClick={(e) => {
                         e.stopPropagation();
                         const clip = findClipByTime(segment.time);
                         if (clip) onSelectClip(clip);
                       }}
-                      title="Bookmark"
                     >
-                      <Bookmark className="h-4 w-4 text-[#000000] fill-[#FBBC05]" />
+                      <Bookmark className="h-5 w-5 text-[#000000] fill-[#FBBC05] stroke-[1.5]" />
+                      {segment.bookmarks && segment.bookmarks.length > 0 && (
+                        <div className="absolute bottom-full mb-1 left-1/2 transform -translate-x-1/2 bg-[#000000] text-[#FFFFFF] px-2 py-1 rounded text-xs whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity">
+                          {segment.bookmarks.length > 1 
+                            ? `${segment.bookmarks.length} bookmarks` 
+                            : segment.bookmarks[0].title || 'Bookmark'}
+                        </div>
+                      )}
                     </div>
                   )}
                   
                   {/* Annotation indicator */}
                   {segment.hasAnnotations && (
                     <div 
-                      className="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-4 cursor-pointer"
+                      className="absolute top-0 left-1/2 transform -translate-x-1/2 -mt-6 cursor-pointer z-10 group"
                       onClick={(e) => {
                         e.stopPropagation();
                         const clip = findClipByTime(segment.time);
                         if (clip) onSelectClip(clip);
                       }}
-                      title={`${segment.annotations?.length || 0} annotation(s)`}
                     >
-                      <MessageSquare className="h-4 w-4 text-[#000000] fill-[#FBBC05]" />
+                      <MessageSquare className="h-5 w-5 text-[#000000] fill-[#FBBC05] stroke-[1.5]" />
+                      {segment.annotations && segment.annotations.length > 0 && (
+                        <div className="absolute top-full mt-1 left-1/2 transform -translate-x-1/2 bg-[#000000] text-[#FFFFFF] px-2 py-1 rounded text-xs whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity">
+                          {segment.annotations.length > 1 
+                            ? `${segment.annotations.length} annotations` 
+                            : segment.annotations[0].content?.substring(0, 20) + (segment.annotations[0].content?.length > 20 ? '...' : '') || 'Annotation'}
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
