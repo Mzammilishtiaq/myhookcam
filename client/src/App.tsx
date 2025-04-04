@@ -214,6 +214,8 @@ function Layout() {
           transition: 'width 0.3s ease-in-out',
           marginLeft: !isOpen && !isMobileView ? '50px' : '0' // Add space for the toggle button when sidebar is collapsed
         }}>
+          {/* Content area - header is now placed outside this div so it can extend full width */}
+          
           {/* Main content */}
           <main className="flex-grow p-4">
             <Switch>
