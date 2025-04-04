@@ -81,9 +81,9 @@ export default function Recordings() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Video Player - Takes 2/3 of the space on larger screens */}
-        <div className="md:col-span-2">
+      <div className="flex flex-col gap-4">
+        {/* Video Player - Takes the full width */}
+        <div className="w-full">
           <VideoPlayer 
             clip={currentClip}
             nextClip={nextClip}
@@ -95,17 +95,8 @@ export default function Recordings() {
           />
         </div>
         
-        {/* Notes Section - Takes 1/3 of the space, positioned to the right */}
-        <div className="md:col-span-1 md:row-span-2">
-          <NoteSidebar 
-            selectedDate={formattedDate}
-            currentClip={currentClip}
-            currentVideoTime={currentVideoTime}
-          />
-        </div>
-        
-        {/* Timeline and Controls - Takes the full width under the video */}
-        <div className="md:col-span-2">
+        {/* Timeline and Controls - Below the video */}
+        <div className="w-full">
           <Timeline 
             clips={clips}
             currentClip={currentClip}
@@ -118,6 +109,15 @@ export default function Recordings() {
             currentClip={currentClip}
             onExportCurrentClip={handleExportCurrentClip}
             selectedDate={formattedDate}
+          />
+        </div>
+        
+        {/* Notes Section - At the bottom of the page */}
+        <div className="w-full">
+          <NoteSidebar 
+            selectedDate={formattedDate}
+            currentClip={currentClip}
+            currentVideoTime={currentVideoTime}
           />
         </div>
       </div>

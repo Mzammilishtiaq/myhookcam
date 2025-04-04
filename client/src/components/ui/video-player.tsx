@@ -239,8 +239,8 @@ export function VideoPlayer({
         onMouseLeave={handleMouseUp}
         style={{ 
           cursor: zoom > 1 ? (isDragging ? 'grabbing' : 'grab') : 'default',
-          height: "calc(100vh - 300px)",  /* Make the video larger */
-          minHeight: "400px"
+          height: "calc(100vh - 280px)",  /* Make the video larger */
+          minHeight: "450px"
         }}
       >
         {/* Main video element with zoom and pan transform */}

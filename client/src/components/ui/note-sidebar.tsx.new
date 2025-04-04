@@ -1,11 +1,11 @@
-import { useState, useEffect, useRef } from "react";
-import { Clock, Save, X, Trash2 } from "lucide-react";
-import { Card } from "@/components/ui/card";
+import { useState, useRef, useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { Clock, Trash2, Save, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { formatTime } from "@/lib/time";
 import { useToast } from "@/hooks/use-toast";
+import { formatTime, timeToSeconds } from "@/lib/time";
 import { useAnnotations } from "@/hooks/use-annotations";
 import type { Clip } from "@shared/schema";
 
@@ -18,153 +18,142 @@ interface NoteSidebarProps {
 export function NoteSidebar({
   selectedDate,
   currentClip,
-  currentVideoTime,
+  currentVideoTime
 }: NoteSidebarProps) {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const listRef = useRef<HTMLDivElement>(null);
+  
+  // State for notes
   const [newNote, setNewNote] = useState("");
   const [editingNote, setEditingNote] = useState<number | null>(null);
   const [editedText, setEditedText] = useState("");
-  const listRef = useRef<HTMLDivElement>(null);
-
-  // Get annotations from the server
+  
+  // Fetch notes for the selected date
   const { 
     data: notes = [], 
-    isLoading, 
-    createAnnotation, 
-    updateAnnotation, 
-    deleteAnnotation 
+    isLoading,
+    createAnnotation,
+    updateAnnotation,
+    deleteAnnotation
   } = useAnnotations(selectedDate);
-
-  // Auto-scroll to current time notes
+  
+  // Scroll notes list to show current clip's notes
   useEffect(() => {
-    if (listRef.current && currentClip && notes.length > 0) {
-      const currentTimeInSeconds = currentVideoTime;
+    if (currentClip && listRef.current && notes.length > 0) {
+      const currentClipTimeStr = currentClip.startTime;
+      const notesInCurrentClip = notes.filter((note: any) => {
+        return isTimeInCurrentClip(note.clipTime);
+      });
       
-      // Find notes that are within 10 seconds of the current time
-      const nearbyNoteIndex = notes.findIndex(
-        (note: any) => {
-          const clipTimeInSeconds = 
-            parseInt(note.clipTime.split(":")[0]) * 60 + 
-            parseInt(note.clipTime.split(":")[1]);
-          return Math.abs(clipTimeInSeconds - currentTimeInSeconds) < 10;
+      if (notesInCurrentClip.length > 0) {
+        // Find the first note element
+        const noteElement = listRef.current.querySelector(`[data-clip-time="${notesInCurrentClip[0].clipTime}"]`);
+        if (noteElement) {
+          noteElement.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
-      );
-      
-      if (nearbyNoteIndex !== -1) {
-        const noteElement = listRef.current.children[nearbyNoteIndex] as HTMLElement;
-        noteElement.scrollIntoView({ behavior: "smooth", block: "nearest" });
       }
     }
-  }, [currentVideoTime, notes, currentClip]);
-
-  // Handle creating a new note
+  }, [currentClip, notes]);
+  
+  // Add a new note
   const handleCreateNote = async () => {
     if (!currentClip || !newNote.trim()) return;
     
     try {
       await createAnnotation({
-        date: selectedDate,
         videoTime: formatTime(currentVideoTime),
         clipTime: currentClip.startTime,
         content: newNote.trim(),
+        date: selectedDate,
       });
       
       setNewNote("");
       toast({
-        title: "Success",
-        description: "Note added successfully",
+        title: "Note Added",
+        description: "Your note has been saved successfully",
       });
     } catch (error) {
-      console.error("Error creating note:", error);
+      console.error("Failed to add note:", error);
       toast({
-        variant: "destructive",
         title: "Error",
-        description: "Failed to add note",
+        description: "Failed to add note. Please try again.",
+        variant: "destructive",
       });
     }
   };
-
-  // Handle updating a note
-  const handleUpdateNote = async (id: number) => {
+  
+  // Start editing a note
+  const startEditing = (noteId: number, content: string) => {
+    setEditingNote(noteId);
+    setEditedText(content);
+  };
+  
+  // Cancel editing
+  const cancelEditing = () => {
+    setEditingNote(null);
+    setEditedText("");
+  };
+  
+  // Update a note
+  const handleUpdateNote = async (noteId: number) => {
     if (!editedText.trim()) return;
     
     try {
-      await updateAnnotation(id, { content: editedText.trim() });
+      await updateAnnotation(noteId, {
+        content: editedText.trim()
+      });
+      
       setEditingNote(null);
+      setEditedText("");
       toast({
-        title: "Success",
-        description: "Note updated successfully",
+        title: "Note Updated",
+        description: "Your note has been updated successfully",
       });
     } catch (error) {
-      console.error("Error updating note:", error);
+      console.error("Failed to update note:", error);
       toast({
-        variant: "destructive",
         title: "Error",
-        description: "Failed to update note",
+        description: "Failed to update note. Please try again.",
+        variant: "destructive",
       });
     }
   };
-
-  // Handle deleting a note
-  const handleDeleteNote = async (id: number) => {
+  
+  // Delete a note
+  const handleDeleteNote = async (noteId: number) => {
     try {
-      await deleteAnnotation(id);
+      await deleteAnnotation(noteId);
       toast({
-        title: "Success",
-        description: "Note deleted successfully",
+        title: "Note Deleted",
+        description: "Your note has been deleted successfully",
       });
     } catch (error) {
-      console.error("Error deleting note:", error);
+      console.error("Failed to delete note:", error);
       toast({
-        variant: "destructive",
         title: "Error",
-        description: "Failed to delete note",
+        description: "Failed to delete note. Please try again.",
+        variant: "destructive",
       });
     }
   };
-
-  // Start editing a note
-  const startEditing = (id: number, content: string) => {
-    setEditingNote(id);
-    setEditedText(content);
+  
+  // Jump to the time of a note
+  const jumpToTime = (clipTime: string) => {
+    // Trigger an event to jump to this timestamp
+    const jumpEvent = new CustomEvent("jump-to-time", { 
+      detail: { clipTime } 
+    });
+    window.dispatchEvent(jumpEvent);
   };
-
-  // Cancel editing a note
-  const cancelEditing = () => {
-    setEditingNote(null);
-  };
-
-  // Jump to a specific time in the video
-  const jumpToTime = (timeString: string) => {
-    if (!timeString) return;
+  
+  // Check if a note's time is in the current clip
+  const isTimeInCurrentClip = (noteTimeStr: string): boolean => {
+    if (!currentClip) return false;
     
-    const [minutes, seconds] = timeString.split(":").map(Number);
-    const videoElement = document.querySelector("video");
-    
-    if (videoElement) {
-      videoElement.currentTime = minutes * 60 + seconds;
-      videoElement.play().catch(err => console.error("Error playing video:", err));
-    }
-  };
-
-  // Check if a time is in the current clip
-  const isTimeInCurrentClip = (timeString: string): boolean => {
-    if (!currentClip || !timeString) return false;
-    
-    const [minutes, seconds] = timeString.split(":").map(Number);
-    const timeInSeconds = minutes * 60 + seconds;
-    
-    const startParts = currentClip.startTime.split(":");
-    const startH = parseInt(startParts[0]);
-    const startM = parseInt(startParts[1]);
-    
-    const endParts = currentClip.endTime.split(":");
-    const endH = parseInt(endParts[0]);
-    const endM = parseInt(endParts[1]);
-    
-    // Convert to seconds within the hour (for 5-minute clip comparison)
-    const clipStartInSeconds = startM * 60;
-    const clipEndInSeconds = (endH > startH ? 3600 : 0) + endM * 60;
+    const clipStartInSeconds = timeToSeconds(currentClip.startTime);
+    const clipEndInSeconds = timeToSeconds(currentClip.endTime);
+    const timeInSeconds = timeToSeconds(noteTimeStr);
     
     return timeInSeconds >= clipStartInSeconds && timeInSeconds <= clipEndInSeconds;
   };
@@ -247,6 +236,7 @@ export function NoteSidebar({
                       <div 
                         className="text-sm font-medium text-[#FBBC05] mb-1 cursor-pointer hover:underline flex items-center"
                         onClick={() => jumpToTime(note.clipTime)}
+                        data-clip-time={note.clipTime}
                       >
                         <Clock className="w-3 h-3 mr-1" />
                         {note.clipTime}
