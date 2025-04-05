@@ -88,8 +88,8 @@ export function Timeline({
           transform: 'translateX(-50%)'
         }}
       >
-        <div className="text-xs text-[#555555] w-10 text-center font-medium">{formattedHour}:00</div>
-        <div className="h-5 w-px bg-[#BCBBBB] mt-1"></div>
+        <div className="text-xs text-[#555555] w-10 text-center font-medium leading-none">{formattedHour}:00</div>
+        <div className="h-3 w-px bg-[#BCBBBB] mt-0.5"></div>
       </div>
     );
   }
@@ -172,7 +172,7 @@ export function Timeline({
       <div 
         className="relative mt-4"
         style={{ 
-          height: '120px', 
+          height: '90px', 
           width: `${contentWidth}px` 
         }}
       >
@@ -195,12 +195,12 @@ export function Timeline({
           
           const startPercentage = (startTimeInSeconds / totalSecondsInDay) * 100;
           const endPercentage = (endTimeInSeconds / totalSecondsInDay) * 100;
-          const width = endPercentage - startPercentage;
+          const width = Math.max(endPercentage - startPercentage, 0.5); // Ensure minimum width
           
           const { hasNotes, hasFlags } = getClipAnnotations(clip);
           
           let clipBgColor = "bg-[#FFFFFF]";
-          let clipBorderColor = "border-[#BCBBBB]";
+          let clipBorderColor = "border-[#FBBC05]/40";
           
           if (hasNotes && hasFlags) {
             clipBgColor = "bg-[#FBBC05]/20";
@@ -215,20 +215,20 @@ export function Timeline({
           
           const isSelected = currentClip && currentClip.key === clip.key;
           if (isSelected) {
-            clipBgColor += " ring-2 ring-[#FBBC05] ring-offset-1";
+            clipBgColor = "bg-[#FBBC05]/30";
             clipBorderColor = "border-[#FBBC05]";
           }
           
           return (
             <div
               key={clip.key}
-              className={`absolute cursor-pointer border-2 ${clipBorderColor} ${clipBgColor} hover:shadow-lg transition-all duration-200 overflow-hidden`}
+              className={`absolute cursor-pointer border ${clipBorderColor} ${clipBgColor} hover:shadow-md transition-all duration-200 overflow-hidden hover:border-[#FBBC05]`}
               style={{
                 left: `${startPercentage}%`,
                 width: `${width}%`,
                 top: 0,
                 height: '100%',
-                boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+                boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
               }}
               onClick={() => onSelectClip(clip)}
             >
@@ -236,13 +236,13 @@ export function Timeline({
                 clipKey={clip.key} 
                 className="h-full w-full object-cover opacity-95"
               />
-              <div className="absolute bottom-0 left-0 right-0 bg-[#000000] bg-opacity-70 text-[#FFFFFF] text-xs px-2 py-1 font-medium">
+              <div className="absolute bottom-0 left-0 right-0 bg-[#000000] bg-opacity-70 text-[#FFFFFF] text-xs px-1 py-0.5 font-medium">
                 {clip.startTime}
               </div>
               {(hasNotes || hasFlags) && (
                 <div className="absolute top-1 right-1 flex space-x-1 bg-[#000000] bg-opacity-50 rounded-sm p-0.5">
-                  {hasNotes && <MessageSquare size={14} className="text-[#FBBC05]" />}
-                  {hasFlags && <Flag size={14} className="text-[#FBBC05]" />}
+                  {hasNotes && <MessageSquare size={12} className="text-[#FBBC05]" />}
+                  {hasFlags && <Flag size={12} className="text-[#FBBC05]" />}
                 </div>
               )}
             </div>
@@ -254,39 +254,40 @@ export function Timeline({
   
   return (
     <div className="flex flex-col space-y-2 w-full h-full">
-      <div className="flex justify-between items-center mb-2 w-full">
+      <div className="flex items-center mb-2 w-full">
         <div className="text-sm font-medium text-[#555555]">Timeline - {selectedDate}</div>
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-2 ml-4">
           <Button
             variant="outline"
-            size="sm"
+            size="xs"
             onClick={handleZoomOut}
             disabled={zoomLevel <= 25}
-            className="border-[#BCBBBB] text-[#555555] hover:bg-[#F5F5F5]"
+            className="h-6 px-1 border-[#BCBBBB] text-[#555555] hover:bg-[#F5F5F5]"
           >
-            <ZoomOut className="h-4 w-4" />
+            <ZoomOut className="h-3 w-3" />
           </Button>
-          <span className="text-xs w-16 text-center text-[#555555] font-medium">{zoomLevel}%</span>
+          <span className="text-xs w-10 text-center text-[#555555] font-medium">{zoomLevel}%</span>
           <Button
             variant="outline"
-            size="sm"
+            size="xs"
             onClick={handleZoomIn}
             disabled={zoomLevel >= 500}
-            className="border-[#BCBBBB] text-[#555555] hover:bg-[#F5F5F5]"
+            className="h-6 px-1 border-[#BCBBBB] text-[#555555] hover:bg-[#F5F5F5]"
           >
-            <ZoomIn className="h-4 w-4" />
+            <ZoomIn className="h-3 w-3" />
           </Button>
         </div>
+        <div className="flex-grow"></div>
       </div>
       
-      <div className="w-full h-[150px] border border-[#BCBBBB] rounded-lg overflow-hidden relative">
-        <div className="relative h-8 bg-[#F5F5F5] w-full border-b border-[#BCBBBB] px-2">
+      <div className="w-full h-[120px] border border-[#BCBBBB] rounded-lg overflow-hidden relative">
+        <div className="relative h-6 bg-[#F5F5F5] w-full border-b border-[#BCBBBB] px-2">
           {hourMarks}
         </div>
         
         <div 
           ref={timelineRef}
-          className="overflow-x-auto w-full h-[112px] hide-scrollbar bg-white"
+          className="overflow-x-auto w-full h-[84px] hide-scrollbar bg-white"
           onScroll={handleScroll}
         >
           {renderClips()}
