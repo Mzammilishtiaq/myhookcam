@@ -9,6 +9,7 @@ import { NotesFlagsSidebar } from "@/components/ui/notes-flags-sidebar";
 import { ExportModal } from "@/components/ui/export-modal";
 import { NoteFlagModal } from "@/components/ui/note-flag-modal";
 import { ShareModal } from "@/components/ui/share-modal";
+import { ClipTable } from "@/components/ui/clip-table";
 import { useToast } from "@/hooks/use-toast";
 import { fetchClips } from "@/lib/s3";
 import { useTimeline } from "@/hooks/use-timeline";
@@ -25,8 +26,8 @@ export default function Recordings() {
   
   const formattedDate = format(selectedDate, "yyyy-MM-dd");
   
-  // Get the note-flag creation function
-  const { createNoteFlag } = useNotesFlags(formattedDate);
+  // Get the notes/flags data and creation function
+  const { notesFlags, createNoteFlag } = useNotesFlags(formattedDate);
   
   const {
     currentClip,
@@ -173,6 +174,19 @@ export default function Recordings() {
             }}
             onExportCurrentClip={handleExportCurrentClip}
             selectedDate={formattedDate}
+          />
+        </div>
+        
+        {/* Clip Table - Shows all clips in a tabular format */}
+        <div className="w-full">
+          <ClipTable 
+            clips={clips}
+            notesFlags={notesFlags}
+            date={formattedDate}
+            onClipSelect={(clip) => {
+              setCurrentClip(clip);
+              setIsPlaying(true); // Auto-play when clip is selected
+            }}
           />
         </div>
         
