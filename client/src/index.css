@@ -14,13 +14,23 @@
 }
 
 .timeline-scroll-container::-webkit-scrollbar-thumb {
-  background: #555555;
+  background: #BCBBBB;
   border-radius: 4px;
   border: 2px solid #FFFFFF;
 }
 
 .timeline-scroll-container::-webkit-scrollbar-thumb:hover {
   background: #FBBC05;
+}
+
+/* Hide scrollbar but keep functionality */
+.hide-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;  /* Chrome, Safari and Opera */
 }
 
 @layer base {
