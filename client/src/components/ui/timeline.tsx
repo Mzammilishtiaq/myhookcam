@@ -6,6 +6,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { VideoPreview } from "@/components/ui/video-preview";
+import { ClipTooltip } from "@/components/ui/clip-tooltip";
 import type { Clip, NoteFlag } from "@shared/schema";
 import { useNotesFlags } from "@/hooks/use-notes-flags";
 import { useToast } from "@/hooks/use-toast";
@@ -220,32 +221,33 @@ export function Timeline({
           }
           
           return (
-            <div
-              key={clip.key}
-              className={`absolute cursor-pointer border ${clipBorderColor} ${clipBgColor} hover:shadow-md transition-all duration-200 overflow-hidden hover:border-[#FBBC05]`}
-              style={{
-                left: `${startPercentage}%`,
-                width: `${width}%`,
-                top: 0,
-                height: '100%',
-                boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
-              }}
-              onClick={() => onSelectClip(clip)}
-            >
-              <VideoPreview 
-                clipKey={clip.key} 
-                className="h-full w-full object-cover opacity-95"
-              />
-              <div className="absolute bottom-0 left-0 right-0 bg-[#000000] bg-opacity-70 text-[#FFFFFF] text-xs px-1 py-0.5 font-medium">
-                {clip.startTime}
-              </div>
-              {(hasNotes || hasFlags) && (
-                <div className="absolute top-1 right-1 flex space-x-1 bg-[#000000] bg-opacity-50 rounded-sm p-0.5">
-                  {hasNotes && <MessageSquare size={12} className="text-[#FBBC05]" />}
-                  {hasFlags && <Flag size={12} className="text-[#FBBC05]" />}
+            <ClipTooltip key={clip.key} clip={clip}>
+              <div
+                className={`absolute cursor-pointer border ${clipBorderColor} ${clipBgColor} hover:shadow-md transition-all duration-200 overflow-hidden hover:border-[#FBBC05]`}
+                style={{
+                  left: `${startPercentage}%`,
+                  width: `${width}%`,
+                  top: 0,
+                  height: '100%',
+                  boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+                }}
+                onClick={() => onSelectClip(clip)}
+              >
+                <VideoPreview 
+                  clipKey={clip.key} 
+                  className="h-full w-full object-cover opacity-95"
+                />
+                <div className="absolute bottom-0 left-0 right-0 bg-[#000000] bg-opacity-70 text-[#FFFFFF] text-xs px-1 py-0.5 font-medium">
+                  {clip.startTime}
                 </div>
-              )}
-            </div>
+                {(hasNotes || hasFlags) && (
+                  <div className="absolute top-1 right-1 flex space-x-1 bg-[#000000] bg-opacity-50 rounded-sm p-0.5">
+                    {hasNotes && <MessageSquare size={12} className="text-[#FBBC05]" />}
+                    {hasFlags && <Flag size={12} className="text-[#FBBC05]" />}
+                  </div>
+                )}
+              </div>
+            </ClipTooltip>
           );
         })}
       </div>
@@ -259,20 +261,20 @@ export function Timeline({
         <div className="flex items-center space-x-2 ml-4">
           <Button
             variant="outline"
-            size="xs"
+            size="icon"
             onClick={handleZoomOut}
             disabled={zoomLevel <= 25}
-            className="h-6 px-1 border-[#BCBBBB] text-[#555555] hover:bg-[#F5F5F5]"
+            className="h-6 w-6 p-0 border-[#BCBBBB] text-[#555555] hover:bg-[#F5F5F5]"
           >
             <ZoomOut className="h-3 w-3" />
           </Button>
           <span className="text-xs w-10 text-center text-[#555555] font-medium">{zoomLevel}%</span>
           <Button
             variant="outline"
-            size="xs"
+            size="icon"
             onClick={handleZoomIn}
             disabled={zoomLevel >= 500}
-            className="h-6 px-1 border-[#BCBBBB] text-[#555555] hover:bg-[#F5F5F5]"
+            className="h-6 w-6 p-0 border-[#BCBBBB] text-[#555555] hover:bg-[#F5F5F5]"
           >
             <ZoomIn className="h-3 w-3" />
           </Button>

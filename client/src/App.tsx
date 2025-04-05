@@ -12,6 +12,7 @@ import Recordings from "@/pages/Recordings";
 import SystemStatus from "@/pages/SystemStatus";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import useSidebarStore from "@/hooks/use-sidebar";
 
 // Context type for selection
@@ -247,14 +248,16 @@ function App() {
   
   return (
     <QueryClientProvider client={queryClient}>
-      <SelectionContext.Provider value={{
-        selectedCameras,
-        selectedJobsites,
-        handleSelectionChange
-      }}>
-        <Layout />
-        <Toaster />
-      </SelectionContext.Provider>
+      <TooltipProvider>
+        <SelectionContext.Provider value={{
+          selectedCameras,
+          selectedJobsites,
+          handleSelectionChange
+        }}>
+          <Layout />
+          <Toaster />
+        </SelectionContext.Provider>
+      </TooltipProvider>
     </QueryClientProvider>
   );
 }
