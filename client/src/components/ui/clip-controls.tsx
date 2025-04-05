@@ -2,7 +2,7 @@ import { useState } from "react";
 import { FileDown, BookmarkPlus, FileEdit, Share2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+// Removed Select imports as we simplified the export UI
 import { useAnnotations } from "@/hooks/use-annotations";
 import { useBookmarks } from "@/hooks/use-bookmarks";
 import { formatVideoTime } from "@/lib/time";
@@ -21,11 +21,10 @@ export function ClipControls({
   selectedDate
 }: ClipControlsProps) {
   const { toast } = useToast();
-  const [exportFormat, setExportFormat] = useState<string>("mp4");
-  const [exportQuality, setExportQuality] = useState<string>("high");
+  // Removed export format and quality state as we simplified the export UI
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   
-  const { addAnnotation } = useAnnotations(selectedDate);
+  const { createAnnotation } = useAnnotations(selectedDate);
   const { addBookmark } = useBookmarks(selectedDate);
   
   // Handle add bookmark
@@ -66,7 +65,7 @@ export function ClipControls({
   };
   
   // Handle add annotation
-  const handleAddAnnotation = () => {
+  const handleAddAnnotation = async () => {
     if (!currentClip) {
       toast({
         title: "No clip selected",
@@ -79,26 +78,25 @@ export function ClipControls({
     const content = prompt("Enter your annotation:");
     
     if (content) {
-      addAnnotation.mutate({
-        videoTime: formatVideoTime(0), // Default to start of clip
-        clipTime: currentClip.startTime,
-        date: selectedDate,
-        content
-      }, {
-        onSuccess: () => {
-          toast({
-            title: "Annotation added",
-            description: `Annotation created at ${currentClip.startTime}`
-          });
-        },
-        onError: () => {
-          toast({
-            title: "Error",
-            description: "Failed to create annotation",
-            variant: "destructive"
-          });
-        }
-      });
+      try {
+        await createAnnotation({
+          videoTime: formatVideoTime(0), // Default to start of clip
+          clipTime: currentClip.startTime,
+          date: selectedDate,
+          content
+        });
+        
+        toast({
+          title: "Note added",
+          description: `Note created at ${currentClip.startTime}`
+        });
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "Failed to create note",
+          variant: "destructive"
+        });
+      }
     }
   };
   
@@ -117,7 +115,7 @@ export function ClipControls({
   };
   
   return (
-    <div className="clip-controls mt-8 grid grid-cols-1 md:grid-cols-2 gap-4 bg-[#FFFFFF] p-4 rounded-lg shadow border border-[#BCBBBB]">
+    <div className="clip-controls mt-8 grid grid-cols-1 gap-4 bg-[#FFFFFF] p-4 rounded-lg shadow border border-[#BCBBBB]">
       <div>
         <h3 className="text-md font-medium mb-2 text-[#555555]">Clip Controls</h3>
         <div className="flex flex-wrap gap-2">
@@ -128,7 +126,7 @@ export function ClipControls({
             disabled={!currentClip}
           >
             <FileDown className="mr-1 h-4 w-4" />
-            <span>Export Current</span>
+            <span>Export</span>
           </Button>
           
           <Button
@@ -159,49 +157,6 @@ export function ClipControls({
           >
             <Share2 className="mr-1 h-4 w-4" />
             <span>Share</span>
-          </Button>
-        </div>
-      </div>
-      
-      <div className="md:ml-auto">
-        <h3 className="text-md font-medium mb-2 text-[#555555]">Export Options</h3>
-        <div className="flex flex-wrap gap-2">
-          <Select
-            value={exportFormat}
-            onValueChange={setExportFormat}
-          >
-            <SelectTrigger className="w-[140px] border-[#BCBBBB] text-[#555555] focus:ring-[#FBBC05]">
-              <SelectValue placeholder="Format" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="mp4">MP4</SelectItem>
-              <SelectItem value="webm">WebM</SelectItem>
-              <SelectItem value="mov">MOV</SelectItem>
-            </SelectContent>
-          </Select>
-          
-          <Select
-            value={exportQuality}
-            onValueChange={setExportQuality}
-          >
-            <SelectTrigger className="w-[160px] border-[#BCBBBB] text-[#555555] focus:ring-[#FBBC05]">
-              <SelectValue placeholder="Quality" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="high">High Quality</SelectItem>
-              <SelectItem value="medium">Medium Quality</SelectItem>
-              <SelectItem value="low">Low Quality</SelectItem>
-            </SelectContent>
-          </Select>
-          
-          <Button 
-            variant="default"
-            className="bg-[#555555] hover:bg-[#555555]/90 text-[#FFFFFF]"
-            disabled={!currentClip}
-            onClick={onExportCurrentClip}
-          >
-            <FileDown className="mr-1 h-4 w-4" />
-            <span>Export Range</span>
           </Button>
         </div>
       </div>
