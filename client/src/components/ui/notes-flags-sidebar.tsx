@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { 
-  Bookmark, Flag, Pencil, Trash2, Clock, Check 
+  Bookmark, Flag, Pencil, Trash2, Clock, Check, ChevronUp, ChevronDown
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -25,6 +25,7 @@ export function NotesFlagsSidebar({
   const [newNoteText, setNewNoteText] = useState("");
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editedText, setEditedText] = useState("");
+  const [isExpanded, setIsExpanded] = useState(true);
   const listRef = useRef<HTMLDivElement>(null);
 
   // Get notes and flags from the server
@@ -183,128 +184,144 @@ export function NotesFlagsSidebar({
 
   return (
     <div className="flex flex-col border border-[#BCBBBB] rounded-md shadow bg-white">
-      <div className="py-2 px-4 bg-[#555555] text-[#FBBC05] rounded-t-md font-bold text-lg">
-        Notes/Flags
+      <div 
+        className="py-2 px-4 bg-[#555555] text-[#FBBC05] rounded-t-md font-bold text-lg flex justify-between items-center cursor-pointer"
+        onClick={() => setIsExpanded(!isExpanded)}
+      >
+        <div className="flex items-center">
+          <span>Notes/Flags</span>
+          {sortedNotes.length > 0 && (
+            <span className="ml-2 px-2 py-0.5 bg-[#FBBC05] text-[#000000] text-xs rounded-full">
+              {sortedNotes.length}
+            </span>
+          )}
+        </div>
+        {isExpanded ? 
+          <ChevronUp className="h-5 w-5 text-[#FBBC05]" /> : 
+          <ChevronDown className="h-5 w-5 text-[#FBBC05]" />
+        }
       </div>
       
-      <div className="flex flex-col md:flex-row">
-        {/* Input area */}
-        <div className="p-4 border-b md:border-b-0 md:border-r border-[#BCBBBB] md:w-1/3">
-          <div className="mb-2 flex items-center text-sm text-[#555555]">
-            <Clock className="w-4 h-4 mr-1" />
-            <span>Current Time: {formatTime(currentVideoTime)}</span>
-          </div>
-          
-          <Textarea
-            value={newNoteText}
-            onChange={(e) => setNewNoteText(e.target.value)}
-            placeholder="Add a note about this moment..."
-            className="mb-2 h-20 border-[#BCBBBB]"
-            disabled={!currentClip}
-          />
-          
-          <div className="flex gap-2">
-            <Button
-              onClick={handleCreateNote}
-              disabled={!currentClip || !newNoteText.trim()}
-              className="flex-1 bg-[#FBBC05] text-[#000000] hover:bg-[#FBBC05]/90"
-            >
-              <Pencil className="w-4 h-4 mr-1" /> Add Note
-            </Button>
+      {isExpanded && (
+        <div className="flex flex-col md:flex-row">
+          {/* Input area */}
+          <div className="p-4 border-b md:border-b-0 md:border-r border-[#BCBBBB] md:w-1/3">
+            <div className="mb-2 flex items-center text-sm text-[#555555]">
+              <Clock className="w-4 h-4 mr-1" />
+              <span>Current Time: {formatTime(currentVideoTime)}</span>
+            </div>
             
-            <Button
-              onClick={handleCreateFlag}
+            <Textarea
+              value={newNoteText}
+              onChange={(e) => setNewNoteText(e.target.value)}
+              placeholder="Add a note about this moment..."
+              className="mb-2 h-20 border-[#BCBBBB]"
               disabled={!currentClip}
-              className="flex-1 bg-[#555555] text-white hover:bg-[#555555]/90"
-            >
-              <Flag className="w-4 h-4 mr-1" /> Flag
-            </Button>
+            />
+            
+            <div className="flex gap-2">
+              <Button
+                onClick={handleCreateNote}
+                disabled={!currentClip || !newNoteText.trim()}
+                className="flex-1 bg-[#FBBC05] text-[#000000] hover:bg-[#FBBC05]/90"
+              >
+                <Pencil className="w-4 h-4 mr-1" /> Add Note
+              </Button>
+              
+              <Button
+                onClick={handleCreateFlag}
+                disabled={!currentClip}
+                className="flex-1 bg-[#555555] text-white hover:bg-[#555555]/90"
+              >
+                <Flag className="w-4 h-4 mr-1" /> Flag
+              </Button>
+            </div>
           </div>
-        </div>
-        
-        {/* List of notes and flags */}
-        <div className="flex-1 h-[300px] overflow-y-auto p-2 md:w-2/3" ref={listRef}>
-          {isLoading ? (
-            <div className="text-center py-4 text-gray-500">Loading...</div>
-          ) : sortedNotes.length === 0 ? (
-            <div className="text-center py-4 text-gray-500">No notes or flags for this date</div>
-          ) : (
-            sortedNotes.map((item) => (
-              <Card key={item.id} className="mb-2 p-3 hover:shadow-md transition-shadow">
-                <div className="flex flex-col">
-                  {editingId === item.id ? (
-                    <>
-                      <Textarea
-                        value={editedText}
-                        onChange={(e) => setEditedText(e.target.value)}
-                        className="mb-2 h-20 border-[#BCBBBB]"
-                        autoFocus
-                      />
-                      <div className="flex justify-end space-x-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={cancelEdit}
-                          className="border-[#BCBBBB] text-[#555555]"
-                        >
-                          Cancel
-                        </Button>
-                        <Button
-                          size="sm"
-                          onClick={() => saveEdit(item.id)}
-                          className="bg-[#FBBC05] text-[#000000] hover:bg-[#FBBC05]/90"
-                        >
-                          <Check className="w-4 h-4 mr-1" /> Save
-                        </Button>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <div 
-                        className="text-sm font-medium mb-1 cursor-pointer hover:underline flex items-center"
-                        onClick={() => jumpToTime(item.clipTime)}
-                      >
-                        <Clock className="w-3 h-3 mr-1" />
-                        <span className={`${item.isFlag ? "text-[#555555]" : "text-[#FBBC05]"}`}>
-                          {item.clipTime}
-                        </span>
-                        {item.isFlag && (
-                          <Flag className="w-3 h-3 ml-2 text-[#FBBC05]" />
-                        )}
-                      </div>
-                      
-                      {item.content && (
-                        <div className="mb-2 text-[#555555]">{item.content}</div>
-                      )}
-                      
-                      <div className="flex justify-end space-x-2">
-                        {item.content && (
+          
+          {/* List of notes and flags */}
+          <div className="flex-1 h-[300px] overflow-y-auto p-2 md:w-2/3" ref={listRef}>
+            {isLoading ? (
+              <div className="text-center py-4 text-gray-500">Loading...</div>
+            ) : sortedNotes.length === 0 ? (
+              <div className="text-center py-4 text-gray-500">No notes or flags for this date</div>
+            ) : (
+              sortedNotes.map((item) => (
+                <Card key={item.id} className="mb-2 p-3 hover:shadow-md transition-shadow">
+                  <div className="flex flex-col">
+                    {editingId === item.id ? (
+                      <>
+                        <Textarea
+                          value={editedText}
+                          onChange={(e) => setEditedText(e.target.value)}
+                          className="mb-2 h-20 border-[#BCBBBB]"
+                          autoFocus
+                        />
+                        <div className="flex justify-end space-x-2">
                           <Button
                             size="sm"
                             variant="outline"
-                            className="border-[#BCBBBB] text-[#555555] hover:bg-[#F5F5F5]"
-                            onClick={() => startEditing(item.id, item.content || "")}
+                            onClick={cancelEdit}
+                            className="border-[#BCBBBB] text-[#555555]"
                           >
-                            Edit
+                            Cancel
                           </Button>
-                        )}
-                        <Button
-                          size="sm"
-                          variant="destructive"
-                          className="bg-[#555555] hover:bg-[#555555]/90"
-                          onClick={() => handleDelete(item.id)}
+                          <Button
+                            size="sm"
+                            onClick={() => saveEdit(item.id)}
+                            className="bg-[#FBBC05] text-[#000000] hover:bg-[#FBBC05]/90"
+                          >
+                            <Check className="w-4 h-4 mr-1" /> Save
+                          </Button>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div 
+                          className="text-sm font-medium mb-1 cursor-pointer hover:underline flex items-center"
+                          onClick={() => jumpToTime(item.clipTime)}
                         >
-                          <Trash2 className="w-4 h-4 mr-1" /> Delete
-                        </Button>
-                      </div>
-                    </>
-                  )}
-                </div>
-              </Card>
-            ))
-          )}
+                          <Clock className="w-3 h-3 mr-1" />
+                          <span className={`${item.isFlag ? "text-[#555555]" : "text-[#FBBC05]"}`}>
+                            {item.clipTime}
+                          </span>
+                          {item.isFlag && (
+                            <Flag className="w-3 h-3 ml-2 text-[#FBBC05]" />
+                          )}
+                        </div>
+                        
+                        {item.content && (
+                          <div className="mb-2 text-[#555555]">{item.content}</div>
+                        )}
+                        
+                        <div className="flex justify-end space-x-2">
+                          {item.content && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="border-[#BCBBBB] text-[#555555] hover:bg-[#F5F5F5]"
+                              onClick={() => startEditing(item.id, item.content || "")}
+                            >
+                              Edit
+                            </Button>
+                          )}
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            className="bg-[#555555] hover:bg-[#555555]/90"
+                            onClick={() => handleDelete(item.id)}
+                          >
+                            <Trash2 className="w-4 h-4 mr-1" /> Delete
+                          </Button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </Card>
+              ))
+            )}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
