@@ -5,7 +5,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+// Removed Select imports as we simplified the export UI
 import { VideoPreview } from "@/components/ui/video-preview";
 import type { Clip, NoteFlag } from "@shared/schema";
 import { useNotesFlags } from "@/hooks/use-notes-flags";
@@ -60,8 +60,7 @@ export function Timeline({
   const [hoveredSegment, setHoveredSegment] = useState<string | null>(null); // Track hovered segment by time key
   const [previewPosition, setPreviewPosition] = useState<number>(50); // Position within clip (as percentage)
   const [mousePosition, setMousePosition] = useState<{x: number, y: number}>({x: 0, y: 0}); // Track mouse position for preview
-  const [exportFormat, setExportFormat] = useState<string>("mp4");
-  const [exportQuality, setExportQuality] = useState<string>("high");
+  // Removed dropdown states for export options
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isNoteFlagModalOpen, setIsNoteFlagModalOpen] = useState(false);
   const { toast } = useToast();
@@ -645,34 +644,6 @@ export function Timeline({
           
           <div className="export-options mt-1">
             <div className="flex flex-wrap gap-1">
-              <Select
-                value={exportFormat}
-                onValueChange={setExportFormat}
-              >
-                <SelectTrigger className="w-[140px] border-[#BCBBBB] text-[#555555] focus:ring-[#FBBC05]">
-                  <SelectValue placeholder="Format" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="mp4">MP4</SelectItem>
-                  <SelectItem value="webm">WebM</SelectItem>
-                  <SelectItem value="mov">MOV</SelectItem>
-                </SelectContent>
-              </Select>
-              
-              <Select
-                value={exportQuality}
-                onValueChange={setExportQuality}
-              >
-                <SelectTrigger className="w-[160px] border-[#BCBBBB] text-[#555555] focus:ring-[#FBBC05]">
-                  <SelectValue placeholder="Quality" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="high">High Quality</SelectItem>
-                  <SelectItem value="medium">Medium Quality</SelectItem>
-                  <SelectItem value="low">Low Quality</SelectItem>
-                </SelectContent>
-              </Select>
-              
               <Button 
                 variant="default"
                 className="bg-[#555555] hover:bg-[#555555]/90 text-[#FFFFFF]"
