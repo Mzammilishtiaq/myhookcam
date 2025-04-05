@@ -123,17 +123,7 @@ export function ShareModal({ clip, onClose }: ShareModalProps) {
     <Dialog open={true} onOpenChange={() => onClose()}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle className="flex items-center">
-            <span className="text-[#555555]">Share Clip</span>
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              onClick={onClose}
-              className="ml-auto h-6 w-6"
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </DialogTitle>
+          <DialogTitle className="text-[#555555]">Share Clip</DialogTitle>
           <DialogDescription>
             Share clip from {formatClipTime(clip.startTime)} on {clip.date}
           </DialogDescription>
