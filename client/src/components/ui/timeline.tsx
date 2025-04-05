@@ -12,6 +12,7 @@ import { useNotesFlags } from "@/hooks/use-notes-flags";
 import { useToast } from "@/hooks/use-toast";
 import { formatVideoTime } from "@/lib/time";
 import { ShareModal } from "@/components/ui/share-modal";
+import { NoteFlagModal } from "@/components/ui/note-flag-modal";
 
 interface TimelineProps {
   clips: Clip[];
@@ -62,6 +63,7 @@ export function Timeline({
   const [exportFormat, setExportFormat] = useState<string>("mp4");
   const [exportQuality, setExportQuality] = useState<string>("high");
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [isNoteFlagModalOpen, setIsNoteFlagModalOpen] = useState(false);
   const { toast } = useToast();
   
   // Fetch notes and flags for the selected date
@@ -446,7 +448,7 @@ export function Timeline({
                                   const clip = findClipByTime(segment.time);
                                   if (clip) onSelectClip(clip);
                                 }}>
-                                  {noteFlag.content?.substring(0, 30) + (noteFlag.content?.length > 30 ? '...' : '') || 'No content'}
+                                  {noteFlag.content && noteFlag.content.length > 0 ? (noteFlag.content.substring(0, 30) + (noteFlag.content.length > 30 ? '...' : '')) : 'No content'}
                                 </li>
                               ))}
                             </ul>
@@ -609,36 +611,7 @@ export function Timeline({
                   return;
                 }
                 
-                const content = prompt("Enter your note:");
-                
-                if (content === null) {
-                  // User cancelled the prompt
-                  return;
-                }
-                
-                const isFlag = confirm("Flag this timestamp? (OK = Yes, Cancel = No)");
-                
-                createNoteFlag.mutate({
-                  videoTime: formatVideoTime(0), // Default to start of clip
-                  clipTime: currentClip.startTime,
-                  date: selectedDate,
-                  content: content || null,
-                  isFlag
-                }, {
-                  onSuccess: () => {
-                    toast({
-                      title: isFlag ? (content ? "Note & Flag added" : "Flag added") : "Note added",
-                      description: `Added to clip at ${currentClip.startTime}`
-                    });
-                  },
-                  onError: () => {
-                    toast({
-                      title: "Error",
-                      description: "Failed to save note/flag",
-                      variant: "destructive"
-                    });
-                  }
-                });
+                setIsNoteFlagModalOpen(true);
               }}
               disabled={!currentClip}
             >
@@ -717,6 +690,39 @@ export function Timeline({
         <ShareModal
           clip={currentClip!}
           onClose={() => setIsShareModalOpen(false)}
+        />
+      )}
+      
+      {/* Notes/Flag Modal */}
+      {isNoteFlagModalOpen && currentClip && (
+        <NoteFlagModal
+          clip={currentClip}
+          date={selectedDate}
+          onSave={(content, isFlag) => {
+            createNoteFlag.mutate({
+              videoTime: formatVideoTime(0), // Default to start of clip
+              clipTime: currentClip.startTime,
+              date: selectedDate,
+              content: content || null,
+              isFlag
+            }, {
+              onSuccess: () => {
+                toast({
+                  title: isFlag ? (content ? "Note & Flag added" : "Flag added") : "Note added",
+                  description: `Added to clip at ${currentClip.startTime}`
+                });
+              },
+              onError: () => {
+                toast({
+                  title: "Error",
+                  description: "Failed to save note/flag",
+                  variant: "destructive"
+                });
+              }
+            });
+            setIsNoteFlagModalOpen(false);
+          }}
+          onClose={() => setIsNoteFlagModalOpen(false)}
         />
       )}
     </div>
