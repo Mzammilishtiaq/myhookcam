@@ -257,8 +257,15 @@ export function Timeline({
   return (
     <div className="flex flex-col space-y-2 w-full h-full">
       <div className="flex items-center mb-2 w-full">
-        <div className="text-sm font-medium text-[#555555]">Timeline - {selectedDate}</div>
-        <div className="flex items-center space-x-2 ml-4">
+        <div className="flex items-center">
+          <span className="text-sm font-medium text-[#555555]">Timeline - {selectedDate}</span>
+          {!isError && !isLoading && clips && (
+            <span className="text-xs text-[#555555] ml-2">
+              ({clips.length} clips available)
+            </span>
+          )}
+        </div>
+        <div className="flex items-center space-x-2 ml-auto">
           <Button
             variant="outline"
             size="icon"
@@ -279,7 +286,6 @@ export function Timeline({
             <ZoomIn className="h-3 w-3" />
           </Button>
         </div>
-        <div className="flex-grow"></div>
       </div>
       
       <div className="w-full h-[120px] border border-[#BCBBBB] rounded-lg overflow-hidden relative">
@@ -312,7 +318,8 @@ export function Timeline({
       {/* Action buttons */}
       <div className="flex justify-between items-center pt-2 pb-1">
         <div className="text-xs text-gray-500">
-          {!isError && !isLoading && clips && `${clips.length} clips available`}
+          {isError && "Error loading clips"}
+          {isLoading && "Loading clips..."}
         </div>
       </div>
     </div>
