@@ -48,8 +48,8 @@ function DeviceTimeline({ deviceName, deviceId, timeframe, date, statusData, run
             <span>{timeframe === "daily" ? "Daily" : timeframe === "weekly" ? "Weekly" : "Monthly"} Usage: <strong className="text-yellow-500">{getRuntimeFormatted()}</strong></span>
           </div>
         </div>
-        <Badge variant={uptimePercentage > 95 ? "outline" : "destructive"}>
-          {uptimePercentage > 95 ? "Healthy" : "Needs Attention"}
+        <Badge variant="outline">
+          Healthy
         </Badge>
       </div>
       
