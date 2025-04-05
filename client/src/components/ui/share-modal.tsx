@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Clipboard, Mail, MessageSquare, X } from "lucide-react";
@@ -24,6 +25,7 @@ export function ShareModal({ clip, onClose }: ShareModalProps) {
   const { toast } = useToast();
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
+  const [message, setMessage] = useState("");
   const [shareMethod, setShareMethod] = useState<"email" | "sms" | "link">("email");
   const [isSharing, setIsSharing] = useState(false);
   
@@ -45,7 +47,11 @@ export function ShareModal({ clip, onClose }: ShareModalProps) {
           },
           body: JSON.stringify({
             clipKey: clip.key,
+            date: clip.date,
+            clipTime: clip.startTime,
             recipientEmail: email,
+            message: message.trim(),
+            expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 1 week
             shareMethod: "email"
           }),
         });
@@ -66,7 +72,11 @@ export function ShareModal({ clip, onClose }: ShareModalProps) {
           },
           body: JSON.stringify({
             clipKey: clip.key,
+            date: clip.date,
+            clipTime: clip.startTime,
             recipientPhone: phone,
+            message: message.trim(),
+            expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 1 week
             shareMethod: "sms"
           }),
         });
@@ -128,6 +138,18 @@ export function ShareModal({ clip, onClose }: ShareModalProps) {
             Share clip from {formatClipTime(clip.startTime)} on {clip.date}
           </DialogDescription>
         </DialogHeader>
+        
+        {/* Message input section */}
+        <div className="space-y-2 mb-4">
+          <Label htmlFor="message" className="text-[#555555]">Message (optional)</Label>
+          <Textarea 
+            id="message" 
+            placeholder="Add a message to include with this clip..." 
+            value={message} 
+            onChange={(e) => setMessage(e.target.value)}
+            className="border-[#BCBBBB] focus-visible:ring-[#FBBC05] h-20 resize-none"
+          />
+        </div>
         
         <Tabs defaultValue="email" className="w-full" onValueChange={(v) => setShareMethod(v as any)}>
           <TabsList className="grid grid-cols-3 mb-4">

@@ -471,7 +471,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create a new share
   app.post("/api/shares", async (req: Request, res: Response) => {
     try {
-      const parsedBody = insertShareSchema.safeParse(req.body);
+      // Map request body to match our schema
+      const shareData: any = {
+        clipKey: req.body.clipKey,
+        date: req.body.date || new Date().toISOString().split('T')[0],
+        clipTime: req.body.clipTime || '00:00',
+        message: req.body.message || null,
+        expiresAt: req.body.expiresAt || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() // Default 7 days
+      };
+      
+      // Handle different sharing methods
+      if (req.body.shareMethod === 'email' && req.body.recipientEmail) {
+        shareData.recipient = req.body.recipientEmail;
+        shareData.type = 'email';
+      } else if (req.body.shareMethod === 'sms' && req.body.recipientPhone) {
+        shareData.recipient = req.body.recipientPhone;
+        shareData.type = 'sms';
+      } else {
+        return res.status(400).json({ message: "Invalid share method or missing recipient" });
+      }
+      
+      const parsedBody = insertShareSchema.safeParse(shareData);
       
       if (!parsedBody.success) {
         return res.status(400).json({ message: "Invalid share data", errors: parsedBody.error });
