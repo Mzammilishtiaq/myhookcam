@@ -39,7 +39,7 @@ const ZOOM_PRESETS: ZoomPreset[] = [
     label: 'Working Hours',
     level: 2,
     focus: 11, // Mid-morning as focus point
-    description: 'Focus on 6:30am-5:30pm working hours'
+    description: 'Focus on 06:30-17:30 working hours'
   },
   // No additional presets - only the working hours preset
 ];
@@ -74,14 +74,12 @@ export function Timeline({
     createNoteFlag 
   } = useNotesFlags(selectedDate);
   
-  // Generate segments for a 24-hour timeline with emphasis on working hours (7am-5pm)
+  // Generate segments for a 24-hour timeline with emphasis on working hours (07:00-17:00)
   // Each segment represents a 5-minute interval (288 segments in a day)
   const hourMarkers = Array.from({ length: 24 }, (_, i) => {
     const hour = i;
-    const amPm = hour < 12 ? 'AM' : 'PM';
-    const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
-    const label = `${displayHour} ${amPm}`;
-    const isWorkingHour = hour >= 7 && hour <= 17; // 7am to 5pm
+    const label = `${hour.toString().padStart(2, '0')}:00`;
+    const isWorkingHour = hour >= 7 && hour <= 17; // 07:00 to 17:00
     
     return {
       hour,
@@ -140,7 +138,7 @@ export function Timeline({
     const segments = [];
     
     for (let hour = 0; hour < 24; hour++) {
-      const isWorkingHour = hour >= 7 && hour <= 17; // 7am to 5pm
+      const isWorkingHour = hour >= 7 && hour <= 17; // 07:00 to 17:00
       
       for (let minute = 0; minute < 60; minute += 5) {
         const timeKey = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
@@ -167,11 +165,9 @@ export function Timeline({
     return segments;
   };
   
-  // Format time for display
+  // Format time for display (24-hour format)
   const formatTimeDisplay = (hour: number, minute: number) => {
-    const amPm = hour < 12 ? 'AM' : 'PM';
-    const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
-    return `${displayHour}:${minute.toString().padStart(2, '0')} ${amPm}`;
+    return `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
   };
   
   // Generate all timeline segments
@@ -247,7 +243,7 @@ export function Timeline({
   return (
     <div className="timeline-container mt-4">
       <div className="flex items-center mb-1">
-        <h2 className="text-lg font-medium text-[#555555]">Timeline - Working Hours (7am-5pm)</h2>
+        <h2 className="text-lg font-medium text-[#555555]">Timeline - Working Hours (07:00-17:00)</h2>
         
         <div className="ml-auto flex flex-wrap gap-2 text-xs">
           <div className="flex items-center">
@@ -352,7 +348,13 @@ export function Timeline({
                     }`}
                   style={{ width: `${segmentWidth}%` }}
                   title={segment.displayTime}
-                  onClick={() => segment.hasClip && segment.clip && onSelectClip(segment.clip)}
+                  onClick={() => {
+                    if (segment.hasClip && segment.clip) {
+                      onSelectClip(segment.clip);
+                      // Auto-play when a clip is selected
+                      // Note: Play state is managed by the parent component
+                    }
+                  }}
                   onMouseEnter={(e) => {
                     // Always set hovered segment for feedback, regardless of clip presence
                     setHoveredSegment(segment.time);
@@ -576,7 +578,7 @@ export function Timeline({
               {zoomLevel > 1 ? (
                 <span>
                   {activePreset === 'custom' && <span className="text-xs bg-[#FBBC05]/20 px-1 py-0.5 rounded mr-1">Custom</span>}
-                  Focus: {focusHour > 12 ? focusHour - 12 : focusHour}{focusHour >= 12 ? 'PM' : 'AM'} | {zoomLevel.toFixed(1)}x
+                  Focus: {focusHour.toString().padStart(2, '0')}:00 | {zoomLevel.toFixed(1)}x
                 </span>
               ) : (
                 <span>Full Day View</span>

@@ -101,7 +101,10 @@ export default function Recordings() {
             currentClip={currentClip}
             isLoading={isLoading}
             isError={isError}
-            onSelectClip={setCurrentClip}
+            onSelectClip={(clip) => {
+              setCurrentClip(clip);
+              setIsPlaying(true); // Auto-play when clip is selected
+            }}
             onExportCurrentClip={handleExportCurrentClip}
             selectedDate={formattedDate}
           />

@@ -176,7 +176,7 @@ export default function SystemStatus() {
         const minute = (i * 5) % 60;
         const timePoint = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
         
-        // Higher reliability during working hours (7am-5pm)
+        // Higher reliability during working hours (07:00-17:00)
         const isWorkHours = hour >= 7 && hour < 17;
         const effectiveReliability = isWorkHours ? reliability + 0.05 : reliability;
         
