@@ -1,22 +1,32 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { format, addDays, subDays, parseISO } from "date-fns";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, FileDown, FileEdit, Share2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { VideoPlayer } from "@/components/ui/video-player";
 import { Timeline } from "@/components/ui/timeline";
 import { NotesFlagsSidebar } from "@/components/ui/notes-flags-sidebar";
 import { ExportModal } from "@/components/ui/export-modal";
+import { NoteFlagModal } from "@/components/ui/note-flag-modal";
+import { ShareModal } from "@/components/ui/share-modal";
 import { useToast } from "@/hooks/use-toast";
 import { fetchClips } from "@/lib/s3";
 import { useTimeline } from "@/hooks/use-timeline";
+import { useNotesFlags } from "@/hooks/use-notes-flags";
+import { formatVideoTime } from "@/lib/time";
 import type { Clip } from "@shared/schema";
 
 export default function Recordings() {
   const { toast } = useToast();
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [showExportModal, setShowExportModal] = useState(false);
+  const [showNoteFlagModal, setShowNoteFlagModal] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
   
   const formattedDate = format(selectedDate, "yyyy-MM-dd");
+  
+  // Get the note-flag creation function
+  const { createNoteFlag } = useNotesFlags(formattedDate);
   
   const {
     currentClip,
@@ -92,6 +102,62 @@ export default function Recordings() {
             onEnded={handleClipEnded}
             onPlayPause={setIsPlaying}
           />
+          
+          {/* Action buttons directly under the player */}
+          <div className="mt-3 p-3 bg-white rounded-lg shadow border border-[#BCBBBB] flex flex-wrap gap-2">
+            <Button
+              variant="default"
+              className="bg-[#FBBC05] hover:bg-[#FBBC05]/90 text-[#000000]"
+              onClick={handleExportCurrentClip}
+              disabled={!currentClip}
+            >
+              <FileDown className="mr-1 h-4 w-4" />
+              <span>Export</span>
+            </Button>
+            
+            <Button
+              variant="outline"
+              className="border-[#555555] text-[#555555] hover:bg-[#FBBC05]/10"
+              onClick={() => {
+                if (!currentClip) {
+                  toast({
+                    title: "No clip selected",
+                    description: "Please select a clip to add a note or flag",
+                    variant: "destructive"
+                  });
+                  return;
+                }
+                
+                // We'll implement this functionality
+                setShowNoteFlagModal(true);
+              }}
+              disabled={!currentClip}
+            >
+              <FileEdit className="mr-1 h-4 w-4" />
+              <span>Note / Flag</span>
+            </Button>
+            
+            <Button
+              variant="outline"
+              className="border-[#555555] text-[#555555] hover:bg-[#FBBC05]/10"
+              onClick={() => {
+                if (!currentClip) {
+                  toast({
+                    title: "No clip selected",
+                    description: "Please select a clip to share",
+                    variant: "destructive"
+                  });
+                  return;
+                }
+                
+                setShowShareModal(true);
+              }}
+              disabled={!currentClip}
+            >
+              <Share2 className="mr-1 h-4 w-4" />
+              <span>Share</span>
+            </Button>
+          </div>
         </div>
         
         {/* Timeline and Controls - Below the video */}
@@ -125,6 +191,47 @@ export default function Recordings() {
         <ExportModal 
           clip={currentClip}
           onClose={() => setShowExportModal(false)} 
+        />
+      )}
+      
+      {/* Note/Flag Modal */}
+      {showNoteFlagModal && currentClip && (
+        <NoteFlagModal
+          clip={currentClip}
+          date={formattedDate}
+          onSave={(content, isFlag) => {
+            createNoteFlag.mutate({
+              videoTime: formatVideoTime(currentVideoTime || 0),
+              clipTime: currentClip.startTime,
+              date: formattedDate,
+              content: content || null,
+              isFlag
+            }, {
+              onSuccess: () => {
+                toast({
+                  title: isFlag ? (content ? "Note & Flag added" : "Flag added") : "Note added",
+                  description: `Added to clip at ${currentClip.startTime}`
+                });
+              },
+              onError: () => {
+                toast({
+                  title: "Error",
+                  description: "Failed to save note/flag",
+                  variant: "destructive"
+                });
+              }
+            });
+            setShowNoteFlagModal(false);
+          }}
+          onClose={() => setShowNoteFlagModal(false)}
+        />
+      )}
+      
+      {/* Share Modal */}
+      {showShareModal && currentClip && (
+        <ShareModal
+          clip={currentClip}
+          onClose={() => setShowShareModal(false)}
         />
       )}
     </div>

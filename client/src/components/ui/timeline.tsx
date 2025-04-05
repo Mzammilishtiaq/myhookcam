@@ -5,7 +5,6 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
-// Removed Select imports as we simplified the export UI
 import { VideoPreview } from "@/components/ui/video-preview";
 import type { Clip, NoteFlag } from "@shared/schema";
 import { useNotesFlags } from "@/hooks/use-notes-flags";
@@ -24,26 +23,6 @@ interface TimelineProps {
   selectedDate: string;
 }
 
-// Smart zoom level presets
-type ZoomPreset = {
-  id: string;
-  label: string;
-  level: number;
-  focus: number | null; // null means no specific focus
-  description: string;
-};
-
-const ZOOM_PRESETS: ZoomPreset[] = [
-  {
-    id: 'working-hours',
-    label: 'Working Hours',
-    level: 2,
-    focus: 11, // Mid-morning as focus point
-    description: 'Focus on 06:30-17:30 working hours'
-  },
-  // No additional presets - only the working hours preset
-];
-
 export function Timeline({
   clips,
   currentClip,
@@ -54,638 +33,282 @@ export function Timeline({
   selectedDate
 }: TimelineProps) {
   const timelineRef = useRef<HTMLDivElement>(null);
-  const [zoomLevel, setZoomLevel] = useState<number>(2); // Default zoom level - zoomed in for working hours
-  const [focusHour, setFocusHour] = useState<number>(11); // Default focus centered on the working day
-  const [activePreset, setActivePreset] = useState<string>('working-hours'); // Default preset
-  const [hoveredSegment, setHoveredSegment] = useState<string | null>(null); // Track hovered segment by time key
-  const [previewPosition, setPreviewPosition] = useState<number>(50); // Position within clip (as percentage)
-  const [mousePosition, setMousePosition] = useState<{x: number, y: number}>({x: 0, y: 0}); // Track mouse position for preview
-  // Removed dropdown states for export options
+  const [scrollLeft, setScrollLeft] = useState(0);
+  const [contentWidth, setContentWidth] = useState(0);
+  const [visibleWidth, setVisibleWidth] = useState(0);
+  const [zoomLevel, setZoomLevel] = useState(100);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isNoteFlagModalOpen, setIsNoteFlagModalOpen] = useState(false);
+  
   const { toast } = useToast();
+  const { data: notesFlags, createNoteFlag } = useNotesFlags(selectedDate);
   
-  // Fetch notes and flags for the selected date
-  const { 
-    notesFlags = [], 
-    flags = [], 
-    notes = [], 
-    createNoteFlag 
-  } = useNotesFlags(selectedDate);
-  
-  // Generate segments for a 24-hour timeline with emphasis on working hours (07:00-17:00)
-  // Each segment represents a 5-minute interval (288 segments in a day)
-  const hourMarkers = Array.from({ length: 24 }, (_, i) => {
-    const hour = i;
-    const label = `${hour.toString().padStart(2, '0')}:00`;
-    const isWorkingHour = hour >= 7 && hour <= 17; // 07:00 to 17:00
-    
-    return {
-      hour,
-      label,
-      position: (hour / 24) * 100,
-      isWorkingHour
-    };
-  });
-  
-  // Helper function to find notes and flags for a segment
-  const findItemsForSegment = (clipTime: string) => {
-    // Find items for this segment
-    const segmentItems = notesFlags.filter((item: NoteFlag) => {
-      // Check if the clipTime matches the segment
-      return item.clipTime === clipTime;
-    });
-    
-    // Find notes (any item with content)
-    const segmentNotes = segmentItems.filter(item => item.content);
-    
-    // Find flags (items where isFlag is true)
-    const segmentFlags = segmentItems.filter(item => item.isFlag);
-    
-    return {
-      notesFlags: segmentItems,
-      notes: segmentNotes,
-      flags: segmentFlags,
-      hasNotes: segmentNotes.length > 0,
-      hasFlags: segmentFlags.length > 0
-    };
-  };
-  
-  // Find clip by clipTime for jumping to a specific time
-  const findClipByTime = (clipTime: string): Clip | undefined => {
-    return clips.find(clip => clip.startTime === clipTime);
-  };
-  
-  // Generate time segments map for the entire day
-  const generateTimeSegments = () => {
-    // Create a map to track which 5-minute segments have clips
-    const segmentMap = new Map<string, Clip>();
-    
-    // Populate map with available clips
-    clips.forEach(clip => {
-      // Extract hour and minute from clip start time (format: HH:MM)
-      const [hours, minutes] = clip.startTime.split(':').map(Number);
-      
-      // Calculate segment key (HH:MM format)
-      const segmentKey = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
-      
-      // Store clip in the map
-      segmentMap.set(segmentKey, clip);
-    });
-    
-    // Generate all 288 5-minute segments for a 24-hour day
-    const segments = [];
-    
-    for (let hour = 0; hour < 24; hour++) {
-      const isWorkingHour = hour >= 7 && hour <= 17; // 07:00 to 17:00
-      
-      for (let minute = 0; minute < 60; minute += 5) {
-        const timeKey = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
-        const displayTime = formatTimeDisplay(hour, minute);
-        
-        // Find notes and flags for this segment
-        const { hasNotes, hasFlags, notes: segmentNotes, flags: segmentFlags } = findItemsForSegment(timeKey);
-        
-        segments.push({
-          time: timeKey,
-          displayTime,
-          hasClip: segmentMap.has(timeKey),
-          clip: segmentMap.get(timeKey),
-          isCurrent: currentClip && currentClip.startTime === timeKey,
-          isWorkingHour,
-          hasNotes,
-          hasFlags,
-          notes: segmentNotes,
-          flags: segmentFlags
-        });
-      }
-    }
-    
-    return segments;
-  };
-  
-  // Format time for display (24-hour format)
-  const formatTimeDisplay = (hour: number, minute: number) => {
-    return `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
-  };
-  
-  // Generate all timeline segments
-  const timeSegments = generateTimeSegments();
-  
-  // Scroll to current clip when it changes
+  // Calculate content width based on zoom level
   useEffect(() => {
-    if (currentClip && timelineRef.current) {
-      // Find the segment index for the current clip
-      const segmentIndex = timeSegments.findIndex(
-        segment => segment.time === currentClip.startTime
-      );
-      
-      if (segmentIndex !== -1) {
-        // Calculate position to scroll to
-        const segmentWidth = timelineRef.current.scrollWidth / timeSegments.length;
-        const scrollPosition = segmentIndex * segmentWidth - timelineRef.current.clientWidth / 2;
-        
-        timelineRef.current.scrollTo({
-          left: scrollPosition,
-          behavior: 'smooth'
-        });
+    const minutesPerDay = 24 * 60;
+    const secondsPerDay = minutesPerDay * 60;
+    const baseWidth = 2000; // Width at 100% zoom
+    const width = baseWidth * (zoomLevel / 100);
+    setContentWidth(width);
+  }, [zoomLevel]);
+  
+  // Update visible width when the timeline container resizes
+  useEffect(() => {
+    if (!timelineRef.current) return;
+    
+    const updateVisibleWidth = () => {
+      if (timelineRef.current) {
+        setVisibleWidth(timelineRef.current.clientWidth);
       }
-    }
-  }, [currentClip]);
-  
-  // Calculate width for each segment - adjust based on zoom level
-  const baseSegmentWidth = 0.5; // Base percentage width (increased from 0.35)
-  const segmentWidth = baseSegmentWidth * zoomLevel;
-  
-  // Filter segments based on focus hour and zoom level
-  const getVisibleSegments = () => {
-    // For zoom level 1, show all segments
-    if (zoomLevel <= 1) {
-      return timeSegments;
-    }
+    };
     
-    // For higher zoom levels, focus on segments around the focus hour
-    // The range narrows as zoom level increases
-    const rangeSize = Math.max(4, 24 / zoomLevel);
-    const startHour = Math.max(0, focusHour - rangeSize / 2);
-    const endHour = Math.min(24, focusHour + rangeSize / 2);
+    updateVisibleWidth();
     
-    return timeSegments.filter(segment => {
-      const [hours] = segment.time.split(':').map(Number);
-      return hours >= startHour && hours < endHour;
-    });
-  };
+    const observer = new ResizeObserver(updateVisibleWidth);
+    observer.observe(timelineRef.current);
+    
+    return () => {
+      if (timelineRef.current) {
+        observer.unobserve(timelineRef.current);
+      }
+    };
+  }, []);
   
-  const visibleSegments = getVisibleSegments();
+  // Generate hour marks
+  const hourMarks = [];
+  for (let hour = 0; hour < 24; hour++) {
+    const formattedHour = hour.toString().padStart(2, "0");
+    hourMarks.push(
+      <div 
+        key={hour} 
+        className="absolute flex flex-col items-center"
+        style={{ 
+          left: `${(hour / 24) * 100}%`,
+          top: 0,
+          transform: 'translateX(-50%)'
+        }}
+      >
+        <div className="text-xs text-gray-500 w-10 text-center">{formattedHour}:00</div>
+        <div className="h-5 w-px bg-gray-300 mt-1"></div>
+      </div>
+    );
+  }
   
   // Handle zoom in/out
   const handleZoomIn = () => {
-    setZoomLevel(prev => Math.min(prev + 0.5, 4)); // Max zoom level is 4x
+    setZoomLevel(prev => Math.min(prev + 25, 500));
   };
   
   const handleZoomOut = () => {
-    setZoomLevel(prev => Math.max(prev - 0.5, 1)); // Min zoom level is 1x
-    if (zoomLevel <= 1.5) {
-      // When zooming out to near default, reset to full day preset
-      setActivePreset('full-day');
-    } else {
-      // Otherwise, indicate custom zoom
-      setActivePreset('custom');
+    setZoomLevel(prev => Math.max(prev - 25, 25));
+  };
+  
+  // Handle scroll with slider
+  const handleScrollChange = (newValue: number[]) => {
+    const scrollPercentage = newValue[0];
+    const maxScroll = contentWidth - visibleWidth;
+    const newScrollLeft = (scrollPercentage / 100) * maxScroll;
+    
+    if (timelineRef.current) {
+      timelineRef.current.scrollLeft = newScrollLeft;
+      setScrollLeft(newScrollLeft);
     }
   };
   
-  // Handle focus hour change
-  const handleFocusChange = (value: number[]) => {
-    setFocusHour(value[0]);
+  // Update scroll percentage when scrolling the timeline
+  const handleScroll = () => {
+    if (timelineRef.current) {
+      setScrollLeft(timelineRef.current.scrollLeft);
+    }
+  };
+  
+  // Calculate scroll percentage for the slider
+  const scrollPercentage = contentWidth > visibleWidth 
+    ? (scrollLeft / (contentWidth - visibleWidth)) * 100 
+    : 0;
+  
+  // Find if a clip has notes or flags
+  const getClipAnnotations = (clip: Clip) => {
+    if (!notesFlags) return { hasNotes: false, hasFlags: false };
+    
+    const clipNotes = notesFlags.filter(note => 
+      note.clipTime === clip.startTime && note.date === selectedDate
+    );
+    
+    const hasNotes = clipNotes.some(note => note.content !== null);
+    const hasFlags = clipNotes.some(note => note.isFlag);
+    
+    return { hasNotes, hasFlags };
+  };
+  
+  // Generate the timeline clips
+  const renderClips = () => {
+    if (isLoading) {
+      return (
+        <div className="flex justify-center items-center h-24">
+          <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+        </div>
+      );
+    }
+    
+    if (isError) {
+      return (
+        <div className="flex justify-center items-center h-24 text-red-500">
+          <AlertTriangle className="h-8 w-8 mr-2" />
+          <span>Error loading clips</span>
+        </div>
+      );
+    }
+    
+    if (!clips || clips.length === 0) {
+      return (
+        <div className="flex justify-center items-center h-24 text-gray-500">
+          No clips available for this date
+        </div>
+      );
+    }
+    
+    return (
+      <div 
+        className="relative mt-4"
+        style={{ 
+          height: '120px', 
+          width: `${contentWidth}px` 
+        }}
+      >
+        {clips.map(clip => {
+          const startTimeParts = clip.startTime.split(':').map(Number);
+          const endTimeParts = clip.endTime.split(':').map(Number);
+          
+          const startHour = startTimeParts[0];
+          const startMinute = startTimeParts[1];
+          const startSecond = startTimeParts[2] || 0;
+          
+          const endHour = endTimeParts[0];
+          const endMinute = endTimeParts[1];
+          const endSecond = endTimeParts[2] || 0;
+          
+          const startTimeInSeconds = startHour * 3600 + startMinute * 60 + startSecond;
+          const endTimeInSeconds = endHour * 3600 + endMinute * 60 + endSecond;
+          
+          const totalSecondsInDay = 24 * 60 * 60;
+          
+          const startPercentage = (startTimeInSeconds / totalSecondsInDay) * 100;
+          const endPercentage = (endTimeInSeconds / totalSecondsInDay) * 100;
+          const width = endPercentage - startPercentage;
+          
+          const { hasNotes, hasFlags } = getClipAnnotations(clip);
+          
+          let clipBgColor = "bg-gray-100";
+          let clipBorderColor = "border-gray-300";
+          
+          if (hasNotes && hasFlags) {
+            clipBgColor = "bg-yellow-100";
+            clipBorderColor = "border-yellow-500";
+          } else if (hasNotes) {
+            clipBgColor = "bg-blue-100";
+            clipBorderColor = "border-blue-500";
+          } else if (hasFlags) {
+            clipBgColor = "bg-red-100";
+            clipBorderColor = "border-red-500";
+          }
+          
+          const isSelected = currentClip && currentClip.key === clip.key;
+          if (isSelected) {
+            clipBgColor += " ring-2 ring-primary ring-offset-2";
+            clipBorderColor = "border-primary";
+          }
+          
+          return (
+            <div
+              key={clip.key}
+              className={`absolute cursor-pointer border ${clipBorderColor} ${clipBgColor} hover:shadow-md transition-shadow duration-200 rounded-sm overflow-hidden`}
+              style={{
+                left: `${startPercentage}%`,
+                width: `${width}%`,
+                top: 0,
+                height: '100%'
+              }}
+              onClick={() => onSelectClip(clip)}
+            >
+              <VideoPreview 
+                clipKey={clip.key} 
+                className="h-full w-full object-cover opacity-90"
+              />
+              <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-60 text-white text-xs p-1">
+                {clip.startTime}
+              </div>
+              {(hasNotes || hasFlags) && (
+                <div className="absolute top-1 right-1 flex space-x-1">
+                  {hasNotes && <MessageSquare size={14} className="text-blue-500" />}
+                  {hasFlags && <Flag size={14} className="text-red-500" />}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    );
   };
   
   return (
-    <div className="timeline-container mt-4">
-      <div className="flex items-center mb-1">
-        <h2 className="text-lg font-medium text-[#555555]">Timeline - Working Hours (07:00-17:00)</h2>
-        
-        <div className="ml-auto flex flex-wrap gap-2 text-xs">
-          <div className="flex items-center">
-            <div className="w-2 h-2 bg-[#FBBC05] rounded-full mr-1"></div>
-            <span className="text-[#555555]">Available</span>
-          </div>
-          <div className="flex items-center">
-            <div className="w-2 h-2 bg-[#ff9900] rounded-full mr-1"></div>
-            <span className="text-[#555555]">Bookmarks</span>
-          </div>
-          <div className="flex items-center">
-            <div className="w-2 h-2 bg-[#ffa833] rounded-full mr-1"></div>
-            <span className="text-[#555555]">Notes</span>
-          </div>
-          <div className="flex items-center">
-            <div className="w-2 h-2 bg-gradient-to-tr from-[#FBBC05] to-[#ff9900] rounded-full mr-1"></div>
-            <span className="text-[#555555]">Both</span>
-          </div>
-          <div className="flex items-center">
-            <div className="w-2 h-2 bg-[#555555] rounded-full mr-1"></div>
-            <span className="text-[#555555]">No Footage</span>
-          </div>
+    <div className="flex flex-col space-y-2 w-full h-full">
+      <div className="flex justify-between items-center mb-2 w-full">
+        <div className="text-sm font-medium">Timeline - {selectedDate}</div>
+        <div className="flex items-center space-x-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleZoomOut}
+            disabled={zoomLevel <= 25}
+          >
+            <ZoomOut className="h-4 w-4" />
+          </Button>
+          <span className="text-xs w-16 text-center">{zoomLevel}%</span>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleZoomIn}
+            disabled={zoomLevel >= 500}
+          >
+            <ZoomIn className="h-4 w-4" />
+          </Button>
         </div>
       </div>
       
-      {isLoading ? (
-        <div className="flex items-center justify-center h-24 bg-[#FFFFFF] rounded-lg shadow border border-[#BCBBBB]">
-          <Loader2 className="h-8 w-8 text-[#FBBC05] animate-spin" />
-          <span className="ml-2 text-[#555555]">Loading clips...</span>
-        </div>
-      ) : isError ? (
-        <div className="flex items-center justify-center h-24 bg-[#FFFFFF] rounded-lg shadow border border-[#BCBBBB]">
-          <AlertTriangle className="h-8 w-8 text-[#555555]" />
-          <span className="ml-2 text-[#555555]">Error loading timeline data</span>
-        </div>
-      ) : (
-        <div className="timeline-scroll-container overflow-x-scroll bg-[#FFFFFF] rounded-lg shadow border border-[#BCBBBB] h-[80px] flex-1 relative" style={{
-          scrollbarWidth: 'auto',
-          scrollbarColor: '#BCBBBB #FFFFFF',
-          overflowY: 'hidden',
-          paddingBottom: '25px',
-          paddingTop: '5px',
-          marginBottom: '10px',
-          paddingRight: '25px'
-        }}>
-          <div 
-            ref={timelineRef}
-            className="timeline-wrapper relative p-1 pt-0"
-            style={{ width: "150%" }}
-          >
-            {/* Hour markers - filter based on zoom level */}
-            <div className="hour-markers relative h-5">
-              {hourMarkers
-                .filter(marker => {
-                  if (zoomLevel <= 1) return true;
-                  const rangeSize = Math.max(4, 24 / zoomLevel);
-                  const startHour = Math.max(0, focusHour - rangeSize / 2);
-                  const endHour = Math.min(24, focusHour + rangeSize / 2);
-                  return marker.hour >= startHour && marker.hour < endHour;
-                })
-                .map((marker) => (
-                  <div 
-                    key={marker.hour}
-                    className={`hour-marker absolute border-l ${
-                      marker.isWorkingHour ? 'border-[#555555] border-l-2' : 'border-[#BCBBBB]'
-                    }`}
-                    style={{ 
-                      left: zoomLevel <= 1 
-                        ? `${marker.position}%` 
-                        : `${(marker.hour - Math.max(0, focusHour - Math.max(4, 24 / zoomLevel) / 2)) / Math.min(24, Math.max(4, 24 / zoomLevel)) * 100}%` 
-                    }}
-                    data-hour={marker.label}
-                  >
-                    <div className={`absolute top-3 transform -translate-x-1/2 text-xs font-mono ${
-                      marker.isWorkingHour ? 'text-[#555555] font-bold' : 'text-[#BCBBBB]'
-                    }`}>
-                      {marker.label}
-                    </div>
-                  </div>
-                ))}
-            </div>
-            
-            {/* Timeline segments */}
-            <div className="timeline-segments flex h-5 mt-4">
-              {visibleSegments.map((segment, index) => (
-                <div
-                  key={index}
-                  className={`timeline-segment hover:opacity-80 transition-opacity relative group
-                    ${segment.hasClip 
-                      ? segment.hasFlags && segment.hasNotes 
-                        ? 'bg-gradient-to-tr from-[#FBBC05] to-[#ff9900] border border-[#000000]/20' 
-                        : segment.hasFlags 
-                          ? 'bg-[#ff9900] border border-[#000000]/20'
-                          : segment.hasNotes
-                            ? 'bg-[#ffa833] border border-[#000000]/20'
-                            : 'bg-[#FBBC05] border border-[#000000]/20'
-                      : 'bg-[#555555]'
-                    } ${
-                      segment.isCurrent ? 'ring-2 ring-[#000000]' : ''
-                    } ${
-                      segment.isWorkingHour ? 'h-5' : 'h-4 mt-1'
-                    }`}
-                  style={{ width: `${segmentWidth}%` }}
-                  title={segment.displayTime}
-                  onClick={() => {
-                    if (segment.hasClip && segment.clip) {
-                      onSelectClip(segment.clip);
-                      // Auto-play when a clip is selected
-                      // Note: Play state is managed by the parent component
-                    }
-                  }}
-                  onMouseEnter={(e) => {
-                    // Always set hovered segment for feedback, regardless of clip presence
-                    setHoveredSegment(segment.time);
-                    console.log("Hovering segment:", segment.time, "Has clip:", segment.hasClip, "Clip:", segment.clip);
-                    
-                    // Calculate relative position in segment (0-100%)
-                    const rect = e.currentTarget.getBoundingClientRect();
-                    const relativeX = e.clientX - rect.left;
-                    const percentage = (relativeX / rect.width) * 100;
-                    setPreviewPosition(percentage);
-                    
-                    // Update mouse position for preview positioning
-                    setMousePosition({
-                      x: e.clientX,
-                      y: e.clientY
-                    });
-                  }}
-                  onMouseMove={(e) => {
-                    if (hoveredSegment === segment.time) {
-                      // Update position on mouse move
-                      const rect = e.currentTarget.getBoundingClientRect();
-                      const relativeX = e.clientX - rect.left;
-                      const percentage = (relativeX / rect.width) * 100;
-                      setPreviewPosition(percentage);
-                      
-                      // Update mouse position for preview positioning
-                      setMousePosition({
-                        x: e.clientX,
-                        y: e.clientY
-                      });
-                    }
-                  }}
-                  onMouseLeave={() => {
-                    setHoveredSegment(null);
-                  }}
-                >
-                  {segment.isCurrent && (
-                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-1 bg-[#000000] text-[#FFFFFF] px-2 py-1 rounded text-xs font-mono whitespace-nowrap">
-                      Now Playing
-                    </div>
-                  )}
-                  {zoomLevel >= 2.5 && (
-                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-1 text-[#555555] text-[10px] font-mono whitespace-nowrap">
-                      {segment.time.split(':')[1] === '00' ? segment.displayTime : segment.time.split(':')[1]}
-                    </div>
-                  )}
-                  
-                  {/* Info tooltip */}
-                  {(segment.hasFlags || segment.hasNotes) && (
-                    <div className="absolute bottom-full mb-1 left-1/2 transform -translate-x-1/2 bg-[#000000] text-[#FFFFFF] px-3 py-2 rounded text-xs opacity-0 group-hover:opacity-100 transition-opacity z-10 shadow-lg max-w-[300px]">
-                      <div className="font-bold text-center mb-1 pb-1 border-b border-gray-700">
-                        {segment.displayTime} - Details
-                      </div>
-                      <div className="flex flex-col gap-2">
-                        {segment.hasFlags && segment.flags && segment.flags.length > 0 && (
-                          <div>
-                            <div className="flex items-center mb-1">
-                              <Bookmark className="h-3 w-3 mr-1 text-[#FBBC05] fill-[#FBBC05]" />
-                              <span className="font-semibold">
-                                {segment.flags.length > 1 
-                                  ? `${segment.flags.length} Flags` 
-                                  : 'Flag'}
-                              </span>
-                            </div>
-                            <ul className="list-disc list-inside pl-2">
-                              {segment.flags.map((noteFlag: NoteFlag, i: number) => (
-                                <li key={i} className="cursor-pointer hover:text-[#FBBC05] truncate" onClick={(e) => {
-                                  e.stopPropagation();
-                                  const clip = findClipByTime(segment.time);
-                                  if (clip) onSelectClip(clip);
-                                }}>
-                                  {noteFlag.content || 'Untitled flag'}
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-                        
-                        {segment.hasNotes && segment.notes && segment.notes.length > 0 && (
-                          <div>
-                            <div className="flex items-center mb-1">
-                              <MessageSquare className="h-3 w-3 mr-1 text-[#FBBC05] fill-[#FBBC05]" />
-                              <span className="font-semibold">
-                                {segment.notes.length > 1 
-                                  ? `${segment.notes.length} Notes` 
-                                  : 'Note'}
-                              </span>
-                            </div>
-                            <ul className="list-disc list-inside pl-2">
-                              {segment.notes.map((noteFlag: NoteFlag, i: number) => (
-                                <li key={i} className="cursor-pointer hover:text-[#FBBC05] truncate" onClick={(e) => {
-                                  e.stopPropagation();
-                                  const clip = findClipByTime(segment.time);
-                                  if (clip) onSelectClip(clip);
-                                }}>
-                                  {noteFlag.content && noteFlag.content.length > 0 ? (noteFlag.content.substring(0, 30) + (noteFlag.content.length > 30 ? '...' : '')) : 'No content'}
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                  
-                  {/* Count indicators */}
-                  {(segment.hasFlags || segment.hasNotes) && (
-                    <div className="absolute top-0 right-0 flex gap-1 p-0.5">
-                      {segment.flags && segment.flags.length > 0 && (
-                        <div className="flex items-center">
-                          <Bookmark className="h-2.5 w-2.5 text-[#000000] fill-[#000000]" />
-                          <span className="text-[9px] font-bold text-[#000000] bg-white/90 px-0.5 rounded">
-                            {segment.flags.length}
-                          </span>
-                        </div>
-                      )}
-                      {segment.notes && segment.notes.length > 0 && (
-                        <div className="flex items-center">
-                          <MessageSquare className="h-2.5 w-2.5 text-[#000000] fill-[#000000]" />
-                          <span className="text-[9px] font-bold text-[#000000] bg-white/90 px-0.5 rounded">
-                            {segment.notes.length}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-          
-          {/* Video Preview */}
-          <div 
-            className={`fixed transform -translate-x-1/2 z-[100] transition-all duration-200 ${
-              hoveredSegment ? 'opacity-100' : 'opacity-0 pointer-events-none'
-            }`}
-            style={{ 
-              left: hoveredSegment ? `${
-                timelineRef.current ? 
-                mousePosition.x : window.innerWidth / 2}px` : '50%',
-              top: hoveredSegment ? `${
-                timelineRef.current ? 
-                mousePosition.y - 200 : window.innerHeight / 2}px` : '50%'
-            }}
-          >
-            {hoveredSegment && (
-              <>
-                {visibleSegments.find(s => s.time === hoveredSegment && s.hasClip && s.clip) ? (
-                  <div className="relative">
-                    <VideoPreview 
-                      clip={visibleSegments.find(s => s.time === hoveredSegment && s.hasClip)?.clip!}
-                      position={previewPosition}
-                      onPositionChange={setPreviewPosition}
-                    />
-                    <div className="w-0 h-0 border-l-8 border-r-8 border-t-8 border-transparent border-t-black mx-auto mt-[-1px]"></div>
-                  </div>
-                ) : (
-                  <div className="relative">
-                    <div className="bg-black rounded-md shadow-lg flex items-center justify-center text-white p-3 border-2 border-[#FBBC05]" style={{ width: '240px', height: '135px' }}>
-                      <span className="text-[#FBBC05]">No footage available for {hoveredSegment}</span>
-                    </div>
-                    <div className="w-0 h-0 border-l-8 border-r-8 border-t-8 border-transparent border-t-black mx-auto mt-[-1px]"></div>
-                  </div>
-                )}
-              </>
-            )}
-          </div>
-        </div>
-      )}
-      
-      <div className="flex flex-col gap-2 bg-[#FFFFFF] p-3 pt-2 rounded-lg shadow border border-[#BCBBBB] mt-2">
-        <h2 className="text-md font-semibold text-[#555555] mb-1">Timeline and Clip Controls</h2>
-        <div className="timeline-controls w-full">
-          <h3 className="text-sm font-medium mb-1 text-[#555555]">Timeline Controls</h3>
-          
-          {/* Zoom Controls */}
-          <div className="zoom-controls flex items-center gap-1 mb-3">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleZoomOut}
-              disabled={zoomLevel <= 1}
-              className="text-[#555555] border-[#BCBBBB] hover:bg-[#FBBC05]/10"
-            >
-              <ZoomOut className="h-4 w-4 mr-1" />
-              <span>Zoom Out</span>
-            </Button>
-            
-            <div className="flex-1 px-4">
-              <Slider
-                defaultValue={[focusHour]}
-                max={23}
-                step={1}
-                value={[focusHour]}
-                onValueChange={(value) => {
-                  setFocusHour(value[0]);
-                  // Reset active preset when manually adjusting
-                  setActivePreset('custom');
-                }}
-                disabled={zoomLevel <= 1}
-                className="w-full"
-              />
-            </div>
-            
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                handleZoomIn();
-                // Reset active preset when manually zooming
-                setActivePreset('custom');
-              }}
-              disabled={zoomLevel >= 4}
-              className="text-[#555555] border-[#BCBBBB] hover:bg-[#FBBC05]/10"
-            >
-              <ZoomIn className="h-4 w-4 mr-1" />
-              <span>Zoom In</span>
-            </Button>
-            
-            <div className="text-sm text-[#555555]">
-              {zoomLevel > 1 ? (
-                <span>
-                  {activePreset === 'custom' && <span className="text-xs bg-[#FBBC05]/20 px-1 py-0.5 rounded mr-1">Custom</span>}
-                  Focus: {focusHour.toString().padStart(2, '0')}:00 | {zoomLevel.toFixed(1)}x
-                </span>
-              ) : (
-                <span>Full Day View</span>
-              )}
-            </div>
-          </div>
+      <div className="w-full h-[150px] border border-gray-300 rounded-lg overflow-hidden relative">
+        <div className="relative h-8 bg-gray-50 w-full border-b border-gray-200 px-2">
+          {hourMarks}
         </div>
         
-        <div className="actions w-full border-t border-[#BCBBBB] pt-2">
-          <h3 className="text-sm font-medium mb-1 text-[#555555]">Actions</h3>
-          <div className="flex flex-wrap gap-1">
-            <Button
-              variant="default"
-              className="bg-[#FBBC05] hover:bg-[#FBBC05]/90 text-[#000000]"
-              onClick={onExportCurrentClip}
-              disabled={!currentClip}
-            >
-              <FileDown className="mr-1 h-4 w-4" />
-              <span>Export</span>
-            </Button>
-            
-            <Button
-              variant="outline"
-              className="border-[#555555] text-[#555555] hover:bg-[#FBBC05]/10"
-              onClick={() => {
-                if (!currentClip) {
-                  toast({
-                    title: "No clip selected",
-                    description: "Please select a clip to add a note or flag",
-                    variant: "destructive"
-                  });
-                  return;
-                }
-                
-                setIsNoteFlagModalOpen(true);
-              }}
-              disabled={!currentClip}
-            >
-              <FileEdit className="mr-1 h-4 w-4" />
-              <span>Note / Flag</span>
-            </Button>
-            
-            <Button
-              variant="outline"
-              className="border-[#555555] text-[#555555] hover:bg-[#FBBC05]/10"
-              onClick={() => {
-                if (!currentClip) {
-                  toast({
-                    title: "No clip selected",
-                    description: "Please select a clip to share",
-                    variant: "destructive"
-                  });
-                  return;
-                }
-                
-                setIsShareModalOpen(true);
-              }}
-              disabled={!currentClip}
-            >
-              <Share2 className="mr-1 h-4 w-4" />
-              <span>Share</span>
-            </Button>
-          </div>
-          
-          {/* Removed duplicate export button */}
+        <div 
+          ref={timelineRef}
+          className="overflow-x-auto w-full h-[112px] hide-scrollbar"
+          onScroll={handleScroll}
+        >
+          {renderClips()}
         </div>
+        
+        {contentWidth > visibleWidth && (
+          <div className="absolute bottom-0 left-0 right-0 px-4 py-2 bg-gray-50 border-t border-gray-200">
+            <Slider
+              value={[scrollPercentage]}
+              min={0}
+              max={100}
+              step={0.1}
+              onValueChange={handleScrollChange}
+              className="w-full"
+            />
+          </div>
+        )}
       </div>
       
-      {/* Share Modal */}
-      {isShareModalOpen && currentClip && (
-        <ShareModal
-          clip={currentClip!}
-          onClose={() => setIsShareModalOpen(false)}
-        />
-      )}
-      
-      {/* Notes/Flag Modal */}
-      {isNoteFlagModalOpen && currentClip && (
-        <NoteFlagModal
-          clip={currentClip}
-          date={selectedDate}
-          onSave={(content, isFlag) => {
-            createNoteFlag.mutate({
-              videoTime: formatVideoTime(0), // Default to start of clip
-              clipTime: currentClip.startTime,
-              date: selectedDate,
-              content: content || null,
-              isFlag
-            }, {
-              onSuccess: () => {
-                toast({
-                  title: isFlag ? (content ? "Note & Flag added" : "Flag added") : "Note added",
-                  description: `Added to clip at ${currentClip.startTime}`
-                });
-              },
-              onError: () => {
-                toast({
-                  title: "Error",
-                  description: "Failed to save note/flag",
-                  variant: "destructive"
-                });
-              }
-            });
-            setIsNoteFlagModalOpen(false);
-          }}
-          onClose={() => setIsNoteFlagModalOpen(false)}
-        />
-      )}
+      {/* Action buttons */}
+      <div className="flex justify-between items-center pt-2 pb-1">
+        <div className="text-xs text-gray-500">
+          {!isError && !isLoading && clips && `${clips.length} clips available`}
+        </div>
+      </div>
     </div>
   );
 }
