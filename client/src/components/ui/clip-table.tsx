@@ -58,20 +58,47 @@ export function ClipTable({
   // Separate notes and flags for lookup
   const clipsWithNotes = new Map<string, NoteFlag[]>();
   
+  // Log all clip keys to better understand their format
+  console.log('Available clips:', clips.map(clip => clip.key));
+  
   // Group notes by clip time
   console.log('Grouping notes by clip time, notesFlags:', notesFlags);
   notesFlags.forEach(noteFlag => {
     // Convert clipTime to a format that matches clip.key (e.g., "14:55" to "2025-04-04_1455.mp4")
     // Extract the time portions to build a key similar to clip.key
     const [hours, minutes] = noteFlag.clipTime.split(':').map(Number);
+    // Format with hours always as 2 digits and minutes always as 2 digits
     const clipKey = `${date}_${hours.toString().padStart(2, '0')}${minutes.toString().padStart(2, '0')}.mp4`;
     
-    console.log('Processing note/flag:', noteFlag, 'mapped to clipKey:', clipKey);
+    // Try alternative formats to match possible clip keys
+    const altClipKey1 = `${date}_${String(hours).padStart(2, '0')}${String(minutes).padStart(2, '0')}.mp4`;
+    const altClipKey2 = `${date.replace(/-/g, '')}_${String(hours).padStart(2, '0')}${String(minutes).padStart(2, '0')}.mp4`;
     
-    if (!clipsWithNotes.has(clipKey)) {
-      clipsWithNotes.set(clipKey, []);
+    console.log('Processing note/flag:', noteFlag, 'mapped to clipKey:', clipKey, 'or alternatives:', altClipKey1, altClipKey2);
+    
+    // Try to find matching clip 
+    const matchingClip = clips.find(clip => 
+      clip.key === clipKey || 
+      clip.key === altClipKey1 || 
+      clip.key === altClipKey2 ||
+      clip.startTime === noteFlag.clipTime
+    );
+    
+    if (matchingClip) {
+      console.log('Found matching clip for this note:', matchingClip.key);
+      if (!clipsWithNotes.has(matchingClip.key)) {
+        clipsWithNotes.set(matchingClip.key, []);
+      }
+      clipsWithNotes.get(matchingClip.key)?.push(noteFlag);
+    } else {
+      console.log('No matching clip found for note/flag with time:', noteFlag.clipTime);
+      
+      // Add to the map using our best guess format
+      if (!clipsWithNotes.has(clipKey)) {
+        clipsWithNotes.set(clipKey, []);
+      }
+      clipsWithNotes.get(clipKey)?.push(noteFlag);
     }
-    clipsWithNotes.get(clipKey)?.push(noteFlag);
   });
   
   // Find existing note for a clip
