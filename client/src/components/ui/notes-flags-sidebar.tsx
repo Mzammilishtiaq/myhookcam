@@ -185,21 +185,18 @@ export function NotesFlagsSidebar({
   return (
     <div className="flex flex-col border border-[#BCBBBB] rounded-md shadow bg-white">
       <div 
-        className="py-2 px-4 bg-[#555555] text-[#FBBC05] rounded-t-md font-bold text-lg flex justify-between items-center cursor-pointer"
+        className="flex items-center justify-between bg-[#FBBC05] p-3 cursor-pointer rounded-t-md"
         onClick={() => setIsExpanded(!isExpanded)}
       >
-        <div className="flex items-center">
-          <span>Notes/Flags</span>
+        <h3 className="font-semibold text-[#000000] flex items-center">
+          {isExpanded ? <ChevronUp className="h-5 w-5 mr-2" /> : <ChevronDown className="h-5 w-5 mr-2" />}
+          Notes/Flags
           {sortedNotes.length > 0 && (
-            <span className="ml-2 px-2 py-0.5 bg-[#FBBC05] text-[#000000] text-xs rounded-full">
+            <span className="ml-2 px-2 py-0.5 bg-[#555555] text-white text-xs rounded-full">
               {sortedNotes.length}
             </span>
           )}
-        </div>
-        {isExpanded ? 
-          <ChevronUp className="h-5 w-5 text-[#FBBC05]" /> : 
-          <ChevronDown className="h-5 w-5 text-[#FBBC05]" />
-        }
+        </h3>
       </div>
       
       {isExpanded && (
