@@ -5,28 +5,37 @@ import { Loader2 } from "lucide-react";
 import type { Clip } from "@shared/schema";
 
 interface VideoPreviewProps {
-  clip: Clip;
-  position: number;
+  // Support both clip object and key string for flexibility
+  clip?: Clip;
+  clipKey?: string;
+  position?: number;
   onPositionChange?: (pos: number) => void;
   previewTimeOffset?: number; // Optional time offset for preview in seconds
+  className?: string;
 }
 
 export function VideoPreview({ 
   clip, 
-  position, 
+  clipKey, 
+  position = 50, 
   onPositionChange,
-  previewTimeOffset = 0 
+  previewTimeOffset = 0,
+  className = ""
 }: VideoPreviewProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
+  
+  // Use either the clip's key or the clipKey parameter
+  const key = clip?.key || clipKey;
   
   // Fetch the signed URL for the clip
   const { 
     data: clipUrl, 
     isLoading: isLoadingUrl 
   } = useQuery({
-    queryKey: [`/api/clips/${clip.key}/url`],
-    queryFn: () => getClipUrl(clip.key),
+    queryKey: [`/api/clips/${key}/url`],
+    queryFn: () => getClipUrl(key || ''),
     staleTime: 1000 * 60 * 5, // 5 minutes
+    enabled: !!key // Only run the query if we have a key
   });
   
   // Update preview position when position changes
@@ -65,10 +74,7 @@ export function VideoPreview({
   const clipTimeDisplay = clip ? clip.startTime : "--:--";
   
   return (
-    <div className="video-preview-container relative bg-black rounded-md overflow-hidden shadow-lg border-2 border-[#FBBC05]" style={{ 
-      width: '240px', 
-      height: '135px'
-    }}>
+    <div className={`video-preview-container relative bg-black overflow-hidden ${className}`}>
       {/* Loading overlay */}
       <div className={`absolute inset-0 flex items-center justify-center bg-[#000000] bg-opacity-70 z-10 transition-opacity duration-300 ${isLoadingUrl ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
         <Loader2 className="h-6 w-6 text-[#FBBC05] animate-spin" />
@@ -86,15 +92,20 @@ export function VideoPreview({
         style={{ opacity: isLoadingUrl ? 0 : 1 }}
       />
       
-      {/* Video info overlay */}
-      <div className="absolute top-1 left-1 bg-[#000000] bg-opacity-70 text-[#FFFFFF] px-1.5 py-0.5 rounded text-xs font-mono border border-[#FBBC05]">
-        <span>{clipTimeDisplay}</span>
-      </div>
-      
-      {/* Debug info */}
-      <div className="absolute bottom-1 right-1 bg-[#000000] bg-opacity-70 text-[#FFFFFF] px-1.5 py-0.5 rounded text-xs font-mono opacity-50 hover:opacity-100">
-        <span>{Math.round(position)}%</span>
-      </div>
+      {/* Only show overlays when explicitly using the full component */}
+      {clip && (
+        <>
+          {/* Video info overlay */}
+          <div className="absolute top-1 left-1 bg-[#000000] bg-opacity-70 text-[#FFFFFF] px-1.5 py-0.5 rounded text-xs font-mono border border-[#FBBC05]">
+            <span>{clipTimeDisplay}</span>
+          </div>
+          
+          {/* Debug info */}
+          <div className="absolute bottom-1 right-1 bg-[#000000] bg-opacity-70 text-[#FFFFFF] px-1.5 py-0.5 rounded text-xs font-mono opacity-50 hover:opacity-100">
+            <span>{Math.round(position)}%</span>
+          </div>
+        </>
+      )}
     </div>
   );
 }

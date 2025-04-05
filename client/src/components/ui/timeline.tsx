@@ -41,7 +41,7 @@ export function Timeline({
   const [isNoteFlagModalOpen, setIsNoteFlagModalOpen] = useState(false);
   
   const { toast } = useToast();
-  const { data: notesFlags, createNoteFlag } = useNotesFlags(selectedDate);
+  const { notesFlags, createNoteFlag } = useNotesFlags(selectedDate);
   
   // Calculate content width based on zoom level
   useEffect(() => {
@@ -131,12 +131,12 @@ export function Timeline({
   const getClipAnnotations = (clip: Clip) => {
     if (!notesFlags) return { hasNotes: false, hasFlags: false };
     
-    const clipNotes = notesFlags.filter(note => 
+    const clipNotes = notesFlags.filter((note: NoteFlag) => 
       note.clipTime === clip.startTime && note.date === selectedDate
     );
     
-    const hasNotes = clipNotes.some(note => note.content !== null);
-    const hasFlags = clipNotes.some(note => note.isFlag);
+    const hasNotes = clipNotes.some((note: NoteFlag) => note.content !== null);
+    const hasFlags = clipNotes.some((note: NoteFlag) => note.isFlag);
     
     return { hasNotes, hasFlags };
   };
