@@ -25,7 +25,7 @@ export function NotesFlagsSidebar({
   const [newNoteText, setNewNoteText] = useState("");
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editedText, setEditedText] = useState("");
-  const [isExpanded, setIsExpanded] = useState(true);
+  const [isExpanded, setIsExpanded] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
 
   // Get notes and flags from the server
