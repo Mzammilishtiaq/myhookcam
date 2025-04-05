@@ -39,6 +39,11 @@ export function ShareModal({ clip, onClose }: ShareModalProps) {
     try {
       // Create different API requests based on share method
       if (shareMethod === "email" && email) {
+        // Split email string into an array of emails
+        const emails = email.split(',').map(e => e.trim()).filter(e => e);
+        
+        if (emails.length === 0) throw new Error("No valid email addresses provided");
+        
         // Share via email
         const response = await fetch("/api/shares", {
           method: "POST",
@@ -49,7 +54,7 @@ export function ShareModal({ clip, onClose }: ShareModalProps) {
             clipKey: clip.key,
             date: clip.date,
             clipTime: clip.startTime,
-            recipientEmail: email,
+            recipientEmails: emails, // Send as array
             message: message.trim(),
             expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 1 week
             shareMethod: "email"
@@ -60,10 +65,17 @@ export function ShareModal({ clip, onClose }: ShareModalProps) {
         
         toast({
           title: "Clip shared!",
-          description: `Email sent to ${email}`,
+          description: emails.length > 1 
+            ? `Email sent to ${emails.length} recipients` 
+            : `Email sent to ${emails[0]}`,
         });
       } 
       else if (shareMethod === "sms" && phone) {
+        // Split phone string into an array of phone numbers
+        const phones = phone.split(',').map(p => p.trim()).filter(p => p);
+        
+        if (phones.length === 0) throw new Error("No valid phone numbers provided");
+        
         // Share via SMS
         const response = await fetch("/api/shares", {
           method: "POST",
@@ -74,7 +86,7 @@ export function ShareModal({ clip, onClose }: ShareModalProps) {
             clipKey: clip.key,
             date: clip.date,
             clipTime: clip.startTime,
-            recipientPhone: phone,
+            recipientPhones: phones, // Send as array
             message: message.trim(),
             expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 1 week
             shareMethod: "sms"
@@ -85,7 +97,9 @@ export function ShareModal({ clip, onClose }: ShareModalProps) {
         
         toast({
           title: "Clip shared!",
-          description: `SMS sent to ${phone}`,
+          description: phones.length > 1 
+            ? `SMS sent to ${phones.length} recipients` 
+            : `SMS sent to ${phones[0]}`,
         });
       }
       else if (shareMethod === "link") {
@@ -169,7 +183,8 @@ export function ShareModal({ clip, onClose }: ShareModalProps) {
                 className="border-[#BCBBBB] focus:border-[#FBBC05] focus:ring-[#FBBC05]"
               />
               <p className="text-xs text-[#555555]">
-                The recipient will receive an email with a link to view this clip.
+                The recipient(s) will receive an email with a link to view this clip.
+                You can enter multiple emails separated by commas.
               </p>
             </div>
           </TabsContent>
@@ -186,7 +201,8 @@ export function ShareModal({ clip, onClose }: ShareModalProps) {
                 className="border-[#BCBBBB] focus:border-[#FBBC05] focus:ring-[#FBBC05]"
               />
               <p className="text-xs text-[#555555]">
-                The recipient will receive a text message with a link to view this clip.
+                The recipient(s) will receive a text message with a link to view this clip.
+                You can enter multiple phone numbers separated by commas.
               </p>
             </div>
           </TabsContent>

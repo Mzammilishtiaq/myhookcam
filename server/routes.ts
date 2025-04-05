@@ -480,13 +480,155 @@ export async function registerRoutes(app: Express): Promise<Server> {
         expiresAt: req.body.expiresAt || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() // Default 7 days
       };
       
-      // Handle different sharing methods
-      if (req.body.shareMethod === 'email' && req.body.recipientEmail) {
-        shareData.recipient = req.body.recipientEmail;
-        shareData.type = 'email';
-      } else if (req.body.shareMethod === 'sms' && req.body.recipientPhone) {
-        shareData.recipient = req.body.recipientPhone;
-        shareData.type = 'sms';
+      // Handle different sharing methods with support for multiple recipients
+      if (req.body.shareMethod === 'email') {
+        // Handle both single email and array of emails
+        if (req.body.recipientEmail) {
+          shareData.recipient = req.body.recipientEmail;
+          shareData.type = 'email';
+        } else if (req.body.recipientEmails && Array.isArray(req.body.recipientEmails) && req.body.recipientEmails.length > 0) {
+          // If multiple emails, create a separate share for each email
+          const successfulShares = [];
+          
+          for (const email of req.body.recipientEmails) {
+            try {
+              const individualShareData = { ...shareData, recipient: email, type: 'email' };
+              const parsedShare = insertShareSchema.safeParse(individualShareData);
+              
+              if (parsedShare.success) {
+                // Generate a unique token for the share
+                const token = Math.random().toString(36).substring(2, 15) + 
+                              Math.random().toString(36).substring(2, 15);
+                
+                const share = await storage.createShare(parsedShare.data, token);
+                successfulShares.push(share);
+                
+                // Send email for this recipient
+                try {
+                  const { sendEmail, generateShareEmailHtml } = await import('./email');
+                  
+                  // Generate share link
+                  const baseUrl = process.env.BASE_URL || `http://${req.headers.host}`;
+                  const shareLink = `${baseUrl}/shared/${token}`;
+                  
+                  // Parse clip date and time from the key
+                  const clipData = parseClipKey(share.clipKey);
+                  
+                  // Generate formatted email
+                  const html = generateShareEmailHtml(
+                    shareLink,
+                    clipData?.date || share.date,
+                    clipData?.startTime || share.clipTime,
+                    share.message || undefined
+                  );
+                  
+                  // Generate plain text version
+                  const text = `A video clip has been shared with you from our Video Timeline Portal.
+Date: ${clipData?.date || share.date}
+Time: ${clipData?.startTime || share.clipTime}
+${share.message ? `Message: ${share.message}\n` : ''}
+View here: ${shareLink}`;
+                  
+                  // Send the email
+                  await sendEmail({
+                    to: share.recipient,
+                    subject: "Video Clip Shared With You",
+                    text,
+                    html,
+                  });
+                } catch (emailError) {
+                  console.error("Email send error:", emailError);
+                  // We continue anyway as the share was created successfully
+                }
+              }
+            } catch (shareError) {
+              console.error("Error creating individual share:", shareError);
+              // Continue with other recipients
+            }
+          }
+          
+          // Return early with the results from batch processing
+          if (successfulShares.length > 0) {
+            return res.status(201).json({
+              message: `Successfully shared with ${successfulShares.length} recipients`,
+              shares: successfulShares
+            });
+          } else {
+            return res.status(400).json({ message: "Failed to create any shares" });
+          }
+        } else {
+          return res.status(400).json({ message: "No valid email recipients provided" });
+        }
+      } else if (req.body.shareMethod === 'sms') {
+        // Handle both single phone and array of phones
+        if (req.body.recipientPhone) {
+          shareData.recipient = req.body.recipientPhone;
+          shareData.type = 'sms';
+        } else if (req.body.recipientPhones && Array.isArray(req.body.recipientPhones) && req.body.recipientPhones.length > 0) {
+          // If multiple phone numbers, create a separate share for each
+          const successfulShares = [];
+          
+          for (const phone of req.body.recipientPhones) {
+            try {
+              const individualShareData = { ...shareData, recipient: phone, type: 'sms' };
+              const parsedShare = insertShareSchema.safeParse(individualShareData);
+              
+              if (parsedShare.success) {
+                // Generate a unique token for the share
+                const token = Math.random().toString(36).substring(2, 15) + 
+                              Math.random().toString(36).substring(2, 15);
+                
+                const share = await storage.createShare(parsedShare.data, token);
+                successfulShares.push(share);
+                
+                // Send SMS for this recipient
+                try {
+                  const { generateShareTextMessage } = await import('./email');
+                  const { sendSMS } = await import('./sms');
+                  
+                  // Generate share link
+                  const baseUrl = process.env.BASE_URL || `http://${req.headers.host}`;
+                  const shareLink = `${baseUrl}/shared/${token}`;
+                  
+                  // Parse clip date and time from the key
+                  const clipData = parseClipKey(share.clipKey);
+                  
+                  // Generate SMS message
+                  const messageBody = generateShareTextMessage(
+                    shareLink,
+                    clipData?.date || share.date,
+                    clipData?.startTime || share.clipTime,
+                    share.message || undefined
+                  );
+                  
+                  // Send the SMS
+                  await sendSMS({
+                    to: share.recipient,
+                    body: messageBody
+                  });
+                } catch (smsError) {
+                  console.error("SMS send error:", smsError);
+                  // We continue anyway as the share was created successfully
+                }
+              }
+            } catch (shareError) {
+              console.error("Error creating individual share:", shareError);
+              // Continue with other recipients
+            }
+          }
+          
+          // Return early with the results from batch processing
+          if (successfulShares.length > 0) {
+            return res.status(201).json({
+              message: `Successfully shared with ${successfulShares.length} recipients`,
+              shares: successfulShares
+            });
+          } else {
+            return res.status(400).json({ message: "Failed to create any shares" });
+          }
+        } else {
+          return res.status(400).json({ message: "No valid SMS recipients provided" });
+        }
       } else {
         return res.status(400).json({ message: "Invalid share method or missing recipient" });
       }

@@ -1,7 +1,7 @@
 // Using fake email handling instead of actual SendGrid integration
 
 interface EmailOptions {
-  to: string;
+  to: string | string[];
   subject: string;
   text?: string;
   html?: string;
@@ -10,16 +10,20 @@ interface EmailOptions {
 
 /**
  * Fake send email function that logs the email details and always returns success
+ * Now supports sending to multiple recipients
  */
 export async function sendEmail(options: EmailOptions): Promise<boolean> {
   try {
     // Default from email if not provided
     const from = options.from || 'noreply@videotimeline.com';
     
+    // Handle single recipient or multiple recipients
+    const recipients = Array.isArray(options.to) ? options.to : [options.to];
+    
     // Log the email details instead of actually sending
     console.log('============ MOCK EMAIL SENT ============');
     console.log(`From: ${from}`);
-    console.log(`To: ${options.to}`);
+    console.log(`To: ${recipients.join(', ')}`);
     console.log(`Subject: ${options.subject}`);
     console.log(`Text: ${options.text || 'No text content'}`);
     console.log(`HTML: ${options.html ? 'HTML content available' : 'No HTML content'}`);
