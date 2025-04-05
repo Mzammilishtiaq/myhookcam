@@ -16,6 +16,7 @@ import { formatTime } from "@/lib/time";
 import type { Clip, NoteFlag } from "@shared/schema";
 import { ShareModal } from "./share-modal";
 import { NoteFlagModal } from "./note-flag-modal";
+import { VideoPreview } from "./video-preview";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import { useNotesFlags } from "@/hooks/use-notes-flags";
@@ -207,15 +208,15 @@ export function ClipTable({ clips, notesFlags, date, onClipSelect }: ClipTablePr
                     <TableCell>
                       <div className="flex flex-col items-center">
                         <div 
-                          className={`w-[100px] h-[60px] bg-[#000] rounded cursor-pointer overflow-hidden mb-1 border ${
+                          className={`w-[100px] h-[60px] rounded cursor-pointer overflow-hidden mb-1 border ${
                             notesCount > 0 || flagsCount > 0 ? 'border-red-500 border-2' : 'border-[#BCBBBB]'
                           }`}
                           onClick={() => onClipSelect(clip)}
                         >
-                          {/* Thumbnail would ideally use an actual thumbnail image */}
-                          <div className="w-full h-full flex items-center justify-center text-white text-xs">
-                            Video Preview
-                          </div>
+                          <VideoPreview 
+                            clipKey={clip.key} 
+                            className="h-full w-full object-cover"
+                          />
                         </div>
                         <span className="text-xs text-[#555555] truncate max-w-[100px]">{clip.key}</span>
                       </div>
