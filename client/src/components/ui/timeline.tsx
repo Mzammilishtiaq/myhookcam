@@ -651,7 +651,7 @@ export function Timeline({
                 onClick={onExportCurrentClip}
               >
                 <FileDown className="mr-1 h-4 w-4" />
-                <span>Export Range</span>
+                <span>Export</span>
               </Button>
             </div>
           </div>
