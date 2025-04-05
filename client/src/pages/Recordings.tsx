@@ -15,19 +15,20 @@ import { fetchClips } from "@/lib/s3";
 import { useTimeline } from "@/hooks/use-timeline";
 import { useNotesFlags } from "@/hooks/use-notes-flags";
 import { formatVideoTime } from "@/lib/time";
-import type { Clip } from "@shared/schema";
+import type { Clip, NoteFlag } from "@shared/schema";
 
 export default function Recordings() {
   const { toast } = useToast();
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [showExportModal, setShowExportModal] = useState(false);
   const [showNoteFlagModal, setShowNoteFlagModal] = useState(false);
+  const [editingNoteFlag, setEditingNoteFlag] = useState<NoteFlag | undefined>(undefined);
   const [showShareModal, setShowShareModal] = useState(false);
   
   const formattedDate = format(selectedDate, "yyyy-MM-dd");
   
   // Get the notes/flags data and creation function
-  const { notesFlags, createNoteFlag } = useNotesFlags(formattedDate);
+  const { notesFlags, createNoteFlag, updateNoteFlag, deleteNoteFlag } = useNotesFlags(formattedDate);
   
   // Debug: Log notes/flags whenever they change
   console.log('Notes/Flags for date:', formattedDate, notesFlags);
@@ -132,7 +133,18 @@ export default function Recordings() {
                   return;
                 }
                 
-                // We'll implement this functionality
+                // Check if there's an existing note/flag for this clip
+                const existingNote = notesFlags.find(nf => nf.clipTime === currentClip.startTime);
+                
+                if (existingNote) {
+                  // If found, we're editing
+                  console.log('Found existing note/flag to edit:', existingNote);
+                  setEditingNoteFlag(existingNote);
+                } else {
+                  // If not found, we're creating new
+                  setEditingNoteFlag(undefined);
+                }
+                
                 setShowNoteFlagModal(true);
               }}
               disabled={!currentClip}
@@ -187,6 +199,8 @@ export default function Recordings() {
             notesFlags={notesFlags}
             date={formattedDate}
             createNoteFlag={createNoteFlag}
+            updateNoteFlag={updateNoteFlag}
+            deleteNoteFlag={deleteNoteFlag}
             onClipSelect={(clip) => {
               setCurrentClip(clip);
               setIsPlaying(true); // Auto-play when clip is selected
@@ -217,6 +231,7 @@ export default function Recordings() {
         <NoteFlagModal
           clip={currentClip}
           date={formattedDate}
+          existingNote={editingNoteFlag}
           onSave={(content, isFlag) => {
             const noteData = {
               videoTime: formatVideoTime(currentVideoTime || 0),
@@ -226,28 +241,84 @@ export default function Recordings() {
               isFlag
             };
             
-            console.log('Creating new note/flag:', noteData);
+            if (editingNoteFlag) {
+              // Update existing note/flag
+              console.log('Updating existing note/flag:', noteData);
+              
+              updateNoteFlag.mutate({ 
+                id: editingNoteFlag.id, 
+                ...noteData
+              }, {
+                onSuccess: (data) => {
+                  console.log('Successfully updated note/flag:', data);
+                  toast({
+                    title: isFlag ? (content ? "Note & Flag updated" : "Flag updated") : "Note updated",
+                    description: `Updated for clip at ${currentClip.startTime}`
+                  });
+                },
+                onError: (error) => {
+                  console.error('Failed to update note/flag:', error);
+                  toast({
+                    title: "Error",
+                    description: "Failed to update note/flag",
+                    variant: "destructive"
+                  });
+                }
+              });
+            } else {
+              // Create new note/flag
+              console.log('Creating new note/flag:', noteData);
+              
+              createNoteFlag.mutate(noteData, {
+                onSuccess: (data) => {
+                  console.log('Successfully created note/flag:', data);
+                  toast({
+                    title: isFlag ? (content ? "Note & Flag added" : "Flag added") : "Note added",
+                    description: `Added to clip at ${currentClip.startTime}`
+                  });
+                },
+                onError: (error) => {
+                  console.error('Failed to create note/flag:', error);
+                  toast({
+                    title: "Error",
+                    description: "Failed to save note/flag",
+                    variant: "destructive"
+                  });
+                }
+              });
+            }
             
-            createNoteFlag.mutate(noteData, {
-              onSuccess: (data) => {
-                console.log('Successfully created note/flag:', data);
+            setShowNoteFlagModal(false);
+            setEditingNoteFlag(undefined);
+          }}
+          onDelete={(id) => {
+            console.log('Deleting note/flag with id:', id);
+            
+            deleteNoteFlag.mutate(id, {
+              onSuccess: () => {
+                console.log('Successfully deleted note/flag');
                 toast({
-                  title: isFlag ? (content ? "Note & Flag added" : "Flag added") : "Note added",
-                  description: `Added to clip at ${currentClip.startTime}`
+                  title: "Deleted",
+                  description: `Note/flag for clip at ${currentClip.startTime} has been deleted`
                 });
               },
               onError: (error) => {
-                console.error('Failed to create note/flag:', error);
+                console.error('Failed to delete note/flag:', error);
                 toast({
                   title: "Error",
-                  description: "Failed to save note/flag",
+                  description: "Failed to delete note/flag",
                   variant: "destructive"
                 });
               }
             });
+            
             setShowNoteFlagModal(false);
+            setEditingNoteFlag(undefined);
           }}
-          onClose={() => setShowNoteFlagModal(false)}
+          onClose={() => {
+            setShowNoteFlagModal(false);
+            setEditingNoteFlag(undefined);
+          }}
         />
       )}
       

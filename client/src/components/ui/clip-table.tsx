@@ -27,13 +27,24 @@ interface ClipTableProps {
   notesFlags: NoteFlag[];
   date: string;
   onClipSelect: (clip: Clip) => void;
-  createNoteFlag?: any; // Add this prop to receive the createNoteFlag function
+  createNoteFlag?: any;
+  updateNoteFlag?: any;
+  deleteNoteFlag?: any;
 }
 
-export function ClipTable({ clips, notesFlags, date, onClipSelect, createNoteFlag }: ClipTableProps) {
+export function ClipTable({ 
+  clips, 
+  notesFlags, 
+  date, 
+  onClipSelect, 
+  createNoteFlag,
+  updateNoteFlag,
+  deleteNoteFlag 
+}: ClipTableProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [selectedClipForShare, setSelectedClipForShare] = useState<Clip | null>(null);
   const [selectedClipForNotes, setSelectedClipForNotes] = useState<Clip | null>(null);
+  const [editingNoteFlag, setEditingNoteFlag] = useState<NoteFlag | undefined>(undefined);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const { toast } = useToast();
 
@@ -62,6 +73,12 @@ export function ClipTable({ clips, notesFlags, date, onClipSelect, createNoteFla
     }
     clipsWithNotes.get(clipKey)?.push(noteFlag);
   });
+  
+  // Find existing note for a clip
+  const findExistingNote = (clipKey: string): NoteFlag | undefined => {
+    const clipNotes = clipsWithNotes.get(clipKey);
+    return clipNotes && clipNotes.length > 0 ? clipNotes[0] : undefined;
+  };
   
   console.log('Resulting clipsWithNotes map:', 
     Array.from(clipsWithNotes.entries()).map(([key, notes]) => ({ 
@@ -302,7 +319,12 @@ export function ClipTable({ clips, notesFlags, date, onClipSelect, createNoteFla
                           variant="outline" 
                           size="icon" 
                           className="h-8 w-8 border-[#BCBBBB]"
-                          onClick={() => setSelectedClipForNotes(clip)}
+                          onClick={() => {
+                            // Check for existing note for this clip
+                            const existingNote = findExistingNote(clip.key);
+                            setEditingNoteFlag(existingNote);
+                            setSelectedClipForNotes(clip);
+                          }}
                         >
                           <MessageSquare className="h-4 w-4 text-[#555555]" />
                         </Button>
@@ -337,19 +359,8 @@ export function ClipTable({ clips, notesFlags, date, onClipSelect, createNoteFla
         <NoteFlagModal
           clip={selectedClipForNotes}
           date={date}
+          existingNote={editingNoteFlag}
           onSave={(content, isFlag) => {
-            // Only proceed if createNoteFlag is available
-            if (!createNoteFlag) {
-              console.error('createNoteFlag is not available');
-              toast({
-                title: "Error",
-                description: "Failed to save note/flag - missing createNoteFlag",
-                variant: "destructive"
-              });
-              setSelectedClipForNotes(null);
-              return;
-            }
-            
             const noteData = {
               clipTime: selectedClipForNotes.startTime,
               date: date,
@@ -359,29 +370,119 @@ export function ClipTable({ clips, notesFlags, date, onClipSelect, createNoteFla
               videoTime: selectedClipForNotes.startTime
             };
             
-            console.log('Saving note from clip table:', noteData);
-            
-            createNoteFlag.mutate(noteData, {
-              onSuccess: (data) => {
-                console.log('Successfully created note/flag from clip table:', data);
+            if (editingNoteFlag) {
+              // Update existing note/flag
+              if (!updateNoteFlag) {
+                console.error('updateNoteFlag is not available');
                 toast({
-                  title: isFlag ? (content ? "Note & Flag added" : "Flag added") : "Note added",
-                  description: `Added to clip at ${selectedClipForNotes.startTime}`
+                  title: "Error",
+                  description: "Failed to update note/flag",
+                  variant: "destructive"
                 });
-              },
-              onError: (error) => {
-                console.error('Failed to create note/flag from clip table:', error);
+                setSelectedClipForNotes(null);
+                setEditingNoteFlag(undefined);
+                return;
+              }
+              
+              console.log('Updating note from clip table:', { id: editingNoteFlag.id, ...noteData });
+              
+              updateNoteFlag.mutate({ 
+                id: editingNoteFlag.id, 
+                ...noteData
+              }, {
+                onSuccess: (data) => {
+                  console.log('Successfully updated note/flag from clip table:', data);
+                  toast({
+                    title: isFlag ? (content ? "Note & Flag updated" : "Flag updated") : "Note updated",
+                    description: `Updated for clip at ${selectedClipForNotes.startTime}`
+                  });
+                },
+                onError: (error) => {
+                  console.error('Failed to update note/flag from clip table:', error);
+                  toast({
+                    title: "Error",
+                    description: "Failed to update note/flag",
+                    variant: "destructive"
+                  });
+                }
+              });
+            } else {
+              // Create new note/flag
+              if (!createNoteFlag) {
+                console.error('createNoteFlag is not available');
                 toast({
                   title: "Error",
                   description: "Failed to save note/flag",
+                  variant: "destructive"
+                });
+                setSelectedClipForNotes(null);
+                return;
+              }
+              
+              console.log('Creating new note from clip table:', noteData);
+              
+              createNoteFlag.mutate(noteData, {
+                onSuccess: (data) => {
+                  console.log('Successfully created note/flag from clip table:', data);
+                  toast({
+                    title: isFlag ? (content ? "Note & Flag added" : "Flag added") : "Note added",
+                    description: `Added to clip at ${selectedClipForNotes.startTime}`
+                  });
+                },
+                onError: (error) => {
+                  console.error('Failed to create note/flag from clip table:', error);
+                  toast({
+                    title: "Error",
+                    description: "Failed to save note/flag",
+                    variant: "destructive"
+                  });
+                }
+              });
+            }
+            
+            setSelectedClipForNotes(null);
+            setEditingNoteFlag(undefined);
+          }}
+          onDelete={(id) => {
+            if (!deleteNoteFlag) {
+              console.error('deleteNoteFlag is not available');
+              toast({
+                title: "Error",
+                description: "Failed to delete note/flag",
+                variant: "destructive"
+              });
+              setSelectedClipForNotes(null);
+              setEditingNoteFlag(undefined);
+              return;
+            }
+            
+            console.log('Deleting note/flag with id:', id);
+            
+            deleteNoteFlag.mutate(id, {
+              onSuccess: () => {
+                console.log('Successfully deleted note/flag from clip table');
+                toast({
+                  title: "Deleted",
+                  description: `Note/flag for clip at ${selectedClipForNotes.startTime} has been deleted`
+                });
+              },
+              onError: (error) => {
+                console.error('Failed to delete note/flag:', error);
+                toast({
+                  title: "Error",
+                  description: "Failed to delete note/flag",
                   variant: "destructive"
                 });
               }
             });
             
             setSelectedClipForNotes(null);
+            setEditingNoteFlag(undefined);
           }}
-          onClose={() => setSelectedClipForNotes(null)}
+          onClose={() => {
+            setSelectedClipForNotes(null);
+            setEditingNoteFlag(undefined);
+          }}
         />
       )}
     </Card>
