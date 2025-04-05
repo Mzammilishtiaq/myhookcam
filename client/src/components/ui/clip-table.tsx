@@ -124,11 +124,17 @@ export function ClipTable({
   };
 
   const getClipNotesCount = (clipKey: string) => {
-    return clipsWithNotes.get(clipKey)?.filter(nf => !nf.isFlag).length || 0;
+    // Count notes (not flags)
+    const count = clipsWithNotes.get(clipKey)?.filter(nf => !nf.isFlag).length || 0;
+    console.log(`Notes count for clip ${clipKey}: ${count}`);
+    return count;
   };
 
   const getClipFlagsCount = (clipKey: string) => {
-    return clipsWithNotes.get(clipKey)?.filter(nf => nf.isFlag).length || 0;
+    // Count flags
+    const count = clipsWithNotes.get(clipKey)?.filter(nf => nf.isFlag).length || 0;
+    console.log(`Flags count for clip ${clipKey}: ${count}`);
+    return count;
   };
 
   // Generate and export PDF
@@ -322,15 +328,25 @@ export function ClipTable({
                         </div>
                         
                         {/* Notes content preview */}
-                        {notesCount > 0 && (
+                        {(notesCount > 0 || flagsCount > 0) && (
                           <div className="text-xs text-[#555555] mt-1 max-w-[230px]">
+                            {/* Show content for all notes/flags with content */}
                             {clipsWithNotes.get(clip.key)?.filter(note => note.content)
                               .slice(0, 1)
                               .map((note, i) => (
                                 <div key={i} className="italic truncate">
-                                  "{note.content}"
+                                  "{note.content}" {note.isFlag && <span className="text-red-500">(flagged)</span>}
                                 </div>
                               ))}
+                            
+                            {/* Show "No content" for flags without content */}
+                            {flagsCount > 0 && notesCount === 0 && !clipsWithNotes.get(clip.key)?.some(note => note.content) && (
+                              <div className="italic text-red-500">
+                                Flagged clip
+                              </div>
+                            )}
+                            
+                            {/* Show "more notes" if there are multiple notes with content */}
                             {(clipsWithNotes.get(clip.key)?.filter(note => note.content)?.length || 0) > 1 && (
                               <div className="text-xs text-blue-500 cursor-pointer hover:underline" onClick={() => onClipSelect(clip)}>
                                 + {(clipsWithNotes.get(clip.key)?.filter(note => note.content)?.length || 0) - 1} more notes
@@ -417,14 +433,14 @@ export function ClipTable({
                 id: editingNoteFlag.id, 
                 ...noteData
               }, {
-                onSuccess: (data) => {
+                onSuccess: (data: any) => {
                   console.log('Successfully updated note/flag from clip table:', data);
                   toast({
                     title: isFlag ? (content ? "Note & Flag updated" : "Flag updated") : "Note updated",
                     description: `Updated for clip at ${selectedClipForNotes.startTime}`
                   });
                 },
-                onError: (error) => {
+                onError: (error: any) => {
                   console.error('Failed to update note/flag from clip table:', error);
                   toast({
                     title: "Error",
@@ -449,14 +465,14 @@ export function ClipTable({
               console.log('Creating new note from clip table:', noteData);
               
               createNoteFlag.mutate(noteData, {
-                onSuccess: (data) => {
+                onSuccess: (data: any) => {
                   console.log('Successfully created note/flag from clip table:', data);
                   toast({
                     title: isFlag ? (content ? "Note & Flag added" : "Flag added") : "Note added",
                     description: `Added to clip at ${selectedClipForNotes.startTime}`
                   });
                 },
-                onError: (error) => {
+                onError: (error: any) => {
                   console.error('Failed to create note/flag from clip table:', error);
                   toast({
                     title: "Error",
@@ -493,7 +509,7 @@ export function ClipTable({
                   description: `Note/flag for clip at ${selectedClipForNotes.startTime} has been deleted`
                 });
               },
-              onError: (error) => {
+              onError: (error: any) => {
                 console.error('Failed to delete note/flag:', error);
                 toast({
                   title: "Error",
