@@ -29,6 +29,9 @@ export default function Recordings() {
   // Get the notes/flags data and creation function
   const { notesFlags, createNoteFlag } = useNotesFlags(formattedDate);
   
+  // Debug: Log notes/flags whenever they change
+  console.log('Notes/Flags for date:', formattedDate, notesFlags);
+  
   const {
     currentClip,
     nextClip,
@@ -183,6 +186,7 @@ export default function Recordings() {
             clips={clips}
             notesFlags={notesFlags}
             date={formattedDate}
+            createNoteFlag={createNoteFlag}
             onClipSelect={(clip) => {
               setCurrentClip(clip);
               setIsPlaying(true); // Auto-play when clip is selected
@@ -214,20 +218,26 @@ export default function Recordings() {
           clip={currentClip}
           date={formattedDate}
           onSave={(content, isFlag) => {
-            createNoteFlag.mutate({
+            const noteData = {
               videoTime: formatVideoTime(currentVideoTime || 0),
               clipTime: currentClip.startTime,
               date: formattedDate,
               content: content || null,
               isFlag
-            }, {
-              onSuccess: () => {
+            };
+            
+            console.log('Creating new note/flag:', noteData);
+            
+            createNoteFlag.mutate(noteData, {
+              onSuccess: (data) => {
+                console.log('Successfully created note/flag:', data);
                 toast({
                   title: isFlag ? (content ? "Note & Flag added" : "Flag added") : "Note added",
                   description: `Added to clip at ${currentClip.startTime}`
                 });
               },
-              onError: () => {
+              onError: (error) => {
+                console.error('Failed to create note/flag:', error);
                 toast({
                   title: "Error",
                   description: "Failed to save note/flag",

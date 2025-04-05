@@ -20,19 +20,22 @@ import { VideoPreview } from "./video-preview";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import { useNotesFlags } from "@/hooks/use-notes-flags";
+import { useToast } from "@/hooks/use-toast";
 
 interface ClipTableProps {
   clips: Clip[];
   notesFlags: NoteFlag[];
   date: string;
   onClipSelect: (clip: Clip) => void;
+  createNoteFlag?: any; // Add this prop to receive the createNoteFlag function
 }
 
-export function ClipTable({ clips, notesFlags, date, onClipSelect }: ClipTableProps) {
+export function ClipTable({ clips, notesFlags, date, onClipSelect, createNoteFlag }: ClipTableProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [selectedClipForShare, setSelectedClipForShare] = useState<Clip | null>(null);
   const [selectedClipForNotes, setSelectedClipForNotes] = useState<Clip | null>(null);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const { toast } = useToast();
 
   // Sort clips by start time for proper display
   const sortedClips = [...clips].sort((a, b) => {
@@ -45,17 +48,27 @@ export function ClipTable({ clips, notesFlags, date, onClipSelect }: ClipTablePr
   const clipsWithNotes = new Map<string, NoteFlag[]>();
   
   // Group notes by clip time
+  console.log('Grouping notes by clip time, notesFlags:', notesFlags);
   notesFlags.forEach(noteFlag => {
     // Convert clipTime to a format that matches clip.key (e.g., "14:55" to "2025-04-04_1455.mp4")
     // Extract the time portions to build a key similar to clip.key
     const [hours, minutes] = noteFlag.clipTime.split(':').map(Number);
     const clipKey = `${date}_${hours.toString().padStart(2, '0')}${minutes.toString().padStart(2, '0')}.mp4`;
     
+    console.log('Processing note/flag:', noteFlag, 'mapped to clipKey:', clipKey);
+    
     if (!clipsWithNotes.has(clipKey)) {
       clipsWithNotes.set(clipKey, []);
     }
     clipsWithNotes.get(clipKey)?.push(noteFlag);
   });
+  
+  console.log('Resulting clipsWithNotes map:', 
+    Array.from(clipsWithNotes.entries()).map(([key, notes]) => ({ 
+      key, 
+      notesCount: notes.length 
+    }))
+  );
 
   // Calculate end time from start time plus duration
   const getEndTime = (clip: Clip) => {
@@ -325,8 +338,47 @@ export function ClipTable({ clips, notesFlags, date, onClipSelect }: ClipTablePr
           clip={selectedClipForNotes}
           date={date}
           onSave={(content, isFlag) => {
-            // This is where we would handle saving the note/flag
-            // For now, just close the modal
+            // Only proceed if createNoteFlag is available
+            if (!createNoteFlag) {
+              console.error('createNoteFlag is not available');
+              toast({
+                title: "Error",
+                description: "Failed to save note/flag - missing createNoteFlag",
+                variant: "destructive"
+              });
+              setSelectedClipForNotes(null);
+              return;
+            }
+            
+            const noteData = {
+              clipTime: selectedClipForNotes.startTime,
+              date: date,
+              content: content || null,
+              isFlag,
+              // This videoTime is a placeholder since we don't know the current time
+              videoTime: selectedClipForNotes.startTime
+            };
+            
+            console.log('Saving note from clip table:', noteData);
+            
+            createNoteFlag.mutate(noteData, {
+              onSuccess: (data) => {
+                console.log('Successfully created note/flag from clip table:', data);
+                toast({
+                  title: isFlag ? (content ? "Note & Flag added" : "Flag added") : "Note added",
+                  description: `Added to clip at ${selectedClipForNotes.startTime}`
+                });
+              },
+              onError: (error) => {
+                console.error('Failed to create note/flag from clip table:', error);
+                toast({
+                  title: "Error",
+                  description: "Failed to save note/flag",
+                  variant: "destructive"
+                });
+              }
+            });
+            
             setSelectedClipForNotes(null);
           }}
           onClose={() => setSelectedClipForNotes(null)}

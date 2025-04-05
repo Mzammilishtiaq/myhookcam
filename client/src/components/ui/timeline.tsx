@@ -130,14 +130,29 @@ export function Timeline({
   
   // Find if a clip has notes or flags
   const getClipAnnotations = (clip: Clip) => {
-    if (!notesFlags) return { hasNotes: false, hasFlags: false };
+    if (!notesFlags || notesFlags.length === 0) return { hasNotes: false, hasFlags: false };
     
-    const clipNotes = notesFlags.filter((note: NoteFlag) => 
-      note.clipTime === clip.startTime && note.date === selectedDate
-    );
+    // Extract time from clip.key (format: "2025-04-04_1400.mp4" -> "14:00")
+    const timeMatch = clip.key.match(/(\d{2})(\d{2})\.mp4$/);
+    if (!timeMatch) return { hasNotes: false, hasFlags: false };
+    
+    const hours = timeMatch[1];
+    const minutes = timeMatch[2];
+    const clipTime = `${hours}:${minutes}`;
+    
+    console.log('Checking annotations for clip:', clip.key, 'clipTime:', clipTime, 'comparing with notesFlags:', notesFlags);
+    
+    const clipNotes = notesFlags.filter((note: NoteFlag) => {
+      console.log('Comparing note:', note.clipTime, 'with clipTime:', clipTime);
+      return note.clipTime === clipTime && note.date === selectedDate;
+    });
+    
+    console.log('Found clipNotes:', clipNotes);
     
     const hasNotes = clipNotes.some((note: NoteFlag) => note.content !== null);
     const hasFlags = clipNotes.some((note: NoteFlag) => note.isFlag);
+    
+    console.log('hasNotes:', hasNotes, 'hasFlags:', hasFlags);
     
     return { hasNotes, hasFlags };
   };
