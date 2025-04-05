@@ -207,7 +207,9 @@ export function ClipTable({ clips, notesFlags, date, onClipSelect }: ClipTablePr
                     <TableCell>
                       <div className="flex flex-col items-center">
                         <div 
-                          className="w-[100px] h-[60px] bg-[#000] rounded cursor-pointer overflow-hidden mb-1 border border-[#BCBBBB]"
+                          className={`w-[100px] h-[60px] bg-[#000] rounded cursor-pointer overflow-hidden mb-1 border ${
+                            notesCount > 0 || flagsCount > 0 ? 'border-red-500 border-2' : 'border-[#BCBBBB]'
+                          }`}
                           onClick={() => onClipSelect(clip)}
                         >
                           {/* Thumbnail would ideally use an actual thumbnail image */}
@@ -221,35 +223,62 @@ export function ClipTable({ clips, notesFlags, date, onClipSelect }: ClipTablePr
                     <TableCell className="text-[#555555] font-medium">{formatTime(timeToSeconds(clip.startTime))}</TableCell>
                     <TableCell className="text-[#555555]">{formatTime(timeToSeconds(endTime))}</TableCell>
                     <TableCell>
-                      <div className="flex gap-2">
-                        {notesCount > 0 && (
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Badge className="bg-blue-100 text-blue-800 border border-blue-300 hover:bg-blue-200">
-                                  <MessageSquare className="h-3 w-3 mr-1" /> {notesCount}
-                                </Badge>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>{notesCount} note{notesCount !== 1 ? 's' : ''}</p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                        )}
+                      <div className="flex flex-col gap-2">
+                        {/* Notes count with badge */}
+                        <div className="flex items-center gap-2">
+                          {notesCount > 0 && (
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Badge 
+                                    className="bg-blue-100 text-blue-800 border border-blue-300 hover:bg-blue-200 cursor-pointer"
+                                    onClick={() => onClipSelect(clip)}
+                                  >
+                                    <MessageSquare className="h-3 w-3 mr-1" /> {notesCount}
+                                  </Badge>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>{notesCount} note{notesCount !== 1 ? 's' : ''} - Click to view</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          )}
+                          
+                          {flagsCount > 0 && (
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Badge 
+                                    className="bg-red-100 text-red-800 border border-red-300 hover:bg-red-200 cursor-pointer"
+                                    onClick={() => onClipSelect(clip)}
+                                  >
+                                    <Flag className="h-3 w-3 mr-1" /> {flagsCount}
+                                  </Badge>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>{flagsCount} flag{flagsCount !== 1 ? 's' : ''} - Click to view</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          )}
+                        </div>
                         
-                        {flagsCount > 0 && (
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Badge className="bg-red-100 text-red-800 border border-red-300 hover:bg-red-200">
-                                  <Flag className="h-3 w-3 mr-1" /> {flagsCount}
-                                </Badge>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>{flagsCount} flag{flagsCount !== 1 ? 's' : ''}</p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
+                        {/* Notes content preview */}
+                        {notesCount > 0 && (
+                          <div className="text-xs text-[#555555] mt-1 max-w-[230px]">
+                            {clipsWithNotes.get(clip.key)?.filter(note => note.content)
+                              .slice(0, 1)
+                              .map((note, i) => (
+                                <div key={i} className="italic truncate">
+                                  "{note.content}"
+                                </div>
+                              ))}
+                            {(clipsWithNotes.get(clip.key)?.filter(note => note.content)?.length || 0) > 1 && (
+                              <div className="text-xs text-blue-500 cursor-pointer hover:underline" onClick={() => onClipSelect(clip)}>
+                                + {(clipsWithNotes.get(clip.key)?.filter(note => note.content)?.length || 0) - 1} more notes
+                              </div>
+                            )}
+                          </div>
                         )}
                       </div>
                     </TableCell>

@@ -202,28 +202,35 @@ export function Timeline({
           
           let clipBgColor = "bg-[#FFFFFF]";
           let clipBorderColor = "border-[#FBBC05]/40";
+          let clipBorderWidth = "";
           
           if (hasNotes && hasFlags) {
             clipBgColor = "bg-[#FBBC05]/20";
-            clipBorderColor = "border-[#FBBC05]";
+            clipBorderColor = "border-red-500";
+            clipBorderWidth = "border-2";
           } else if (hasNotes) {
             clipBgColor = "bg-[#FBBC05]/10";
-            clipBorderColor = "border-[#FBBC05]/80";
+            clipBorderColor = "border-red-500";
+            clipBorderWidth = "border-2";
           } else if (hasFlags) {
             clipBgColor = "bg-[#FBBC05]/5";
-            clipBorderColor = "border-[#FBBC05]/60";
+            clipBorderColor = "border-red-500";
+            clipBorderWidth = "border-2";
           }
           
           const isSelected = currentClip && currentClip.key === clip.key;
           if (isSelected) {
             clipBgColor = "bg-[#FBBC05]/30";
-            clipBorderColor = "border-[#FBBC05]";
+            // Maintain the red border if has annotations, otherwise use default selection border
+            if (!hasNotes && !hasFlags) {
+              clipBorderColor = "border-[#FBBC05]";
+            }
           }
           
           return (
             <ClipTooltip key={clip.key} clip={clip}>
               <div
-                className={`absolute cursor-pointer border ${clipBorderColor} ${clipBgColor} hover:shadow-md transition-all duration-200 overflow-hidden hover:border-[#FBBC05]`}
+                className={`absolute cursor-pointer border ${clipBorderColor} ${clipBgColor} ${clipBorderWidth} hover:shadow-md transition-all duration-200 overflow-hidden hover:border-[#FBBC05]`}
                 style={{
                   left: `${startPercentage}%`,
                   width: `${width}%`,
