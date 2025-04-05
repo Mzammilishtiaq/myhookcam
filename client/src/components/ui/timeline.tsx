@@ -596,7 +596,7 @@ export function Timeline({
               disabled={!currentClip}
             >
               <FileDown className="mr-1 h-4 w-4" />
-              <span>Export Current</span>
+              <span>Export</span>
             </Button>
             
             <Button
@@ -642,19 +642,7 @@ export function Timeline({
             </Button>
           </div>
           
-          <div className="export-options mt-1">
-            <div className="flex flex-wrap gap-1">
-              <Button 
-                variant="default"
-                className="bg-[#555555] hover:bg-[#555555]/90 text-[#FFFFFF]"
-                disabled={!currentClip}
-                onClick={onExportCurrentClip}
-              >
-                <FileDown className="mr-1 h-4 w-4" />
-                <span>Export</span>
-              </Button>
-            </div>
-          </div>
+          {/* Removed duplicate export button */}
         </div>
       </div>
       
