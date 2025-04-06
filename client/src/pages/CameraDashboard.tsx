@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
 import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Camera, Activity, Clock } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
+import { PageTitleContext } from "@/App";
 
 // Define the camera type
 interface Camera {
@@ -35,6 +36,9 @@ export default function CameraDashboard({ jobsiteId: propJobsiteId }: CameraDash
   const [isLoading, setIsLoading] = useState(true);
   const [viewType, setViewType] = useState<"grid" | "list">("grid");
   const [currentPath, navigate] = useLocation();
+  
+  // Get the page title context
+  const { setPageTitle, setJobsiteName: setContextJobsiteName, setCameraName } = useContext(PageTitleContext);
   
   // Get jobsiteId from URL if not provided via props
   const urlJobsiteId = currentPath.includes('/cameras/') 
@@ -76,7 +80,12 @@ export default function CameraDashboard({ jobsiteId: propJobsiteId }: CameraDash
             
             // Set jobsite name if we have a filtered result
             if (jobsiteId && device.jobsiteName) {
-              setJobsiteName(device.jobsiteName);
+              const name = device.jobsiteName;
+              setJobsiteName(name);
+              
+              // Set the context jobsite name for header display
+              setContextJobsiteName(name);
+              setPageTitle("Dashboard");
             }
             
             return {
@@ -103,7 +112,7 @@ export default function CameraDashboard({ jobsiteId: propJobsiteId }: CameraDash
     // Refresh data every 30 seconds
     const interval = setInterval(fetchCameras, 30000);
     return () => clearInterval(interval);
-  }, [jobsiteId]);
+  }, [jobsiteId, setPageTitle, setContextJobsiteName]);
 
   // Format the runtime duration
   const formatRuntime = (runtime?: string) => {
@@ -131,6 +140,16 @@ export default function CameraDashboard({ jobsiteId: propJobsiteId }: CameraDash
 
   // Navigate to the camera view with all 3 tabs (Live Stream, Recordings, Device Status)
   const handleViewCamera = (cameraId: number) => {
+    // Get the camera object
+    const camera = cameras.find(c => c.id === cameraId);
+    
+    // Update the global context with camera and jobsite info
+    if (camera) {
+      // Set camera name in the title context
+      setCameraName(camera.name);
+      setPageTitle("Live Stream");
+    }
+    
     // This will navigate to the live stream tab with the specific camera selected
     // We'll use context or URL params to pass the camera ID
     // First, we'll update the selected camera in localStorage to maintain selection across tabs

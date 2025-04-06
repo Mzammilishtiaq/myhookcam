@@ -23,19 +23,43 @@ type SelectionContextType = {
   handleSelectionChange: (jobsiteIds: number[], cameraIds: number[]) => void;
 };
 
-// Default context
+// Context type for page title
+type PageTitleContextType = {
+  pageTitle: string;
+  setPageTitle: (title: string) => void;
+  cameraName: string;
+  setCameraName: (name: string) => void;
+  jobsiteName: string;
+  setJobsiteName: (name: string) => void;
+};
+
+// Default selection context
 const defaultSelectionContext: SelectionContextType = {
   selectedCameras: [],
   selectedJobsites: [],
   handleSelectionChange: () => {},
 };
 
+// Default page title context
+const defaultPageTitleContext: PageTitleContextType = {
+  pageTitle: "System",
+  setPageTitle: () => {},
+  cameraName: "",
+  setCameraName: () => {},
+  jobsiteName: "",
+  setJobsiteName: () => {},
+};
+
 // Context will be used just for jobsite/camera selection
 export const SelectionContext = createContext<SelectionContextType>(defaultSelectionContext);
+
+// Context for page title management
+export const PageTitleContext = createContext<PageTitleContextType>(defaultPageTitleContext);
 
 function MainNavigation() {
   const [location, setLocation] = useLocation();
   const { isOpen, toggle } = useSidebarStore();
+  const { pageTitle, cameraName, jobsiteName } = useContext(PageTitleContext);
   
   // Get isMobile status for this component
   const [isMobileView, setIsMobileView] = useState(false);
@@ -63,6 +87,31 @@ function MainNavigation() {
     toggle();
   };
   
+  // Determine the header title based on the page context
+  const getHeaderTitle = () => {
+    // Default header title
+    let title = <><span className="text-[#FBBC05]">HookCam</span> System</>;
+    
+    // Check if we're on Camera Dashboard page
+    if (location.startsWith('/cameras')) {
+      if (jobsiteName) {
+        title = <>{jobsiteName} <span className="text-[#FBBC05]">Dashboard</span></>;
+      } else {
+        title = <><span className="text-[#FBBC05]">All Jobsites</span> Dashboard</>;
+      }
+    } 
+    // Check if we're on a specific camera view
+    else if (cameraName && (location === '/livestream' || location === '/recordings' || location === '/system-status')) {
+      if (jobsiteName) {
+        title = <><span className="text-[#FBBC05]">HookCam</span> {cameraName} at {jobsiteName}</>;
+      } else {
+        title = <><span className="text-[#FBBC05]">HookCam</span> {cameraName}</>;
+      }
+    }
+    
+    return title;
+  };
+  
   return (
     <div className="bg-[#555555] text-[#FFFFFF] px-4 pt-4 shadow-md">
       <div className="w-full">
@@ -80,7 +129,7 @@ function MainNavigation() {
               </Button>
             )}
             <h1 className="text-xl font-semibold">
-              <span className="text-[#FBBC05]">HookCam</span> System
+              {getHeaderTitle()}
             </h1>
           </div>
         </div>
@@ -245,8 +294,14 @@ function Layout() {
 }
 
 function App() {
+  // Camera selection state
   const [selectedCameras, setSelectedCameras] = useState<number[]>([]);
   const [selectedJobsites, setSelectedJobsites] = useState<number[]>([]);
+  
+  // Page title state
+  const [pageTitle, setPageTitle] = useState("System");
+  const [cameraName, setCameraName] = useState("");
+  const [jobsiteName, setJobsiteName] = useState("");
   
   // Load selection from localStorage on initial mount
   useEffect(() => {
@@ -264,6 +319,19 @@ function App() {
     } catch (error) {
       console.error("Error loading camera selection from localStorage:", error);
     }
+    
+    // Expose context to window for direct access from components
+    // that might not have React context available (e.g., external libraries)
+    window.pageTitleContext = {
+      setCameraName,
+      setJobsiteName, 
+      setPageTitle
+    };
+    
+    return () => {
+      // Clean up on unmount
+      delete window.pageTitleContext;
+    };
   }, []);
   
   const handleSelectionChange = (jobsiteIds: number[], cameraIds: number[]) => {
@@ -284,14 +352,23 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <SelectionContext.Provider value={{
-          selectedCameras,
-          selectedJobsites,
-          handleSelectionChange
+        <PageTitleContext.Provider value={{
+          pageTitle,
+          setPageTitle,
+          cameraName,
+          setCameraName,
+          jobsiteName,
+          setJobsiteName
         }}>
-          <Layout />
-          <Toaster />
-        </SelectionContext.Provider>
+          <SelectionContext.Provider value={{
+            selectedCameras,
+            selectedJobsites,
+            handleSelectionChange
+          }}>
+            <Layout />
+            <Toaster />
+          </SelectionContext.Provider>
+        </PageTitleContext.Provider>
       </TooltipProvider>
     </QueryClientProvider>
   );

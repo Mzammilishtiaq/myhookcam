@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useContext } from "react";
 import { ChevronDown, ChevronRight, MapPin, Camera, X, Plus, User, Menu } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { useLocation } from "wouter";
 import useSidebarStore from "@/hooks/use-sidebar";
+import { PageTitleContext } from "@/App";
 
 // Define the jobsite and camera types
 interface Camera {
@@ -32,6 +33,8 @@ export function Sidebar({ onSelectionChange }: SidebarProps) {
   const { toggle } = useSidebarStore();
   // Get the routing functionality
   const [_, setLocation] = useLocation();
+  // Get the page title context
+  const pageTitleContext = useContext(PageTitleContext);
   
   // Sample jobsite data - in a real app this would come from an API
   const [jobsites, setJobsites] = useState<Jobsite[]>([
@@ -261,6 +264,12 @@ export function Sidebar({ onSelectionChange }: SidebarProps) {
                   className="flex-grow font-medium text-sm cursor-pointer hover:text-[#FBBC05] transition-colors"
                   onClick={(e) => {
                     e.stopPropagation();
+                    // Update context with jobsite name
+                    if (pageTitleContext) {
+                      pageTitleContext.setJobsiteName(jobsite.name);
+                      pageTitleContext.setCameraName(""); // Reset camera name
+                      pageTitleContext.setPageTitle("Dashboard");
+                    }
                     setLocation(`/cameras/${jobsite.id}`);
                   }}
                 >
@@ -300,6 +309,13 @@ export function Sidebar({ onSelectionChange }: SidebarProps) {
                               selectedCameras: [camera.id],
                               selectedJobsites: [jobsite.id]
                             }));
+                            
+                            // Update the page title context
+                            if (pageTitleContext) {
+                              pageTitleContext.setCameraName(camera.name);
+                              pageTitleContext.setJobsiteName(jobsite.name);
+                              pageTitleContext.setPageTitle("Live Stream");
+                            }
                           } catch (error) {
                             console.error("Error saving camera selection:", error);
                           }
