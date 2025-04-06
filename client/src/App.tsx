@@ -248,9 +248,37 @@ function App() {
   const [selectedCameras, setSelectedCameras] = useState<number[]>([]);
   const [selectedJobsites, setSelectedJobsites] = useState<number[]>([]);
   
+  // Load selection from localStorage on initial mount
+  useEffect(() => {
+    try {
+      const storedSelection = localStorage.getItem('cameraSelection');
+      if (storedSelection) {
+        const { selectedCameras: storedCameras, selectedJobsites: storedJobsites } = JSON.parse(storedSelection);
+        if (Array.isArray(storedCameras) && storedCameras.length > 0) {
+          setSelectedCameras(storedCameras);
+        }
+        if (Array.isArray(storedJobsites) && storedJobsites.length > 0) {
+          setSelectedJobsites(storedJobsites);
+        }
+      }
+    } catch (error) {
+      console.error("Error loading camera selection from localStorage:", error);
+    }
+  }, []);
+  
   const handleSelectionChange = (jobsiteIds: number[], cameraIds: number[]) => {
     setSelectedJobsites(jobsiteIds);
     setSelectedCameras(cameraIds);
+    
+    // Save selection to localStorage for persistence
+    try {
+      localStorage.setItem('cameraSelection', JSON.stringify({
+        selectedCameras: cameraIds,
+        selectedJobsites: jobsiteIds
+      }));
+    } catch (error) {
+      console.error("Error saving camera selection to localStorage:", error);
+    }
   };
   
   return (

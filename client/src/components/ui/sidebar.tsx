@@ -294,6 +294,15 @@ export function Sidebar({ onSelectionChange }: SidebarProps) {
                         className="flex-grow text-sm cursor-pointer hover:text-[#FBBC05] transition-colors"
                         onClick={(e) => {
                           e.stopPropagation();
+                          // Save selection to localStorage
+                          try {
+                            localStorage.setItem('cameraSelection', JSON.stringify({
+                              selectedCameras: [camera.id],
+                              selectedJobsites: [jobsite.id]
+                            }));
+                          } catch (error) {
+                            console.error("Error saving camera selection:", error);
+                          }
                           setLocation(`/livestream`);
                         }}
                       >

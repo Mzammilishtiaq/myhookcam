@@ -62,9 +62,10 @@ export default function CameraDashboard({ jobsiteId: propJobsiteId }: CameraDash
         
         // Process data
         const processedCameras = devices
-          // Filter by jobsite if needed
+          // Filter by jobsite if needed and only include devices of type "camera"
           .filter((device: any) => 
-            !jobsiteId || device.jobsiteId === parseInt(jobsiteId, 10)
+            (device.type === "camera" || device.name.includes("HookCam")) && 
+            (!jobsiteId || device.jobsiteId === parseInt(jobsiteId, 10))
           )
           .map((device: any) => {
             // Find status for this device
@@ -128,9 +129,23 @@ export default function CameraDashboard({ jobsiteId: propJobsiteId }: CameraDash
     }
   };
 
-  // Navigate to live stream for a specific camera
+  // Navigate to the camera view with all 3 tabs (Live Stream, Recordings, Device Status)
   const handleViewCamera = (cameraId: number) => {
-    // This will navigate to the live stream tab with the camera selected
+    // This will navigate to the live stream tab with the specific camera selected
+    // We'll use context or URL params to pass the camera ID
+    // First, we'll update the selected camera in localStorage to maintain selection across tabs
+    try {
+      // Store the selected camera ID and the current jobsite ID if available
+      const selectionData = {
+        selectedCameras: [cameraId],
+        selectedJobsites: jobsiteId ? [parseInt(jobsiteId, 10)] : []
+      };
+      localStorage.setItem('cameraSelection', JSON.stringify(selectionData));
+    } catch (error) {
+      console.error("Error saving camera selection:", error);
+    }
+
+    // Navigate to the Live Stream tab (the main tab view)
     navigate("/livestream");
   };
 
