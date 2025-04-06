@@ -10,6 +10,7 @@ import { ExportModal } from "@/components/ui/export-modal";
 import { NoteFlagModal } from "@/components/ui/note-flag-modal";
 import { ShareModal } from "@/components/ui/share-modal";
 import { ClipTable } from "@/components/ui/clip-table";
+import { Weather, ClipWeather } from "@/components/ui/weather";
 import { useToast } from "@/hooks/use-toast";
 import { fetchClips } from "@/lib/s3";
 import { useTimeline } from "@/hooks/use-timeline";
@@ -70,7 +71,12 @@ export default function Recordings() {
   return (
     <div className="container mx-auto p-4">
       <div className="mb-4 flex justify-between items-center">
-        <h2 className="text-xl font-semibold text-[#555555]"><span className="text-[#FBBC05]">HookCam</span> Recording Archive</h2>
+        <div className="flex items-center gap-4">
+          <h2 className="text-xl font-semibold text-[#555555]"><span className="text-[#FBBC05]">HookCam</span> Recording Archive</h2>
+          
+          {/* Weather Card */}
+          <Weather date={formattedDate} className="w-[300px]" />
+        </div>
         
         {/* Date Picker */}
         <div className="flex items-center space-x-2">
@@ -108,71 +114,84 @@ export default function Recordings() {
             onPlayPause={setIsPlaying}
           />
           
-          {/* Action buttons directly under the player */}
-          <div className="mt-3 p-3 bg-white rounded-lg shadow border border-[#BCBBBB] flex flex-wrap gap-2">
-            <Button
-              variant="default"
-              className="bg-[#FBBC05] hover:bg-[#FBBC05]/90 text-[#000000]"
-              onClick={handleExportCurrentClip}
-              disabled={!currentClip}
-            >
-              <FileDown className="mr-1 h-4 w-4" />
-              <span>Export</span>
-            </Button>
+          {/* Action buttons and clip info below the player */}
+          <div className="mt-3 p-3 bg-white rounded-lg shadow border border-[#BCBBBB] flex flex-wrap items-center justify-between">
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant="default"
+                className="bg-[#FBBC05] hover:bg-[#FBBC05]/90 text-[#000000]"
+                onClick={handleExportCurrentClip}
+                disabled={!currentClip}
+              >
+                <FileDown className="mr-1 h-4 w-4" />
+                <span>Export</span>
+              </Button>
+              
+              <Button
+                variant="outline"
+                className="border-[#555555] text-[#555555] hover:bg-[#FBBC05]/10"
+                onClick={() => {
+                  if (!currentClip) {
+                    toast({
+                      title: "No clip selected",
+                      description: "Please select a clip to add a note or flag",
+                      variant: "destructive"
+                    });
+                    return;
+                  }
+                  
+                  // Check if there's an existing note/flag for this clip
+                  const existingNote = notesFlags.find(nf => nf.clipTime === currentClip.startTime);
+                  
+                  if (existingNote) {
+                    // If found, we're editing
+                    console.log('Found existing note/flag to edit:', existingNote);
+                    setEditingNoteFlag(existingNote);
+                  } else {
+                    // If not found, we're creating new
+                    setEditingNoteFlag(undefined);
+                  }
+                  
+                  setShowNoteFlagModal(true);
+                }}
+                disabled={!currentClip}
+              >
+                <FileEdit className="mr-1 h-4 w-4" />
+                <span>Note / Flag</span>
+              </Button>
+              
+              <Button
+                variant="outline"
+                className="border-[#555555] text-[#555555] hover:bg-[#FBBC05]/10"
+                onClick={() => {
+                  if (!currentClip) {
+                    toast({
+                      title: "No clip selected",
+                      description: "Please select a clip to share",
+                      variant: "destructive"
+                    });
+                    return;
+                  }
+                  
+                  setShowShareModal(true);
+                }}
+                disabled={!currentClip}
+              >
+                <Share2 className="mr-1 h-4 w-4" />
+                <span>Share</span>
+              </Button>
+            </div>
             
-            <Button
-              variant="outline"
-              className="border-[#555555] text-[#555555] hover:bg-[#FBBC05]/10"
-              onClick={() => {
-                if (!currentClip) {
-                  toast({
-                    title: "No clip selected",
-                    description: "Please select a clip to add a note or flag",
-                    variant: "destructive"
-                  });
-                  return;
-                }
-                
-                // Check if there's an existing note/flag for this clip
-                const existingNote = notesFlags.find(nf => nf.clipTime === currentClip.startTime);
-                
-                if (existingNote) {
-                  // If found, we're editing
-                  console.log('Found existing note/flag to edit:', existingNote);
-                  setEditingNoteFlag(existingNote);
-                } else {
-                  // If not found, we're creating new
-                  setEditingNoteFlag(undefined);
-                }
-                
-                setShowNoteFlagModal(true);
-              }}
-              disabled={!currentClip}
-            >
-              <FileEdit className="mr-1 h-4 w-4" />
-              <span>Note / Flag</span>
-            </Button>
-            
-            <Button
-              variant="outline"
-              className="border-[#555555] text-[#555555] hover:bg-[#FBBC05]/10"
-              onClick={() => {
-                if (!currentClip) {
-                  toast({
-                    title: "No clip selected",
-                    description: "Please select a clip to share",
-                    variant: "destructive"
-                  });
-                  return;
-                }
-                
-                setShowShareModal(true);
-              }}
-              disabled={!currentClip}
-            >
-              <Share2 className="mr-1 h-4 w-4" />
-              <span>Share</span>
-            </Button>
+            {/* Clip Weather Information */}
+            {currentClip && (
+              <div className="flex items-center">
+                <ClipWeather 
+                  date={formattedDate} 
+                  time={currentClip.startTime} 
+                  className="p-2" 
+                />
+              </div>
+            )}
           </div>
         </div>
         

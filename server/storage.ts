@@ -7,7 +7,7 @@ import {
   devices, type Device, type InsertDevice,
   deviceStatus, type DeviceStatus, type InsertDeviceStatus,
   deviceRuntimes, type DeviceRuntime, type InsertDeviceRuntime,
-  type Clip
+  type Clip, type WeatherDaily, type WeatherHourly
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc } from "drizzle-orm";
@@ -57,6 +57,10 @@ export interface IStorage {
   
   // Device Runtime operations
   getDeviceRuntime(deviceId: number | undefined, date: string, timeframe: "daily" | "weekly" | "monthly"): Promise<DeviceRuntime[]>;
+  
+  // Weather operations
+  getDailyWeather(date: string): Promise<WeatherDaily | undefined>;
+  getHourlyWeather(date: string, hour?: string): Promise<WeatherHourly[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -282,6 +286,125 @@ export class DatabaseStorage implements IStorage {
       : db.select().from(deviceRuntimes).where(conditions[0]);
     
     return await query;
+  }
+  
+  // Weather operations
+  async getDailyWeather(date: string): Promise<WeatherDaily | undefined> {
+    // Generate deterministic but varying data based on the date
+    const dateObj = new Date(date);
+    const day = dateObj.getDate();
+    const month = dateObj.getMonth() + 1; // January is 0
+    
+    // Create varying temperatures based on month and day
+    const baseHighTemp = 20 + Math.sin(month) * 10; // Range from 10 to 30
+    const baseLowTemp = 10 + Math.sin(month) * 8;   // Range from 2 to 18
+    
+    // Add some daily variation
+    const highTemp = Math.round((baseHighTemp + (day % 5 - 2)) * 10) / 10;
+    const lowTemp = Math.round((baseLowTemp + (day % 3 - 1)) * 10) / 10;
+    
+    // Generate precipitation based on temperature (lower temp = more rain)
+    const basePrecipitation = Math.max(0, (20 - highTemp) / 2);
+    const precipitation = Math.round((basePrecipitation + (day % 10) / 2) * 10) / 10;
+    
+    // Determine conditions based on precipitation and temperature
+    let conditions = "Sunny";
+    if (precipitation > 5) {
+      conditions = "Heavy Rain";
+    } else if (precipitation > 2) {
+      conditions = "Light Rain";
+    } else if (precipitation > 0.5) {
+      conditions = "Drizzle";
+    } else if (highTemp < 15) {
+      conditions = "Cloudy";
+    } else if (highTemp < 20) {
+      conditions = "Partly Cloudy";
+    }
+    
+    return {
+      date,
+      highTemp,
+      lowTemp,
+      precipitation,
+      conditions,
+      createdAt: new Date()
+    };
+  }
+  
+  async getHourlyWeather(date: string, hour?: string): Promise<WeatherHourly[]> {
+    // Get daily weather data first
+    const dailyWeather = await this.getDailyWeather(date);
+    
+    // Use default values if daily weather is undefined
+    const dailyData = dailyWeather || {
+      date,
+      highTemp: 20,
+      lowTemp: 10,
+      precipitation: 0,
+      conditions: "Sunny",
+      createdAt: new Date()
+    };
+    
+    const dateObj = new Date(date);
+    const day = dateObj.getDate();
+    const month = dateObj.getMonth() + 1;
+    
+    const hourlyData: WeatherHourly[] = [];
+    
+    // Generate data for each hour (or just the specified hour)
+    const startHour = hour ? parseInt(hour.split(':')[0]) : 0;
+    const endHour = hour ? parseInt(hour.split(':')[0]) + 1 : 24;
+    
+    for (let h = startHour; h < endHour; h++) {
+      // Temperature follows a curve: lowest at early morning (4-5am), highest at afternoon (2-3pm)
+      const tempCurve = Math.sin((h - 4) * Math.PI / 12);
+      const temperature = Math.round(
+        (dailyData.lowTemp + (dailyData.highTemp - dailyData.lowTemp) * 
+        (0.5 + 0.5 * tempCurve)) * 10
+      ) / 10;
+      
+      // Wind tends to be higher during the day
+      const windSpeed = Math.round(
+        (5 + 10 * Math.sin(h * Math.PI / 12) + (day % 5)) * 10
+      ) / 10;
+      
+      // Wind direction varies throughout the day
+      const windDirections = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
+      const windDirectionIndex = (Math.floor(h / 3) + day) % windDirections.length;
+      const windDirection = windDirections[windDirectionIndex];
+      
+      // Precipitation is more likely in the afternoon
+      const hourlyPrecipitationFactor = Math.max(0, Math.sin((h - 10) * Math.PI / 12));
+      const precipitation = Math.round(
+        (dailyData.precipitation * hourlyPrecipitationFactor * (day % 3 === 0 ? 2 : 1)) * 10
+      ) / 10;
+      
+      // Determine conditions
+      let conditions = dailyData.conditions;
+      if (precipitation > 2) {
+        conditions = "Heavy Rain";
+      } else if (precipitation > 0.5) {
+        conditions = "Light Rain";
+      } else if (h < 6 || h > 20) {
+        conditions = conditions === "Sunny" ? "Clear" : conditions;
+      }
+      
+      // Format time as HH:MM
+      const timeStr = `${h.toString().padStart(2, '0')}:00`;
+      
+      hourlyData.push({
+        date,
+        time: timeStr,
+        temperature,
+        precipitation,
+        windSpeed,
+        windDirection,
+        conditions,
+        createdAt: new Date()
+      });
+    }
+    
+    return hourlyData;
   }
 }
 

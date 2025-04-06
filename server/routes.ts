@@ -847,12 +847,16 @@ View here: ${shareLink}`;
     } catch (error) {
       console.error("Error fetching device status:", error);
       
+      // Get the date and timeframe from the request again since they might not be in scope
+      const fallbackDate = (req.query.date as string) || new Date().toISOString().split('T')[0];
+      const fallbackTimeframe = (req.query.timeframe as "daily" | "weekly" | "monthly") || "daily";
+      
       // On error, still return mock data for all devices
       const allDeviceIds = [1, 2, 3, 4, 5];
       let allStatusData: any[] = [];
       
       for (const id of allDeviceIds) {
-        const mockStatusData = generateMockDeviceStatus(date, id, timeframe);
+        const mockStatusData = generateMockDeviceStatus(fallbackDate, id, fallbackTimeframe);
         allStatusData = [...allStatusData, ...mockStatusData];
       }
       
@@ -1006,6 +1010,174 @@ View here: ${shareLink}`;
       runtimeMinutes,
       type: timeframe,
       updatedAt: new Date().toISOString()
+    };
+  }
+  
+  // Weather API endpoints
+  app.get("/api/weather/daily", async (req: Request, res: Response) => {
+    try {
+      const date = req.query.date as string || new Date().toISOString().split('T')[0];
+      let weatherData = await storage.getDailyWeather(date);
+      
+      // If no data exists, generate mock data
+      if (!weatherData) {
+        weatherData = generateMockDailyWeather(date);
+      }
+      
+      res.json(weatherData);
+    } catch (error) {
+      console.error("Error fetching daily weather data:", error);
+      res.status(500).json({ error: "Failed to fetch daily weather data" });
+    }
+  });
+  
+  app.get("/api/weather/hourly", async (req: Request, res: Response) => {
+    try {
+      const date = req.query.date as string || new Date().toISOString().split('T')[0];
+      const hour = req.query.hour as string | undefined;
+      let weatherData = await storage.getHourlyWeather(date, hour);
+      
+      // If no data exists, generate mock data
+      if (!weatherData || weatherData.length === 0) {
+        weatherData = generateMockHourlyWeather(date, hour);
+      }
+      
+      res.json(weatherData);
+    } catch (error) {
+      console.error("Error fetching hourly weather data:", error);
+      res.status(500).json({ error: "Failed to fetch hourly weather data" });
+    }
+  });
+  
+  // Generate mock daily weather data for a given date
+  function generateMockDailyWeather(date: string) {
+    // Base temperature varies by date for some variation
+    const dateObj = new Date(date);
+    const dayOfYear = Math.floor((dateObj.getTime() - new Date(dateObj.getFullYear(), 0, 0).getTime()) / (1000 * 60 * 60 * 24));
+    
+    // Generate a temperature value that oscillates throughout the year
+    const baseTemp = 15 + 15 * Math.sin(dayOfYear / 365 * 2 * Math.PI);
+    
+    // Add some randomness
+    const highTemp = Math.round(baseTemp + 5 + Math.random() * 5);
+    const lowTemp = Math.round(baseTemp - 5 - Math.random() * 5);
+    
+    // Weather conditions with weighted probabilities
+    const conditionsOptions = [
+      { condition: "Sunny", weight: 0.4 },
+      { condition: "Partly Cloudy", weight: 0.3 },
+      { condition: "Cloudy", weight: 0.15 },
+      { condition: "Light Rain", weight: 0.1 },
+      { condition: "Heavy Rain", weight: 0.05 }
+    ];
+    
+    // Select a condition based on weighted random selection
+    let randomValue = Math.random();
+    let cumulativeWeight = 0;
+    let conditions = "Sunny";
+    
+    for (const conditionObj of conditionsOptions) {
+      cumulativeWeight += conditionObj.weight;
+      if (randomValue <= cumulativeWeight) {
+        conditions = conditionObj.condition;
+        break;
+      }
+    }
+    
+    // Precipitation based on condition
+    let precipitation = 0;
+    if (conditions === "Light Rain") {
+      precipitation = Math.round(Math.random() * 5 * 10) / 10;
+    } else if (conditions === "Heavy Rain") {
+      precipitation = Math.round((5 + Math.random() * 20) * 10) / 10;
+    } else if (conditions === "Cloudy") {
+      // Small chance of light precipitation even when cloudy
+      precipitation = Math.random() < 0.3 ? Math.round(Math.random() * 2 * 10) / 10 : 0;
+    }
+    
+    return {
+      date,
+      highTemp,
+      lowTemp,
+      conditions,
+      precipitation,
+      createdAt: new Date()
+    };
+  }
+  
+  // Generate mock hourly weather data for a given date and optional hour
+  function generateMockHourlyWeather(date: string, hour?: string) {
+    const hourlyData: any[] = [];
+    const dailyWeather = generateMockDailyWeather(date);
+    
+    // If specific hour requested, just generate that hour
+    if (hour) {
+      hourlyData.push(generateHourWeather(date, parseInt(hour), dailyWeather));
+      return hourlyData;
+    }
+    
+    // Otherwise generate all hours
+    for (let h = 0; h < 24; h++) {
+      hourlyData.push(generateHourWeather(date, h, dailyWeather));
+    }
+    
+    return hourlyData;
+  }
+  
+  // Helper function to generate a single hour's weather data
+  function generateHourWeather(date: string, hour: number, dailyWeather: any) {
+    // Temperature follows a curve throughout the day
+    const timeFactor = hour < 14 ? hour / 14 : (24 - hour) / 10;
+    const tempRange = dailyWeather.highTemp - dailyWeather.lowTemp;
+    const temperature = Math.round(dailyWeather.lowTemp + tempRange * timeFactor);
+    
+    // Conditions may vary throughout the day but generally follow the daily pattern
+    // with increased chances of clearing in the afternoon
+    let conditions = dailyWeather.conditions;
+    const random = Math.random();
+    
+    // Time-based condition variations
+    if (hour >= 10 && hour <= 16) {
+      // More likely to be sunny/clear during peak hours
+      if (dailyWeather.conditions === "Cloudy" && random < 0.4) {
+        conditions = "Partly Cloudy";
+      } else if (dailyWeather.conditions === "Partly Cloudy" && random < 0.3) {
+        conditions = "Sunny";
+      } else if (dailyWeather.conditions === "Light Rain" && random < 0.2) {
+        conditions = "Cloudy";
+      }
+    } else if (hour >= 20 || hour <= 6) {
+      // Nighttime - adjust names
+      if (conditions === "Sunny") {
+        conditions = "Clear";
+      }
+    }
+    
+    // Generate precipitation data that makes sense for the condition
+    let precipitation = 0;
+    if (conditions === "Light Rain") {
+      precipitation = Math.round(Math.random() * 2 * 10) / 10;
+    } else if (conditions === "Heavy Rain") {
+      precipitation = Math.round((1 + Math.random() * 5) * 10) / 10;
+    }
+    
+    // Wind tends to pick up in the afternoon
+    const baseWindSpeed = 5 + Math.random() * 15;
+    const windSpeed = Math.round((baseWindSpeed + (hour >= 12 && hour <= 18 ? 5 : 0)) * 10) / 10;
+    
+    // Wind direction
+    const windDirections = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];
+    const windDirection = windDirections[Math.floor(Math.random() * windDirections.length)];
+    
+    return {
+      date,
+      time: hour.toString().padStart(2, '0') + ":00",
+      temperature,
+      conditions,
+      precipitation,
+      windSpeed,
+      windDirection,
+      createdAt: new Date()
     };
   }
 

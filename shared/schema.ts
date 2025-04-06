@@ -58,6 +58,27 @@ export const insertBookmarkSchema = createInsertSchema(bookmarks).omit({
   createdAt: true,
 });
 
+// Weather data schemas
+export const weatherDailySchema = z.object({
+  date: z.string(), // Format: YYYY-MM-DD
+  highTemp: z.number(), // In °C
+  lowTemp: z.number(), // In °C
+  precipitation: z.number(), // In mm
+  conditions: z.string(), // e.g., "Sunny", "Cloudy", "Rain"
+  createdAt: z.date().optional(),
+});
+
+export const weatherHourlySchema = z.object({
+  date: z.string(), // Format: YYYY-MM-DD
+  time: z.string(), // Format: HH:MM
+  temperature: z.number(), // In °C
+  precipitation: z.number(), // In mm
+  windSpeed: z.number(), // In km/h
+  windDirection: z.string(), // e.g., "N", "SW"
+  conditions: z.string(), // e.g., "Sunny", "Cloudy", "Rain"
+  createdAt: z.date().optional(),
+});
+
 // Define the structure for S3 video clips metadata
 export const clipSchema = z.object({
   key: z.string(),
@@ -65,6 +86,7 @@ export const clipSchema = z.object({
   endTime: z.string(), // Format: HH:MM (time of day)
   date: z.string(), // Format: YYYY-MM-DD
   url: z.string().optional(), // Pre-signed URL
+  weather: weatherHourlySchema.optional(), // Weather data for this clip's time
 });
 
 export const shares = pgTable("shares", {
@@ -162,3 +184,7 @@ export type DeviceStatus = typeof deviceStatus.$inferSelect;
 
 export type InsertDeviceRuntime = z.infer<typeof insertDeviceRuntimeSchema>;
 export type DeviceRuntime = typeof deviceRuntimes.$inferSelect;
+
+// Weather types
+export type WeatherDaily = z.infer<typeof weatherDailySchema>;
+export type WeatherHourly = z.infer<typeof weatherHourlySchema>;
