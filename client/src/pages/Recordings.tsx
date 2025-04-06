@@ -198,27 +198,29 @@ export default function Recordings() {
               </div>
             </div>
             
-            {/* Clip info section - Below the action buttons */}
+            {/* Clip info section - Simplified layout with clear separation */}
             {currentClip && (
-              <div className="flex flex-col mt-2 border-t border-[#BCBBBB] pt-2">
-                {/* Times Section - In its own region */}
-                <div className="mb-3">
-                  <div className="text-sm font-medium mb-1 text-[#555555]">Clip Times:</div>
-                  <div className="text-sm bg-gray-50 p-2 rounded border border-[#BCBBBB]">
-                    <span className="font-medium">Start:</span> {currentClip.startTime}
-                    <span className="mx-2">|</span>
-                    <span className="font-medium">End:</span> {getEndTime(currentClip)}
+              <div className="mt-2 border-t border-[#BCBBBB] pt-2">
+                {/* First section: Clip Times */}
+                <div className="mb-4">
+                  <div className="font-medium text-[#555555] mb-1">Clip Information:</div>
+                  <div className="px-3 py-2 bg-gray-50 rounded">
+                    <div className="mb-2">
+                      <strong>Start Time:</strong> {currentClip.startTime}
+                    </div>
+                    <div>
+                      <strong>End Time:</strong> {getEndTime(currentClip)}
+                    </div>
                   </div>
                 </div>
                 
-                {/* Weather Section - In its own clearly separated region */}
-                <div className="mt-2">
-                  <div className="text-sm font-medium mb-1 text-[#555555]">Weather Conditions:</div>
-                  <div className="bg-gray-50 p-2 rounded border border-[#BCBBBB]">
+                {/* Second section: Weather data */}
+                <div>
+                  <div className="font-medium text-[#555555] mb-1">Weather at Time of Recording:</div>
+                  <div className="px-3 py-2 bg-gray-50 rounded">
                     <ClipWeather 
                       date={formattedDate} 
                       time={currentClip.startTime} 
-                      className="p-0" 
                     />
                   </div>
                 </div>
