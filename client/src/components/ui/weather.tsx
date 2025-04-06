@@ -51,41 +51,40 @@ export function Weather({ date, className = "" }: WeatherProps) {
   
   return (
     <Card className={`${className}`}>
-      <div className="px-4 py-3 flex items-center gap-4">
-        {/* Left side: Icon and conditions */}
-        <div className="flex items-center gap-3">
-          <WeatherIcon 
-            condition={weather.conditions} 
-            time="12:00" 
-            size={42}
-            className="text-[#FBBC05]" 
-          />
-          <div className="flex flex-col">
-            <CardTitle className="text-base font-medium">Weather</CardTitle>
-            <CardDescription className="text-xs">{formattedDate}</CardDescription>
-          </div>
+      <div className="px-4 py-2 flex items-center justify-between">
+        {/* Left side: Title and date */}
+        <div className="flex items-center">
+          <CardTitle className="text-sm font-medium mr-2">Weather:</CardTitle>
+          <CardDescription className="text-xs mr-4">{formattedDate}</CardDescription>
         </div>
         
-        {/* Middle: Temperature */}
-        <div className="flex flex-col items-center border-l border-r border-gray-200 px-4">
-          <div className="font-medium">
-            <span className="text-xl text-[#555555]">{weather.highTemp}°</span>
-            <span className="text-sm text-muted-foreground mx-1">/</span>
-            <span className="text-sm text-muted-foreground">{weather.lowTemp}°</span>
+        {/* Right side: Weather info */}
+        <div className="flex items-center space-x-6">
+          {/* Icon and temperatures */}
+          <div className="flex items-center">
+            <WeatherIcon 
+              condition={weather.conditions} 
+              time="12:00" 
+              size={36}
+              className="text-[#FBBC05] mr-2" 
+            />
+            <div>
+              <div className="font-medium">
+                <span className="text-lg text-[#555555]">{weather.highTemp}°</span>
+                <span className="text-sm text-muted-foreground mx-1">/</span>
+                <span className="text-sm text-muted-foreground">{weather.lowTemp}°</span>
+              </div>
+              <span className="text-xs text-muted-foreground">{weather.conditions}</span>
+            </div>
           </div>
-          <span className="text-xs text-muted-foreground">{weather.conditions}</span>
-        </div>
-        
-        {/* Right: Precipitation and sun times */}
-        <div className="flex flex-col gap-1 text-xs text-muted-foreground">
-          <div className="flex items-center gap-1">
-            <span>Precipitation:</span>
-            <span className="font-medium">{weather.precipitation}mm</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span>🌅 06:15</span>
-            <span>🌇 19:45</span>
-          </div>
+          
+          {/* Precipitation */}
+          {weather.precipitation > 0 && (
+            <div className="flex items-center text-xs text-muted-foreground">
+              <span>Precipitation:</span>
+              <span className="font-medium ml-1">{weather.precipitation}mm</span>
+            </div>
+          )}
         </div>
       </div>
     </Card>
@@ -133,14 +132,19 @@ export function ClipWeather({ date, time, className = "", compact = false }: Cli
   
   if (compact) {
     return (
-      <div className={`flex items-center gap-1.5 ${className}`}>
+      <div className={`flex items-center gap-2 ${className}`}>
         <WeatherIcon 
           condition={hourData.conditions} 
           time={time} 
-          size={16}
+          size={18}
           className="text-[#FBBC05]" 
         />
-        <span className="text-xs">{hourData.temperature}°</span>
+        <div className="flex flex-col">
+          <span className="text-xs font-medium">{hourData.temperature}° {hourData.conditions}</span>
+          <span className="text-[10px] text-muted-foreground">
+            {hourData.windSpeed}km/h {hourData.precipitation > 0 ? `• ${hourData.precipitation}mm` : ''}
+          </span>
+        </div>
       </div>
     );
   }
