@@ -17,6 +17,7 @@ import type { Clip, NoteFlag } from "@shared/schema";
 import { ShareModal } from "./share-modal";
 import { NoteFlagModal } from "./note-flag-modal";
 import { VideoPreview } from "./video-preview";
+import { ClipWeather } from "./weather";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import { useNotesFlags } from "@/hooks/use-notes-flags";
@@ -255,6 +256,7 @@ export function ClipTable({
                 <TableHead className="w-[120px] text-[#555555]">Clip</TableHead>
                 <TableHead className="text-[#555555]">Start Time</TableHead>
                 <TableHead className="text-[#555555]">End Time</TableHead>
+                <TableHead className="text-[#555555]">Weather</TableHead>
                 <TableHead className="text-[#555555]">Annotations</TableHead>
                 <TableHead className="w-[120px] text-[#555555]">Actions</TableHead>
               </TableRow>
@@ -286,6 +288,14 @@ export function ClipTable({
                     </TableCell>
                     <TableCell className="text-[#555555] font-medium">{formatTime(timeToSeconds(clip.startTime))}</TableCell>
                     <TableCell className="text-[#555555]">{formatTime(timeToSeconds(endTime))}</TableCell>
+                    <TableCell>
+                      <ClipWeather 
+                        date={date} 
+                        time={clip.startTime} 
+                        compact={true} 
+                        className="ml-1"
+                      />
+                    </TableCell>
                     <TableCell>
                       <div className="flex flex-col gap-2">
                         {/* Notes count with badge */}
