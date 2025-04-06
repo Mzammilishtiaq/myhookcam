@@ -294,7 +294,7 @@ export function Sidebar({ onSelectionChange }: SidebarProps) {
                         className="flex-grow text-sm cursor-pointer hover:text-[#FBBC05] transition-colors"
                         onClick={(e) => {
                           e.stopPropagation();
-                          setLocation(`/live-stream`);
+                          setLocation(`/livestream`);
                         }}
                       >
                         {camera.name}

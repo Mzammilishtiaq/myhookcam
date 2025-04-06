@@ -53,11 +53,11 @@ export default function CameraDashboard({ jobsiteId: propJobsiteId }: CameraDash
         const devices = await response.json();
         
         // Fetch device status
-        const statusResponse = await fetch("/api/device-status");
+        const statusResponse = await fetch("/api/device-status?date=" + new Date().toISOString().split('T')[0]);
         const deviceStatus = await statusResponse.json();
         
         // Fetch device runtime
-        const runtimeResponse = await fetch("/api/device-runtime");
+        const runtimeResponse = await fetch("/api/device-runtime?date=" + new Date().toISOString().split('T')[0]);
         const deviceRuntime = await runtimeResponse.json();
         
         // Process data
@@ -81,9 +81,9 @@ export default function CameraDashboard({ jobsiteId: propJobsiteId }: CameraDash
             return {
               id: device.id,
               name: device.name,
-              status: status?.isOnline ? "online" : "offline",
+              status: status?.status === 'online' ? "online" : "offline",
               lastOnline: status?.timestamp || new Date().toISOString(),
-              runningTime: status?.isOnline ? runtime?.totalRuntime : undefined,
+              runningTime: runtime?.runtimeMinutes ? `${Math.floor(runtime.runtimeMinutes / 60)}:${runtime.runtimeMinutes % 60}` : undefined,
               type: device.type,
               location: device.location
             };
@@ -126,6 +126,12 @@ export default function CameraDashboard({ jobsiteId: propJobsiteId }: CameraDash
     } catch (error) {
       return "Unknown";
     }
+  };
+
+  // Navigate to live stream for a specific camera
+  const handleViewCamera = (cameraId: number) => {
+    // This will navigate to the live stream tab with the camera selected
+    navigate("/livestream");
   };
 
   return (
@@ -239,7 +245,7 @@ export default function CameraDashboard({ jobsiteId: propJobsiteId }: CameraDash
                 
                 <Button 
                   className="w-full mt-4 bg-[#FBBC05] hover:bg-[#FBBC05]/90 text-white"
-                  onClick={() => navigate("/live-stream")}
+                  onClick={() => handleViewCamera(camera.id)}
                 >
                   View Camera
                 </Button>
@@ -288,7 +294,7 @@ export default function CameraDashboard({ jobsiteId: propJobsiteId }: CameraDash
                       <Button 
                         size="sm"
                         className="bg-[#FBBC05] hover:bg-[#FBBC05]/90 text-white"
-                        onClick={() => navigate("/live-stream")}
+                        onClick={() => handleViewCamera(camera.id)}
                       >
                         View
                       </Button>
