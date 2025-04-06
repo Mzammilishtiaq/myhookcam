@@ -769,26 +769,26 @@ View here: ${shareLink}`;
         return res.status(200).json(devices);
       }
       
-      // Otherwise, return default mock devices for the system
+      // Otherwise, return default mock devices for the system with jobsite information
       const mockDevices = [
-        { id: 1, name: "HookCam", type: "camera", location: "Front", createdAt: new Date().toISOString() },
-        { id: 2, name: "Display", type: "monitor", location: "Center", createdAt: new Date().toISOString() },
-        { id: 3, name: "Antenna Box", type: "hardware", location: "Top", createdAt: new Date().toISOString() },
-        { id: 4, name: "Trolley", type: "hardware", location: "Bottom", createdAt: new Date().toISOString() },
-        { id: 5, name: "Hook", type: "hardware", location: "End", createdAt: new Date().toISOString() }
+        { id: 1, name: "HookCam", type: "camera", location: "Front", jobsiteId: 1, jobsiteName: "Downtown Construction", createdAt: new Date().toISOString() },
+        { id: 2, name: "Display", type: "monitor", location: "Center", jobsiteId: 1, jobsiteName: "Downtown Construction", createdAt: new Date().toISOString() },
+        { id: 3, name: "Antenna Box", type: "hardware", location: "Top", jobsiteId: 2, jobsiteName: "Harbor Project", createdAt: new Date().toISOString() },
+        { id: 4, name: "Trolley", type: "hardware", location: "Bottom", jobsiteId: 2, jobsiteName: "Harbor Project", createdAt: new Date().toISOString() },
+        { id: 5, name: "Hook", type: "hardware", location: "End", jobsiteId: 3, jobsiteName: "Highway Extension", createdAt: new Date().toISOString() }
       ];
       
       return res.status(200).json(mockDevices);
     } catch (error) {
       console.error("Error fetching devices:", error);
       
-      // On error, still return mock devices
+      // On error, still return mock devices with jobsite information
       const mockDevices = [
-        { id: 1, name: "HookCam", type: "camera", location: "Front", createdAt: new Date().toISOString() },
-        { id: 2, name: "Display", type: "monitor", location: "Center", createdAt: new Date().toISOString() },
-        { id: 3, name: "Antenna Box", type: "hardware", location: "Top", createdAt: new Date().toISOString() },
-        { id: 4, name: "Trolley", type: "hardware", location: "Bottom", createdAt: new Date().toISOString() },
-        { id: 5, name: "Hook", type: "hardware", location: "End", createdAt: new Date().toISOString() }
+        { id: 1, name: "HookCam", type: "camera", location: "Front", jobsiteId: 1, jobsiteName: "Downtown Construction", createdAt: new Date().toISOString() },
+        { id: 2, name: "Display", type: "monitor", location: "Center", jobsiteId: 1, jobsiteName: "Downtown Construction", createdAt: new Date().toISOString() },
+        { id: 3, name: "Antenna Box", type: "hardware", location: "Top", jobsiteId: 2, jobsiteName: "Harbor Project", createdAt: new Date().toISOString() },
+        { id: 4, name: "Trolley", type: "hardware", location: "Bottom", jobsiteId: 2, jobsiteName: "Harbor Project", createdAt: new Date().toISOString() },
+        { id: 5, name: "Hook", type: "hardware", location: "End", jobsiteId: 3, jobsiteName: "Highway Extension", createdAt: new Date().toISOString() }
       ];
       
       return res.status(200).json(mockDevices);

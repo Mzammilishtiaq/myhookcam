@@ -5,6 +5,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
+import { useLocation } from "wouter";
 import useSidebarStore from "@/hooks/use-sidebar";
 
 // Define the jobsite and camera types
@@ -29,6 +30,8 @@ interface SidebarProps {
 export function Sidebar({ onSelectionChange }: SidebarProps) {
   // Get the toggle function from the sidebar store
   const { toggle } = useSidebarStore();
+  // Get the routing functionality
+  const [_, setLocation] = useLocation();
   
   // Sample jobsite data - in a real app this would come from an API
   const [jobsites, setJobsites] = useState<Jobsite[]>([
@@ -254,7 +257,15 @@ export function Sidebar({ onSelectionChange }: SidebarProps) {
                   : <ChevronRight className="h-4 w-4 text-gray-500" />
                 }
                 <MapPin className="h-4 w-4 text-[#FBBC05]" />
-                <span className="flex-grow font-medium text-sm">{jobsite.name}</span>
+                <span 
+                  className="flex-grow font-medium text-sm cursor-pointer hover:text-[#FBBC05] transition-colors"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setLocation(`/cameras/${jobsite.id}`);
+                  }}
+                >
+                  {jobsite.name}
+                </span>
                 
                 <div 
                   className={`h-4 w-4 rounded border ${
@@ -279,7 +290,15 @@ export function Sidebar({ onSelectionChange }: SidebarProps) {
                       className="flex items-center space-x-2 p-1.5 rounded-md hover:bg-gray-100 transition-colors"
                     >
                       <Camera className="h-4 w-4 text-gray-500" />
-                      <span className="flex-grow text-sm">{camera.name}</span>
+                      <span 
+                        className="flex-grow text-sm cursor-pointer hover:text-[#FBBC05] transition-colors"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setLocation(`/live-stream`);
+                        }}
+                      >
+                        {camera.name}
+                      </span>
                       <div 
                         className={`h-4 w-4 rounded border ${
                           camera.isActive

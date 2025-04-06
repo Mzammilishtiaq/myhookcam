@@ -10,6 +10,7 @@ import Home from "@/pages/Home";
 import LiveStream from "@/pages/LiveStream";
 import Recordings from "@/pages/Recordings";
 import SystemStatus from "@/pages/SystemStatus";
+import CameraDashboard from "@/pages/CameraDashboard";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -223,6 +224,12 @@ function Layout() {
               <Route path="/livestream" component={LiveStream} />
               <Route path="/recordings" component={Recordings} />
               <Route path="/system-status" component={SystemStatus} />
+              <Route path="/cameras">
+                {(params) => <CameraDashboard />}
+              </Route>
+              <Route path="/cameras/:jobsiteId">
+                {(params) => <CameraDashboard jobsiteId={params.jobsiteId} />}
+              </Route>
               <Route component={NotFound} />
             </Switch>
           </main>
