@@ -201,7 +201,8 @@ export default function Recordings() {
             {/* Clip info and weather - Below the action buttons */}
             {currentClip && (
               <div className="flex flex-col mt-2 border-t border-[#BCBBBB] pt-2">
-                <div className="flex items-center justify-between">
+                {/* Times Section */}
+                <div className="pb-2 mb-2 border-b border-dashed border-[#BCBBBB]">
                   <div className="text-sm text-[#555555]">
                     <span className="font-medium">Start Time:</span> {currentClip.startTime}
                     <span className="mx-2">|</span>
@@ -209,8 +210,9 @@ export default function Recordings() {
                   </div>
                 </div>
                 
-                {/* Weather below the times */}
-                <div className="mt-2">
+                {/* Weather Section - Clearly below the times with visual separation */}
+                <div>
+                  <div className="text-xs text-[#555555] mb-1 font-medium">Weather Conditions:</div>
                   <ClipWeather 
                     date={formattedDate} 
                     time={currentClip.startTime} 
