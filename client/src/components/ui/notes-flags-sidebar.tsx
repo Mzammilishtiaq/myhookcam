@@ -286,8 +286,19 @@ export function NotesFlagsSidebar({
                           )}
                         </div>
                         
+                        {/* Video clip filename */}
+                        <div className="text-xs text-[#555555] mb-1 font-mono">
+                          File: {item.date}_
+                          {item.clipTime.replace(':', '')}.mp4
+                        </div>
+                        
+                        {/* Video clip time (formatted) */}
+                        <div className="text-xs text-[#555555] mb-1">
+                          <span className="font-medium">Video position:</span> {item.videoTime}
+                        </div>
+                        
                         {item.content && (
-                          <div className="mb-2 text-[#555555]">{item.content}</div>
+                          <div className="mb-2 text-[#555555] border-t border-[#BCBBBB] mt-2 pt-2">{item.content}</div>
                         )}
                         
                         <div className="flex justify-end space-x-2">
