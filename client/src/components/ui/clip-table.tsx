@@ -252,13 +252,13 @@ export function ClipTable({
           <Table>
             <TableHeader className="bg-[#F5F5F5]">
               <TableRow>
-                <TableHead className="w-[50px] text-[#555555]">#</TableHead>
-                <TableHead className="w-[120px] text-[#555555]">Clip</TableHead>
-                <TableHead className="text-[#555555]">Start Time</TableHead>
-                <TableHead className="text-[#555555]">End Time</TableHead>
-                <TableHead className="text-[#555555]">Weather</TableHead>
-                <TableHead className="text-[#555555]">Annotations</TableHead>
-                <TableHead className="w-[120px] text-[#555555]">Actions</TableHead>
+                <TableHead className="w-[40px] text-[#555555] p-2">#</TableHead>
+                <TableHead className="w-[100px] text-[#555555] p-2">Clip</TableHead>
+                <TableHead className="w-[80px] text-[#555555] p-2">Start Time</TableHead>
+                <TableHead className="w-[80px] text-[#555555] p-2">End Time</TableHead>
+                <TableHead className="w-[130px] text-[#555555] p-2">Weather</TableHead>
+                <TableHead className="text-[#555555] p-2">Notes</TableHead>
+                <TableHead className="w-[70px] text-[#555555] p-2 text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -269,8 +269,8 @@ export function ClipTable({
                 
                 return (
                   <TableRow key={clip.key} className="hover:bg-[#F9F9F9]">
-                    <TableCell className="font-mono text-[#555555]">{index + 1}</TableCell>
-                    <TableCell>
+                    <TableCell className="font-mono text-[#555555] py-2 px-2">{index + 1}</TableCell>
+                    <TableCell className="py-2 px-2">
                       <div className="flex flex-col items-center">
                         <div 
                           className={`w-[100px] h-[60px] rounded cursor-pointer overflow-hidden mb-1 border ${
@@ -286,9 +286,9 @@ export function ClipTable({
                         <span className="text-xs text-[#555555] truncate max-w-[100px]">{clip.key}</span>
                       </div>
                     </TableCell>
-                    <TableCell className="text-[#555555] font-medium">{formatTime(timeToSeconds(clip.startTime))}</TableCell>
-                    <TableCell className="text-[#555555]">{formatTime(timeToSeconds(endTime))}</TableCell>
-                    <TableCell>
+                    <TableCell className="text-[#555555] font-medium py-2 px-2">{formatTime(timeToSeconds(clip.startTime))}</TableCell>
+                    <TableCell className="text-[#555555] py-2 px-2">{formatTime(timeToSeconds(endTime))}</TableCell>
+                    <TableCell className="py-2 px-2">
                       <ClipWeather 
                         date={date} 
                         time={clip.startTime} 
@@ -296,8 +296,8 @@ export function ClipTable({
                         className="ml-1"
                       />
                     </TableCell>
-                    <TableCell>
-                      <div className="flex flex-col gap-2">
+                    <TableCell className="py-2 px-1">
+                      <div className="flex flex-col gap-1">
                         {/* Notes count with badge */}
                         <div className="flex items-center gap-2">
                           {notesCount > 0 && (
@@ -339,7 +339,7 @@ export function ClipTable({
                         
                         {/* Notes content preview */}
                         {(notesCount > 0 || flagsCount > 0) && (
-                          <div className="text-xs text-[#555555] mt-1 max-w-[230px]">
+                          <div className="text-xs text-[#555555] mt-1 max-w-[350px]">
                             {/* Show content for all notes/flags with content */}
                             {clipsWithNotes.get(clip.key)?.filter(note => note.content)
                               .slice(0, 1)
@@ -366,8 +366,8 @@ export function ClipTable({
                         )}
                       </div>
                     </TableCell>
-                    <TableCell>
-                      <div className="flex space-x-1">
+                    <TableCell className="py-2 px-2 text-right">
+                      <div className="flex space-x-1 justify-end">
                         <Button 
                           variant="outline" 
                           size="icon" 
