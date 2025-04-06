@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useContext } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { 
@@ -13,10 +13,22 @@ import {
   Volume,
   Volume2
 } from "lucide-react";
+import { PageTitleContext, SelectionContext } from "@/App";
 
 export default function LiveStream() {
   // Mock video stream URL - in production this would be replaced with a real stream URL
   const mockStreamUrl = "https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4";
+  
+  // Access contexts
+  const { selectedCameras } = useContext(SelectionContext);
+  const { setPageTitle, setCameraName, setJobsiteName } = useContext(PageTitleContext);
+  
+  // Camera state
+  const [cameraInfo, setCameraInfo] = useState<{
+    name: string;
+    location: string;
+    jobsiteName: string;
+  } | null>(null);
   
   // State for video playback
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -29,6 +41,45 @@ export default function LiveStream() {
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  
+  // Fetch camera information when component mounts or selection changes
+  useEffect(() => {
+    async function fetchCameraInfo() {
+      if (selectedCameras && selectedCameras.length > 0) {
+        const cameraId = selectedCameras[0]; // Get the first selected camera
+        
+        try {
+          // Fetch all devices to find the selected camera
+          const response = await fetch('/api/devices');
+          const devices = await response.json();
+          
+          // Find the selected camera
+          const selectedCamera = devices.find((device: any) => device.id === cameraId);
+          
+          if (selectedCamera) {
+            // Update local state
+            setCameraInfo({
+              name: selectedCamera.name,
+              location: selectedCamera.location,
+              jobsiteName: selectedCamera.jobsiteName
+            });
+            
+            // Update global context for page title display
+            setCameraName(selectedCamera.name);
+            setJobsiteName(selectedCamera.jobsiteName);
+            setPageTitle("Live Stream");
+            
+            // For debug
+            console.log(`Loaded camera: ${selectedCamera.name} at ${selectedCamera.jobsiteName}`);
+          }
+        } catch (error) {
+          console.error("Error fetching camera information:", error);
+        }
+      }
+    }
+    
+    fetchCameraInfo();
+  }, [selectedCameras, setCameraName, setJobsiteName, setPageTitle]);
   
   // Toggle play/pause
   const togglePlayPause = () => {
@@ -215,7 +266,14 @@ export default function LiveStream() {
   return (
     <div className="container mx-auto p-4">
       <Card className="p-6">
-        <h2 className="text-2xl font-bold mb-4 text-[#555555]"><span className="text-[#FBBC05]">HookCam</span> Live Stream</h2>
+        <h2 className="text-2xl font-bold mb-4 text-[#555555]">
+          <span className="text-[#FBBC05]">HookCam</span> {cameraInfo?.name || "Live Stream"}
+          {cameraInfo?.jobsiteName && (
+            <span className="text-base ml-2 text-[#555555] opacity-75">
+              at {cameraInfo.jobsiteName}
+            </span>
+          )}
+        </h2>
         
         {/* Video Container */}
         <div 

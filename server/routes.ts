@@ -771,11 +771,15 @@ View here: ${shareLink}`;
       
       // Otherwise, return default mock devices for the system with jobsite information
       const mockDevices = [
-        { id: 1, name: "HookCam", type: "camera", location: "Front", jobsiteId: 1, jobsiteName: "Downtown Construction", createdAt: new Date().toISOString() },
-        { id: 2, name: "Display", type: "monitor", location: "Center", jobsiteId: 1, jobsiteName: "Downtown Construction", createdAt: new Date().toISOString() },
-        { id: 3, name: "Antenna Box", type: "hardware", location: "Top", jobsiteId: 2, jobsiteName: "Harbor Project", createdAt: new Date().toISOString() },
-        { id: 4, name: "Trolley", type: "hardware", location: "Bottom", jobsiteId: 2, jobsiteName: "Harbor Project", createdAt: new Date().toISOString() },
-        { id: 5, name: "Hook", type: "hardware", location: "End", jobsiteId: 3, jobsiteName: "Highway Extension", createdAt: new Date().toISOString() }
+        { id: 1, name: "HookCam - Main Tower", type: "camera", location: "Northeast Corner", jobsiteId: 1, jobsiteName: "Downtown Construction", createdAt: new Date().toISOString() },
+        { id: 2, name: "HookCam - East Wing", type: "camera", location: "East Elevation", jobsiteId: 1, jobsiteName: "Downtown Construction", createdAt: new Date().toISOString() },
+        { id: 3, name: "Display", type: "monitor", location: "Site Office", jobsiteId: 1, jobsiteName: "Downtown Construction", createdAt: new Date().toISOString() },
+        { id: 4, name: "Antenna Box", type: "hardware", location: "Top", jobsiteId: 2, jobsiteName: "Harbor Project", createdAt: new Date().toISOString() },
+        { id: 5, name: "HookCam - Pier 1", type: "camera", location: "Pier 1 North", jobsiteId: 2, jobsiteName: "Harbor Project", createdAt: new Date().toISOString() },
+        { id: 6, name: "HookCam - Loading Dock", type: "camera", location: "South Dock", jobsiteId: 2, jobsiteName: "Harbor Project", createdAt: new Date().toISOString() },
+        { id: 7, name: "Trolley", type: "hardware", location: "Loading Area", jobsiteId: 2, jobsiteName: "Harbor Project", createdAt: new Date().toISOString() },
+        { id: 8, name: "HookCam - North Section", type: "camera", location: "North Overpass", jobsiteId: 3, jobsiteName: "Highway Extension", createdAt: new Date().toISOString() },
+        { id: 9, name: "Hook", type: "hardware", location: "Central Junction", jobsiteId: 3, jobsiteName: "Highway Extension", createdAt: new Date().toISOString() }
       ];
       
       return res.status(200).json(mockDevices);
@@ -784,11 +788,15 @@ View here: ${shareLink}`;
       
       // On error, still return mock devices with jobsite information
       const mockDevices = [
-        { id: 1, name: "HookCam", type: "camera", location: "Front", jobsiteId: 1, jobsiteName: "Downtown Construction", createdAt: new Date().toISOString() },
-        { id: 2, name: "Display", type: "monitor", location: "Center", jobsiteId: 1, jobsiteName: "Downtown Construction", createdAt: new Date().toISOString() },
-        { id: 3, name: "Antenna Box", type: "hardware", location: "Top", jobsiteId: 2, jobsiteName: "Harbor Project", createdAt: new Date().toISOString() },
-        { id: 4, name: "Trolley", type: "hardware", location: "Bottom", jobsiteId: 2, jobsiteName: "Harbor Project", createdAt: new Date().toISOString() },
-        { id: 5, name: "Hook", type: "hardware", location: "End", jobsiteId: 3, jobsiteName: "Highway Extension", createdAt: new Date().toISOString() }
+        { id: 1, name: "HookCam - Main Tower", type: "camera", location: "Northeast Corner", jobsiteId: 1, jobsiteName: "Downtown Construction", createdAt: new Date().toISOString() },
+        { id: 2, name: "HookCam - East Wing", type: "camera", location: "East Elevation", jobsiteId: 1, jobsiteName: "Downtown Construction", createdAt: new Date().toISOString() },
+        { id: 3, name: "Display", type: "monitor", location: "Site Office", jobsiteId: 1, jobsiteName: "Downtown Construction", createdAt: new Date().toISOString() },
+        { id: 4, name: "Antenna Box", type: "hardware", location: "Top", jobsiteId: 2, jobsiteName: "Harbor Project", createdAt: new Date().toISOString() },
+        { id: 5, name: "HookCam - Pier 1", type: "camera", location: "Pier 1 North", jobsiteId: 2, jobsiteName: "Harbor Project", createdAt: new Date().toISOString() },
+        { id: 6, name: "HookCam - Loading Dock", type: "camera", location: "South Dock", jobsiteId: 2, jobsiteName: "Harbor Project", createdAt: new Date().toISOString() },
+        { id: 7, name: "Trolley", type: "hardware", location: "Loading Area", jobsiteId: 2, jobsiteName: "Harbor Project", createdAt: new Date().toISOString() },
+        { id: 8, name: "HookCam - North Section", type: "camera", location: "North Overpass", jobsiteId: 3, jobsiteName: "Highway Extension", createdAt: new Date().toISOString() },
+        { id: 9, name: "Hook", type: "hardware", location: "Central Junction", jobsiteId: 3, jobsiteName: "Highway Extension", createdAt: new Date().toISOString() }
       ];
       
       return res.status(200).json(mockDevices);
@@ -832,7 +840,7 @@ View here: ${shareLink}`;
       }
       
       // For all other cases, generate mock data for all devices
-      const allDeviceIds = [1, 2, 3, 4, 5]; // All device IDs
+      const allDeviceIds = [1, 2, 3, 4, 5, 6, 7, 8, 9]; // All device IDs
       let allStatusData: any[] = [];
       
       // If a specific device was requested, only generate for that device
@@ -852,7 +860,7 @@ View here: ${shareLink}`;
       const fallbackTimeframe = (req.query.timeframe as "daily" | "weekly" | "monthly") || "daily";
       
       // On error, still return mock data for all devices
-      const allDeviceIds = [1, 2, 3, 4, 5];
+      const allDeviceIds = [1, 2, 3, 4, 5, 6, 7, 8, 9];
       let allStatusData: any[] = [];
       
       for (const id of allDeviceIds) {
@@ -901,7 +909,7 @@ View here: ${shareLink}`;
       }
       
       // For all other cases, generate mock data for all devices
-      const allDeviceIds = [1, 2, 3, 4, 5]; // All device IDs
+      const allDeviceIds = [1, 2, 3, 4, 5, 6, 7, 8, 9]; // All device IDs
       const mockRuntimeStats: any[] = [];
       
       // If a specific device was requested, only generate for that device
@@ -922,7 +930,7 @@ View here: ${shareLink}`;
       const safeDate = req.query.date as string || new Date().toISOString().split('T')[0];
       const safeTimeframe = (req.query.timeframe as "daily" | "weekly" | "monthly") || "daily";
       
-      const allDeviceIds = [1, 2, 3, 4, 5];
+      const allDeviceIds = [1, 2, 3, 4, 5, 6, 7, 8, 9];
       const mockRuntimeStats: any[] = [];
       
       for (const id of allDeviceIds) {
