@@ -67,7 +67,8 @@ export default function LiveStream() {
             // Update global context for page title display
             setCameraName(selectedCamera.name);
             setJobsiteName(selectedCamera.jobsiteName);
-            setPageTitle("Live Stream");
+            // Set the page title to "Camera Name at Jobsite Name"
+            setPageTitle(`${selectedCamera.name} at ${selectedCamera.jobsiteName}`);
             
             // For debug
             console.log(`Loaded camera: ${selectedCamera.name} at ${selectedCamera.jobsiteName}`);
@@ -401,12 +402,12 @@ export default function LiveStream() {
                 onClick={togglePlayPause}
               >
                 {isPlaying ? (
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="h-6 w-6">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6">
                     <rect x="6" y="4" width="4" height="16"></rect>
                     <rect x="14" y="4" width="4" height="16"></rect>
                   </svg>
                 ) : (
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="h-6 w-6">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6">
                     <polygon points="5 3 19 12 5 21 5 3"></polygon>
                   </svg>
                 )}
