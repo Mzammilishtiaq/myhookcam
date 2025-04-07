@@ -360,6 +360,60 @@ function App() {
     };
   }, []);
   
+  // Watch for window events to update title state from other components
+  useEffect(() => {
+    // Listen for storage events (for cross-tab sync)
+    const handleStorageEvent = (event: StorageEvent) => {
+      if (event.key === 'cameraSelection') {
+        try {
+          // Try to load camera info from session storage
+          const savedCameraInfo = sessionStorage.getItem('currentCameraInfo');
+          if (savedCameraInfo) {
+            const parsedInfo = JSON.parse(savedCameraInfo);
+            setCameraName(parsedInfo.name);
+            setJobsiteName(parsedInfo.jobsiteName);
+            setPageTitle(`${parsedInfo.name} at ${parsedInfo.jobsiteName}`);
+            console.log("App.tsx updated title from localStorage event:", parsedInfo);
+          }
+        } catch (e) {
+          console.error("Error loading camera info from session storage:", e);
+        }
+      }
+    };
+    
+    // Listen for custom titleUpdate events
+    const handleTitleUpdateEvent = (event: CustomEvent) => {
+      const { cameraName: newCameraName, jobsiteName: newJobsiteName, pageTitle: newPageTitle } = event.detail;
+      setCameraName(newCameraName);
+      setJobsiteName(newJobsiteName);
+      setPageTitle(newPageTitle);
+      console.log("App.tsx updated title from custom event:", newPageTitle);
+    };
+    
+    // Add event listeners
+    window.addEventListener('storage', handleStorageEvent);
+    window.addEventListener('titleUpdate', handleTitleUpdateEvent as EventListener);
+    
+    // Also check for existing session storage on initial mount
+    try {
+      const savedCameraInfo = sessionStorage.getItem('currentCameraInfo');
+      if (savedCameraInfo) {
+        const parsedInfo = JSON.parse(savedCameraInfo);
+        setCameraName(parsedInfo.name);
+        setJobsiteName(parsedInfo.jobsiteName);
+        setPageTitle(`${parsedInfo.name} at ${parsedInfo.jobsiteName}`);
+        console.log("App.tsx initialized title from sessionStorage:", parsedInfo);
+      }
+    } catch (e) {
+      console.error("Error loading camera info from session storage:", e);
+    }
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageEvent);
+      window.removeEventListener('titleUpdate', handleTitleUpdateEvent as EventListener);
+    };
+  }, []);
+  
   const handleSelectionChange = (jobsiteIds: number[], cameraIds: number[]) => {
     setSelectedJobsites(jobsiteIds);
     setSelectedCameras(cameraIds);

@@ -321,6 +321,24 @@ export function Sidebar({ onSelectionChange }: SidebarProps) {
                               // Format the title as "Camera Name at Jobsite Name"
                               pageTitleContext.setPageTitle(`${camera.name} at ${jobsite.name}`);
                               
+                              // Save current camera info to session storage
+                              const cameraData = {
+                                name: camera.name,
+                                location: "",  // We don't have location in the Camera type
+                                jobsiteName: jobsite.name
+                              };
+                              sessionStorage.setItem('currentCameraInfo', JSON.stringify(cameraData));
+                              
+                              // Dispatch a custom event to notify App.tsx to update its state
+                              const titleUpdateEvent = new CustomEvent('titleUpdate', {
+                                detail: {
+                                  cameraName: camera.name,
+                                  jobsiteName: jobsite.name,
+                                  pageTitle: `${camera.name} at ${jobsite.name}`
+                                }
+                              });
+                              window.dispatchEvent(titleUpdateEvent);
+                              
                               // Debug log
                               console.log(`SETTING TITLE: ${camera.name} at ${jobsite.name}`);
                             }
