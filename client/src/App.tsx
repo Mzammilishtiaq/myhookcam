@@ -89,6 +89,14 @@ function MainNavigation() {
   
   // Determine the header title based on the page context
   const getHeaderTitle = () => {
+    // Debug log for title generation
+    console.log("Generating header title with:", { 
+      pageTitle,
+      cameraName, 
+      jobsiteName, 
+      location 
+    });
+    
     // Default header title
     let title = <><span className="text-[#FBBC05]">HookCam</span> System</>;
     
@@ -100,17 +108,24 @@ function MainNavigation() {
         title = <><span className="text-[#FBBC05]">All Jobsites</span> Dashboard</>;
       }
     } 
-    // Check if we're on a specific camera view
+    // Check if we're on a specific camera view and have a camera name
     else if (cameraName && (location === '/livestream' || location === '/recordings' || location === '/system-status')) {
-      // Format: "{Camera Name} at {Jobsite Name}"
-      if (jobsiteName) {
-        // Don't include "HookCam" text prefix since it's already in the camera name
-        title = <>{cameraName} at {jobsiteName}</>;
-      } else {
-        title = <>{cameraName}</>;
+      // Use the exact title that was set by sidebar or LiveStream component
+      if (pageTitle && pageTitle !== "Live Stream" && pageTitle !== "System") {
+        // The title has already been formatted as "Camera Name at Jobsite Name"
+        title = <>{pageTitle}</>;
+      }
+      // Fallback to camera name only if we don't have a properly formatted title
+      else if (cameraName) {
+        if (jobsiteName) {
+          title = <>{cameraName} at {jobsiteName}</>;
+        } else {
+          title = <>{cameraName}</>;
+        }
       }
     }
     
+    console.log("Generated title:", title);
     return title;
   };
   

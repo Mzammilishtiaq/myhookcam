@@ -303,22 +303,32 @@ export function Sidebar({ onSelectionChange }: SidebarProps) {
                         className="flex-grow text-sm cursor-pointer hover:text-[#FBBC05] transition-colors"
                         onClick={(e) => {
                           e.stopPropagation();
-                          // Save selection to localStorage
+                          
+                          // Important: Save the device ID (not camera ID) to localStorage
                           try {
                             localStorage.setItem('cameraSelection', JSON.stringify({
-                              selectedCameras: [camera.id],
+                              selectedCameras: [camera.deviceId], // Use deviceId instead of camera.id
                               selectedJobsites: [jobsite.id]
                             }));
+                            
+                            // Clear any existing camera info from session storage
+                            sessionStorage.removeItem('currentCameraInfo');
                             
                             // Update the page title context
                             if (pageTitleContext) {
                               pageTitleContext.setCameraName(camera.name);
                               pageTitleContext.setJobsiteName(jobsite.name);
-                              pageTitleContext.setPageTitle("Live Stream");
+                              // Format the title as "Camera Name at Jobsite Name"
+                              pageTitleContext.setPageTitle(`${camera.name} at ${jobsite.name}`);
+                              
+                              // Debug log
+                              console.log(`SETTING TITLE: ${camera.name} at ${jobsite.name}`);
                             }
                           } catch (error) {
                             console.error("Error saving camera selection:", error);
                           }
+                          
+                          // Navigate to livestream
                           setLocation(`/livestream`);
                         }}
                       >
