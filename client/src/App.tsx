@@ -160,31 +160,34 @@ function MainNavigation() {
           </div>
         </div>
         
-        <Tabs value={location === "/" ? "/livestream" : location} className="w-full">
-          <TabsList className="w-full">
-            <TabsTrigger 
-              value="/livestream" 
-              className="flex-1 data-[state=active]:text-[#FBBC05] data-[state=active]:border-b-2 data-[state=active]:border-[#FBBC05]"
-              onClick={() => setLocation("/livestream")}
-            >
-              Live Stream
-            </TabsTrigger>
-            <TabsTrigger 
-              value="/recordings" 
-              className="flex-1 data-[state=active]:text-[#FBBC05] data-[state=active]:border-b-2 data-[state=active]:border-[#FBBC05]"
-              onClick={() => setLocation("/recordings")}
-            >
-              Recordings
-            </TabsTrigger>
-            <TabsTrigger 
-              value="/system-status" 
-              className="flex-1 data-[state=active]:text-[#FBBC05] data-[state=active]:border-b-2 data-[state=active]:border-[#FBBC05]"
-              onClick={() => setLocation("/system-status")}
-            >
-              System Status
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
+        {/* Only show tabs when NOT on the camera dashboard pages */}
+        {!location.startsWith('/cameras') && (
+          <Tabs value={location === "/" ? "/livestream" : location} className="w-full">
+            <TabsList className="w-full">
+              <TabsTrigger 
+                value="/livestream" 
+                className="flex-1 data-[state=active]:text-[#FBBC05] data-[state=active]:border-b-2 data-[state=active]:border-[#FBBC05]"
+                onClick={() => setLocation("/livestream")}
+              >
+                Live Stream
+              </TabsTrigger>
+              <TabsTrigger 
+                value="/recordings" 
+                className="flex-1 data-[state=active]:text-[#FBBC05] data-[state=active]:border-b-2 data-[state=active]:border-[#FBBC05]"
+                onClick={() => setLocation("/recordings")}
+              >
+                Recordings
+              </TabsTrigger>
+              <TabsTrigger 
+                value="/system-status" 
+                className="flex-1 data-[state=active]:text-[#FBBC05] data-[state=active]:border-b-2 data-[state=active]:border-[#FBBC05]"
+                onClick={() => setLocation("/system-status")}
+              >
+                System Status
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+        )}
       </div>
     </div>
   );
