@@ -102,10 +102,12 @@ function MainNavigation() {
     } 
     // Check if we're on a specific camera view
     else if (cameraName && (location === '/livestream' || location === '/recordings' || location === '/system-status')) {
+      // Format: "{Camera Name} at {Jobsite Name}"
       if (jobsiteName) {
-        title = <><span className="text-[#FBBC05]">HookCam</span> {cameraName} at {jobsiteName}</>;
+        // Don't include "HookCam" text prefix since it's already in the camera name
+        title = <>{cameraName} at {jobsiteName}</>;
       } else {
-        title = <><span className="text-[#FBBC05]">HookCam</span> {cameraName}</>;
+        title = <>{cameraName}</>;
       }
     }
     
