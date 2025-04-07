@@ -111,11 +111,8 @@ function MainNavigation() {
     
     // Check if we're on Camera Dashboard page
     if (location.startsWith('/cameras')) {
-      if (jobsiteName) {
-        title = <>{jobsiteName} <span className="text-[#FBBC05]">Dashboard</span></>;
-      } else {
-        title = <><span className="text-[#FBBC05]">All Jobsites</span> Dashboard</>;
-      }
+      // Use static "HookCam Dashboard" title since jobsite name is already displayed in main title
+      title = <><span className="text-[#FBBC05]">HookCam</span> Dashboard</>;
     } 
     // Check if we're on a specific camera view and have a camera name
     else if (cameraName && (location === '/livestream' || location === '/recordings' || location === '/system-status')) {
