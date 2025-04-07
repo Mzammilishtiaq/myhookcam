@@ -56,6 +56,15 @@ export const SelectionContext = createContext<SelectionContextType>(defaultSelec
 // Context for page title management
 export const PageTitleContext = createContext<PageTitleContextType>(defaultPageTitleContext);
 
+// Add a provider hook for better debugging
+export function usePageTitle() {
+  const context = useContext(PageTitleContext);
+  if (context === undefined) {
+    throw new Error('usePageTitle must be used within a PageTitleProvider');
+  }
+  return context;
+}
+
 function MainNavigation() {
   const [location, setLocation] = useLocation();
   const { isOpen, toggle } = useSidebarStore();

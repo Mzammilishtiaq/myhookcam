@@ -13,7 +13,7 @@ import {
   Volume,
   Volume2
 } from "lucide-react";
-import { PageTitleContext, SelectionContext } from "@/App";
+import { usePageTitle, SelectionContext } from "@/App";
 
 export default function LiveStream() {
   // Mock video stream URL - in production this would be replaced with a real stream URL
@@ -21,7 +21,7 @@ export default function LiveStream() {
   
   // Access contexts
   const { selectedCameras } = useContext(SelectionContext);
-  const { setPageTitle, setCameraName, setJobsiteName } = useContext(PageTitleContext);
+  const { setPageTitle, setCameraName, setJobsiteName } = usePageTitle();
   
   // Camera state
   const [cameraInfo, setCameraInfo] = useState<{
@@ -57,8 +57,13 @@ export default function LiveStream() {
           
           const devices = await response.json();
           
-          // Find the selected camera
-          const selectedCamera = devices.find((device: any) => device.id === cameraId);
+          // Find the selected camera - use both id and deviceId for compatibility 
+          // (deviceId from API would match selectedCameras when using sidebar)
+          console.log("Looking for camera with ID:", cameraId);
+          console.log("Available devices:", devices);
+          const selectedCamera = devices.find((device: any) => 
+            device.id === cameraId || device.deviceId === cameraId
+          );
           
           if (selectedCamera) {
             // Update local state with camera info
