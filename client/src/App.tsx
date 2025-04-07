@@ -109,7 +109,7 @@ function MainNavigation() {
     // Default header title
     let title = <><span className="text-[#FBBC05]">HookCam</span> System</>;
     
-    // Check if we're on Camera Dashboard page
+    // Check if we're on Dashboard page
     if (location.startsWith('/cameras')) {
       // Use static "HookCam Dashboard" title since jobsite name is already displayed in main title
       title = <><span className="text-[#FBBC05]">HookCam</span> Dashboard</>;
@@ -157,7 +157,7 @@ function MainNavigation() {
           </div>
         </div>
         
-        {/* Only show tabs when NOT on the camera dashboard pages */}
+        {/* Only show tabs when NOT on the dashboard pages */}
         {!location.startsWith('/cameras') && (
           <Tabs value={location === "/" ? "/livestream" : location} className="w-full">
             <TabsList className="w-full">
