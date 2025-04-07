@@ -51,27 +51,39 @@ export default function LiveStream() {
         try {
           // Fetch all devices to find the selected camera
           const response = await fetch('/api/devices');
+          if (!response.ok) {
+            throw new Error(`API request failed with status: ${response.status}`);
+          }
+          
           const devices = await response.json();
           
           // Find the selected camera
           const selectedCamera = devices.find((device: any) => device.id === cameraId);
           
           if (selectedCamera) {
-            // Update local state
-            setCameraInfo({
+            // Update local state with camera info
+            const cameraData = {
               name: selectedCamera.name,
               location: selectedCamera.location,
               jobsiteName: selectedCamera.jobsiteName
-            });
+            };
+            
+            setCameraInfo(cameraData);
             
             // Update global context for page title display
             setCameraName(selectedCamera.name);
             setJobsiteName(selectedCamera.jobsiteName);
+            
             // Set the page title to "Camera Name at Jobsite Name"
             setPageTitle(`${selectedCamera.name} at ${selectedCamera.jobsiteName}`);
             
+            // Save camera info to session storage for persistence
+            sessionStorage.setItem('currentCameraInfo', JSON.stringify(cameraData));
+            
             // For debug
             console.log(`Loaded camera: ${selectedCamera.name} at ${selectedCamera.jobsiteName}`);
+          } else {
+            console.warn(`No camera found with ID: ${cameraId}`);
           }
         } catch (error) {
           console.error("Error fetching camera information:", error);
@@ -79,6 +91,22 @@ export default function LiveStream() {
       }
     }
     
+    // First try to load from session storage if available
+    try {
+      const savedCameraInfo = sessionStorage.getItem('currentCameraInfo');
+      if (savedCameraInfo && selectedCameras.length > 0) {
+        const parsedInfo = JSON.parse(savedCameraInfo);
+        setCameraInfo(parsedInfo);
+        setCameraName(parsedInfo.name);
+        setJobsiteName(parsedInfo.jobsiteName);
+        setPageTitle(`${parsedInfo.name} at ${parsedInfo.jobsiteName}`);
+        console.log(`Restored camera from session: ${parsedInfo.name} at ${parsedInfo.jobsiteName}`);
+      }
+    } catch (e) {
+      console.error("Error loading camera info from session storage:", e);
+    }
+    
+    // Then fetch the latest info from API
     fetchCameraInfo();
   }, [selectedCameras, setCameraName, setJobsiteName, setPageTitle]);
   
@@ -268,11 +296,19 @@ export default function LiveStream() {
     <div className="container mx-auto p-4">
       <Card className="p-6">
         <h2 className="text-2xl font-bold mb-4 text-[#555555]">
-          <span className="text-[#FBBC05]">HookCam</span> {cameraInfo?.name || "Live Stream"}
-          {cameraInfo?.jobsiteName && (
-            <span className="text-base ml-2 text-[#555555] opacity-75">
-              at {cameraInfo.jobsiteName}
-            </span>
+          {cameraInfo?.name ? (
+            <>
+              {cameraInfo.name}
+              {cameraInfo.jobsiteName && (
+                <span className="text-base ml-2 text-[#555555] opacity-75">
+                  at {cameraInfo.jobsiteName}
+                </span>
+              )}
+            </>
+          ) : (
+            <>
+              <span className="text-[#FBBC05]">HookCam</span> Live Stream
+            </>
           )}
         </h2>
         
