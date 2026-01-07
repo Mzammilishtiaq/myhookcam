@@ -137,61 +137,55 @@ function MainNavigation() {
   };
   
   return (
-    <div className="bg-[#555555] text-[#FFFFFF] px-4 pt-4 shadow-md">
-      <div className="w-full">
+    <div className="bg-[#555555] text-[#FFFFFF] px-2 sm:px-4 pt-4 shadow-md overflow-hidden">
+      <div className="w-full max-w-full">
         <div className="flex justify-between items-center mb-4">
-          <div className="flex items-center">
-            {/* Menu button - always visible on mobile and when sidebar is collapsed on desktop */}
+          <div className="flex items-center min-w-0">
             {(!isOpen || isMobileView) && (
               <Button 
                 variant="ghost" 
                 size="sm"
-                className="mr-3 text-white hover:bg-[#666666] transition-colors"
+                className="mr-2 sm:mr-3 text-white hover:bg-[#666666] transition-colors flex-shrink-0"
                 onClick={handleMenuClick}
               >
                 <Menu className="h-5 w-5" />
               </Button>
             )}
-            <h1 className="text-xl font-semibold">
+            <h1 className="text-base sm:text-xl font-semibold truncate">
               {getHeaderTitle()}
             </h1>
           </div>
         </div>
         
-        {/* Only show tabs when NOT on the dashboard pages */}
         {!location.startsWith('/cameras') && (
-          <Tabs value={location === "/" ? "/livestream" : location} className="w-full">
-            <TabsList className="w-full grid grid-cols-4">
-              <TabsTrigger 
-                value="/livestream" 
-                className="text-[10px] sm:text-xs md:text-sm px-1 sm:px-2 whitespace-nowrap data-[state=active]:text-[#FBBC05] data-[state=active]:border-b-2 data-[state=active]:border-[#FBBC05]"
+          <div className="w-full overflow-hidden -mx-2 sm:-mx-4 px-2 sm:px-4">
+            <div className="flex w-full bg-[#444444] rounded-md">
+              <button 
+                className={`flex-1 py-2 text-center text-[11px] sm:text-sm font-medium transition-colors ${location === "/" || location === "/livestream" ? "text-[#FBBC05] border-b-2 border-[#FBBC05] bg-[#555555]" : "text-white hover:bg-[#505050]"}`}
                 onClick={() => setLocation("/livestream")}
               >
                 Live
-              </TabsTrigger>
-              <TabsTrigger 
-                value="/insights" 
-                className="text-[10px] sm:text-xs md:text-sm px-1 sm:px-2 whitespace-nowrap data-[state=active]:text-[#FBBC05] data-[state=active]:border-b-2 data-[state=active]:border-[#FBBC05]"
+              </button>
+              <button 
+                className={`flex-1 py-2 text-center text-[11px] sm:text-sm font-medium transition-colors ${location === "/insights" ? "text-[#FBBC05] border-b-2 border-[#FBBC05] bg-[#555555]" : "text-white hover:bg-[#505050]"}`}
                 onClick={() => setLocation("/insights")}
               >
                 Insights
-              </TabsTrigger>
-              <TabsTrigger 
-                value="/recordings" 
-                className="text-[10px] sm:text-xs md:text-sm px-1 sm:px-2 whitespace-nowrap data-[state=active]:text-[#FBBC05] data-[state=active]:border-b-2 data-[state=active]:border-[#FBBC05]"
+              </button>
+              <button 
+                className={`flex-1 py-2 text-center text-[11px] sm:text-sm font-medium transition-colors ${location === "/recordings" ? "text-[#FBBC05] border-b-2 border-[#FBBC05] bg-[#555555]" : "text-white hover:bg-[#505050]"}`}
                 onClick={() => setLocation("/recordings")}
               >
                 Recordings
-              </TabsTrigger>
-              <TabsTrigger 
-                value="/system-status" 
-                className="text-[10px] sm:text-xs md:text-sm px-1 sm:px-2 whitespace-nowrap data-[state=active]:text-[#FBBC05] data-[state=active]:border-b-2 data-[state=active]:border-[#FBBC05]"
+              </button>
+              <button 
+                className={`flex-1 py-2 text-center text-[11px] sm:text-sm font-medium transition-colors ${location === "/system-status" ? "text-[#FBBC05] border-b-2 border-[#FBBC05] bg-[#555555]" : "text-white hover:bg-[#505050]"}`}
                 onClick={() => setLocation("/system-status")}
               >
                 Status
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
+              </button>
+            </div>
+          </div>
         )}
       </div>
     </div>
