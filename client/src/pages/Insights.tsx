@@ -2,7 +2,7 @@ import { useContext, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SelectionContext } from "@/App";
 import { BarChart3, TrendingUp, Clock, Activity, AlertTriangle, CheckCircle, Package, Weight, Wind } from "lucide-react";
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, ComposedChart, Scatter, Line, XAxis, YAxis, CartesianGrid, Legend } from "recharts";
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Legend } from "recharts";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -22,21 +22,21 @@ export default function Insights() {
   const remainingMinutes = totalMinutes % 60;
 
   const pickEvents = [
-    { id: 1, hour: 6.5, durationMinutes: 8, tonnage: 3.2 },
-    { id: 2, hour: 7.25, durationMinutes: 5, tonnage: 2.1 },
-    { id: 3, hour: 8.0, durationMinutes: 12, tonnage: 5.8 },
-    { id: 4, hour: 8.75, durationMinutes: 6, tonnage: 2.5 },
-    { id: 5, hour: 9.5, durationMinutes: 10, tonnage: 4.2 },
-    { id: 6, hour: 10.25, durationMinutes: 4, tonnage: 1.8 },
-    { id: 7, hour: 11.0, durationMinutes: 7, tonnage: 3.5 },
-    { id: 8, hour: 11.5, durationMinutes: 9, tonnage: 4.0 },
-    { id: 9, hour: 13.0, durationMinutes: 11, tonnage: 5.2 },
-    { id: 10, hour: 13.75, durationMinutes: 6, tonnage: 2.8 },
-    { id: 11, hour: 14.5, durationMinutes: 8, tonnage: 3.6 },
-    { id: 12, hour: 15.25, durationMinutes: 5, tonnage: 2.2 },
-    { id: 13, hour: 16.0, durationMinutes: 10, tonnage: 4.5 },
-    { id: 14, hour: 16.5, durationMinutes: 7, tonnage: 3.1 },
-    { id: 15, hour: 17.25, durationMinutes: 4, tonnage: 1.9 },
+    { id: 1, hour: 6.5, durationMinutes: 8, tonnage: 3.2, timeLabel: "6:30 AM" },
+    { id: 2, hour: 7.25, durationMinutes: 5, tonnage: 2.1, timeLabel: "7:15 AM" },
+    { id: 3, hour: 8.0, durationMinutes: 12, tonnage: 5.8, timeLabel: "8:00 AM" },
+    { id: 4, hour: 8.75, durationMinutes: 6, tonnage: 2.5, timeLabel: "8:45 AM" },
+    { id: 5, hour: 9.5, durationMinutes: 10, tonnage: 4.2, timeLabel: "9:30 AM" },
+    { id: 6, hour: 10.25, durationMinutes: 4, tonnage: 1.8, timeLabel: "10:15 AM" },
+    { id: 7, hour: 11.0, durationMinutes: 7, tonnage: 3.5, timeLabel: "11:00 AM" },
+    { id: 8, hour: 11.5, durationMinutes: 9, tonnage: 4.0, timeLabel: "11:30 AM" },
+    { id: 9, hour: 13.0, durationMinutes: 11, tonnage: 5.2, timeLabel: "1:00 PM" },
+    { id: 10, hour: 13.75, durationMinutes: 6, tonnage: 2.8, timeLabel: "1:45 PM" },
+    { id: 11, hour: 14.5, durationMinutes: 8, tonnage: 3.6, timeLabel: "2:30 PM" },
+    { id: 12, hour: 15.25, durationMinutes: 5, tonnage: 2.2, timeLabel: "3:15 PM" },
+    { id: 13, hour: 16.0, durationMinutes: 10, tonnage: 4.5, timeLabel: "4:00 PM" },
+    { id: 14, hour: 16.5, durationMinutes: 7, tonnage: 3.1, timeLabel: "4:30 PM" },
+    { id: 15, hour: 17.25, durationMinutes: 4, tonnage: 1.9, timeLabel: "5:15 PM" },
   ];
 
   const windData = [
@@ -230,21 +230,37 @@ export default function Insights() {
                   />
                 )}
                 <Tooltip 
-                  formatter={(value: number, name: string) => {
-                    if (name === "windSpeed") return [`${value} mph`, "Wind Speed"];
-                    if (selectedMetric === "duration") return [`${value} min`, "Duration"];
-                    return [`${value} tons`, "Tonnage"];
+                  content={({ active, payload }) => {
+                    if (active && payload && payload.length) {
+                      const data = payload[0].payload;
+                      return (
+                        <div className="bg-white p-2 border border-[#BCBBBB] rounded shadow-md">
+                          <p className="text-sm font-medium text-[#000000]">Pick at {data.timeLabel || formatHour(data.hour)}</p>
+                          {payload.map((entry: any, index: number) => (
+                            <p key={index} className="text-sm text-[#555555]">
+                              {entry.name === "Wind Speed" 
+                                ? `Wind Speed: ${entry.value} mph`
+                                : selectedMetric === "duration" 
+                                  ? `Duration: ${entry.value} min` 
+                                  : `Tonnage: ${entry.value} tons`
+                              }
+                            </p>
+                          ))}
+                        </div>
+                      );
+                    }
+                    return null;
                   }}
-                  labelFormatter={(label) => `Time: ${formatHour(label)}`}
                 />
                 <Legend />
                 
-                <Scatter 
+                <Bar 
                   name={selectedMetric === "duration" ? "Pick Duration" : "Pick Tonnage"}
                   data={pickEvents}
                   dataKey={selectedMetric === "duration" ? "durationMinutes" : "tonnage"}
                   fill="#FBBC05"
                   yAxisId="picks"
+                  barSize={8}
                 />
                 
                 {showWindSpeed && (
