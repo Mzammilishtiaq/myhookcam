@@ -1,7 +1,7 @@
 import { useContext, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SelectionContext } from "@/App";
-import { BarChart3, Clock, Activity, Package, Weight, Wind, Star, Share2, Play } from "lucide-react";
+import { BarChart3, Clock, Activity, Package, Weight, Wind, Star, Share2, Play, Calendar } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Legend, BarChart, ReferenceLine } from "recharts";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
@@ -12,6 +12,9 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { format } from "date-fns";
 
 interface PickEvent {
   id: string;
@@ -35,6 +38,7 @@ export default function Insights() {
   const [selectedPickForShare, setSelectedPickForShare] = useState<PickEvent | null>(null);
   const [shareEmails, setShareEmails] = useState("");
   const [shareMessage, setShareMessage] = useState("");
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const { toast } = useToast();
 
   const pickTimeData = [
@@ -164,6 +168,30 @@ export default function Insights() {
 
   return (
     <div className="space-y-6" data-testid="insights-page">
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl font-semibold text-[#555555]">Pick Analytics</h2>
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              className="border-[#BCBBBB] text-[#555555] hover:bg-[#FBBC05]/10"
+              data-testid="date-picker-btn"
+            >
+              <Calendar className="mr-2 h-4 w-4 text-[#FBBC05]" />
+              {format(selectedDate, "MMMM d, yyyy")}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="end">
+            <CalendarComponent
+              mode="single"
+              selected={selectedDate}
+              onSelect={(date) => date && setSelectedDate(date)}
+              initialFocus
+            />
+          </PopoverContent>
+        </Popover>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card className="border-[#BCBBBB]">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
