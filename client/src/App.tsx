@@ -226,10 +226,11 @@ function Layout() {
     <div className="min-h-screen flex flex-col bg-[#FFFFFF]">
       {/* Header positioned as a fixed-width element at the top */}
       <div 
-        className="w-full bg-[#555555] z-40 relative"
+        className="bg-[#555555] z-40 relative"
         style={{
           marginLeft: isOpen && !isMobileView ? '280px' : '0',
-          transition: 'margin-left 0.3s ease-in-out'
+          width: isOpen && !isMobileView ? 'calc(100% - 280px)' : '100%',
+          transition: 'margin-left 0.3s ease-in-out, width 0.3s ease-in-out'
         }}
       >
         <MainNavigation />
@@ -288,9 +289,9 @@ function Layout() {
         <div style={{
           display: 'flex',
           flexDirection: 'column',
-          width: '100%',
-          transition: 'margin-left 0.3s ease-in-out',
-          marginLeft: isOpen && !isMobileView ? '280px' : '0' // Add space for the sidebar
+          width: isOpen && !isMobileView ? 'calc(100% - 280px)' : '100%',
+          transition: 'margin-left 0.3s ease-in-out, width 0.3s ease-in-out',
+          marginLeft: isOpen && !isMobileView ? '280px' : '0'
         }}>
           {/* Content area - header is now placed outside this div so it can extend full width */}
           
