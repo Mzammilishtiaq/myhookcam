@@ -161,34 +161,34 @@ function MainNavigation() {
         {/* Only show tabs when NOT on the dashboard pages */}
         {!location.startsWith('/cameras') && (
           <Tabs value={location === "/" ? "/livestream" : location} className="w-full">
-            <TabsList className="w-full">
+            <TabsList className="w-full grid grid-cols-4">
               <TabsTrigger 
                 value="/livestream" 
-                className="flex-1 data-[state=active]:text-[#FBBC05] data-[state=active]:border-b-2 data-[state=active]:border-[#FBBC05]"
+                className="text-xs sm:text-sm px-2 sm:px-4 data-[state=active]:text-[#FBBC05] data-[state=active]:border-b-2 data-[state=active]:border-[#FBBC05]"
                 onClick={() => setLocation("/livestream")}
               >
                 Live Stream
               </TabsTrigger>
               <TabsTrigger 
                 value="/insights" 
-                className="flex-1 data-[state=active]:text-[#FBBC05] data-[state=active]:border-b-2 data-[state=active]:border-[#FBBC05]"
+                className="text-xs sm:text-sm px-2 sm:px-4 data-[state=active]:text-[#FBBC05] data-[state=active]:border-b-2 data-[state=active]:border-[#FBBC05]"
                 onClick={() => setLocation("/insights")}
               >
                 Insights
               </TabsTrigger>
               <TabsTrigger 
                 value="/recordings" 
-                className="flex-1 data-[state=active]:text-[#FBBC05] data-[state=active]:border-b-2 data-[state=active]:border-[#FBBC05]"
+                className="text-xs sm:text-sm px-2 sm:px-4 data-[state=active]:text-[#FBBC05] data-[state=active]:border-b-2 data-[state=active]:border-[#FBBC05]"
                 onClick={() => setLocation("/recordings")}
               >
                 Recordings
               </TabsTrigger>
               <TabsTrigger 
                 value="/system-status" 
-                className="flex-1 data-[state=active]:text-[#FBBC05] data-[state=active]:border-b-2 data-[state=active]:border-[#FBBC05]"
+                className="text-xs sm:text-sm px-2 sm:px-4 data-[state=active]:text-[#FBBC05] data-[state=active]:border-b-2 data-[state=active]:border-[#FBBC05]"
                 onClick={() => setLocation("/system-status")}
               >
-                System Status
+                Status
               </TabsTrigger>
             </TabsList>
           </Tabs>
