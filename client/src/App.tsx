@@ -10,6 +10,7 @@ import Home from "@/pages/Home";
 import LiveStream from "@/pages/LiveStream";
 import Recordings from "@/pages/Recordings";
 import SystemStatus from "@/pages/SystemStatus";
+import Insights from "@/pages/Insights";
 import CameraDashboard from "@/pages/CameraDashboard";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -115,7 +116,7 @@ function MainNavigation() {
       title = <><span className="text-[#FBBC05]">HookCam</span> Dashboard</>;
     } 
     // Check if we're on a specific camera view and have a camera name
-    else if (cameraName && (location === '/livestream' || location === '/recordings' || location === '/system-status')) {
+    else if (cameraName && (location === '/livestream' || location === '/recordings' || location === '/system-status' || location === '/insights')) {
       // Use the exact title that was set by sidebar or LiveStream component
       if (pageTitle && pageTitle !== "Live Stream" && pageTitle !== "System") {
         // The title has already been formatted as "Camera Name at Jobsite Name"
@@ -181,6 +182,13 @@ function MainNavigation() {
                 onClick={() => setLocation("/system-status")}
               >
                 System Status
+              </TabsTrigger>
+              <TabsTrigger 
+                value="/insights" 
+                className="flex-1 data-[state=active]:text-[#FBBC05] data-[state=active]:border-b-2 data-[state=active]:border-[#FBBC05]"
+                onClick={() => setLocation("/insights")}
+              >
+                Insights
               </TabsTrigger>
             </TabsList>
           </Tabs>
@@ -299,6 +307,7 @@ function Layout() {
               <Route path="/livestream" component={LiveStream} />
               <Route path="/recordings" component={Recordings} />
               <Route path="/system-status" component={SystemStatus} />
+              <Route path="/insights" component={Insights} />
               <Route path="/cameras">
                 {(params) => <CameraDashboard />}
               </Route>
