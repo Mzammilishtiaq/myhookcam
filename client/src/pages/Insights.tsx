@@ -2,7 +2,7 @@ import { useContext, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SelectionContext } from "@/App";
 import { BarChart3, TrendingUp, Clock, Activity, AlertTriangle, CheckCircle, Package, Weight, Wind } from "lucide-react";
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Legend } from "recharts";
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Legend, BarChart, ReferenceLine } from "recharts";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -20,24 +20,6 @@ export default function Insights() {
   const totalMinutes = pickTimeData[0].value + pickTimeData[1].value;
   const totalHours = Math.floor(totalMinutes / 60);
   const remainingMinutes = totalMinutes % 60;
-
-  const pickEvents = [
-    { id: 1, hour: 6.5, durationMinutes: 8, tonnage: 3.2, timeLabel: "6:30 AM" },
-    { id: 2, hour: 7.25, durationMinutes: 5, tonnage: 2.1, timeLabel: "7:15 AM" },
-    { id: 3, hour: 8.0, durationMinutes: 12, tonnage: 5.8, timeLabel: "8:00 AM" },
-    { id: 4, hour: 8.75, durationMinutes: 6, tonnage: 2.5, timeLabel: "8:45 AM" },
-    { id: 5, hour: 9.5, durationMinutes: 10, tonnage: 4.2, timeLabel: "9:30 AM" },
-    { id: 6, hour: 10.25, durationMinutes: 4, tonnage: 1.8, timeLabel: "10:15 AM" },
-    { id: 7, hour: 11.0, durationMinutes: 7, tonnage: 3.5, timeLabel: "11:00 AM" },
-    { id: 8, hour: 11.5, durationMinutes: 9, tonnage: 4.0, timeLabel: "11:30 AM" },
-    { id: 9, hour: 13.0, durationMinutes: 11, tonnage: 5.2, timeLabel: "1:00 PM" },
-    { id: 10, hour: 13.75, durationMinutes: 6, tonnage: 2.8, timeLabel: "1:45 PM" },
-    { id: 11, hour: 14.5, durationMinutes: 8, tonnage: 3.6, timeLabel: "2:30 PM" },
-    { id: 12, hour: 15.25, durationMinutes: 5, tonnage: 2.2, timeLabel: "3:15 PM" },
-    { id: 13, hour: 16.0, durationMinutes: 10, tonnage: 4.5, timeLabel: "4:00 PM" },
-    { id: 14, hour: 16.5, durationMinutes: 7, tonnage: 3.1, timeLabel: "4:30 PM" },
-    { id: 15, hour: 17.25, durationMinutes: 4, tonnage: 1.9, timeLabel: "5:15 PM" },
-  ];
 
   const windData = [
     { hour: 0, windSpeed: 8 },
@@ -66,6 +48,32 @@ export default function Insights() {
     { hour: 23, windSpeed: 7 },
     { hour: 24, windSpeed: 8 },
   ];
+
+  const pickEvents = [
+    { timeLabel: "6:30 AM", durationMinutes: 8, tonnage: 3.2, hour: 6.5 },
+    { timeLabel: "7:15 AM", durationMinutes: 5, tonnage: 2.1, hour: 7.25 },
+    { timeLabel: "8:00 AM", durationMinutes: 12, tonnage: 5.8, hour: 8.0 },
+    { timeLabel: "8:45 AM", durationMinutes: 6, tonnage: 2.5, hour: 8.75 },
+    { timeLabel: "9:30 AM", durationMinutes: 10, tonnage: 4.2, hour: 9.5 },
+    { timeLabel: "10:15 AM", durationMinutes: 4, tonnage: 1.8, hour: 10.25 },
+    { timeLabel: "11:00 AM", durationMinutes: 7, tonnage: 3.5, hour: 11.0 },
+    { timeLabel: "11:30 AM", durationMinutes: 9, tonnage: 4.0, hour: 11.5 },
+    { timeLabel: "1:00 PM", durationMinutes: 11, tonnage: 5.2, hour: 13.0 },
+    { timeLabel: "1:45 PM", durationMinutes: 6, tonnage: 2.8, hour: 13.75 },
+    { timeLabel: "2:30 PM", durationMinutes: 8, tonnage: 3.6, hour: 14.5 },
+    { timeLabel: "3:15 PM", durationMinutes: 5, tonnage: 2.2, hour: 15.25 },
+    { timeLabel: "4:00 PM", durationMinutes: 10, tonnage: 4.5, hour: 16.0 },
+    { timeLabel: "4:30 PM", durationMinutes: 7, tonnage: 3.1, hour: 16.5 },
+    { timeLabel: "5:15 PM", durationMinutes: 4, tonnage: 1.9, hour: 17.25 },
+  ];
+
+  const combinedData = pickEvents.map(pick => {
+    const windEntry = windData.find(w => Math.floor(pick.hour) === w.hour) || { windSpeed: 0 };
+    return {
+      ...pick,
+      windSpeed: windEntry.windSpeed
+    };
+  });
 
   const formatHour = (hour: number) => {
     const h = Math.floor(hour);
@@ -203,16 +211,15 @@ export default function Insights() {
 
           <div className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+              <ComposedChart data={combinedData} margin={{ top: 20, right: showWindSpeed ? 60 : 30, left: 20, bottom: 20 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#BCBBBB" />
                 <XAxis 
-                  type="number"
-                  dataKey="hour"
-                  domain={[0, 24]}
-                  ticks={[0, 4, 8, 12, 16, 20, 24]}
-                  tickFormatter={formatHour}
+                  dataKey="timeLabel"
                   stroke="#555555"
-                  label={{ value: "Time of Day", position: "bottom", offset: 0, fill: "#555555" }}
+                  tick={{ fontSize: 10 }}
+                  angle={-45}
+                  textAnchor="end"
+                  height={60}
                 />
                 <YAxis 
                   yAxisId="picks"
@@ -235,17 +242,16 @@ export default function Insights() {
                       const data = payload[0].payload;
                       return (
                         <div className="bg-white p-2 border border-[#BCBBBB] rounded shadow-md">
-                          <p className="text-sm font-medium text-[#000000]">Pick at {data.timeLabel || formatHour(data.hour)}</p>
-                          {payload.map((entry: any, index: number) => (
-                            <p key={index} className="text-sm text-[#555555]">
-                              {entry.name === "Wind Speed" 
-                                ? `Wind Speed: ${entry.value} mph`
-                                : selectedMetric === "duration" 
-                                  ? `Duration: ${entry.value} min` 
-                                  : `Tonnage: ${entry.value} tons`
-                              }
-                            </p>
-                          ))}
+                          <p className="text-sm font-medium text-[#000000]">Pick at {data.timeLabel}</p>
+                          {selectedMetric === "duration" && (
+                            <p className="text-sm text-[#555555]">Duration: {data.durationMinutes} min</p>
+                          )}
+                          {selectedMetric === "tonnage" && (
+                            <p className="text-sm text-[#555555]">Tonnage: {data.tonnage} tons</p>
+                          )}
+                          {showWindSpeed && (
+                            <p className="text-sm text-[#555555]">Wind Speed: {data.windSpeed} mph</p>
+                          )}
                         </div>
                       );
                     }
@@ -256,17 +262,15 @@ export default function Insights() {
                 
                 <Bar 
                   name={selectedMetric === "duration" ? "Pick Duration" : "Pick Tonnage"}
-                  data={pickEvents}
                   dataKey={selectedMetric === "duration" ? "durationMinutes" : "tonnage"}
                   fill="#FBBC05"
                   yAxisId="picks"
-                  barSize={8}
+                  radius={[4, 4, 0, 0]}
                 />
                 
                 {showWindSpeed && (
                   <Line 
                     name="Wind Speed"
-                    data={windData}
                     type="monotone"
                     dataKey="windSpeed"
                     stroke="#555555"
