@@ -164,28 +164,28 @@ function MainNavigation() {
             <TabsList className="w-full grid grid-cols-4">
               <TabsTrigger 
                 value="/livestream" 
-                className="text-xs sm:text-sm px-2 sm:px-4 data-[state=active]:text-[#FBBC05] data-[state=active]:border-b-2 data-[state=active]:border-[#FBBC05]"
+                className="text-[10px] sm:text-xs md:text-sm px-1 sm:px-2 whitespace-nowrap data-[state=active]:text-[#FBBC05] data-[state=active]:border-b-2 data-[state=active]:border-[#FBBC05]"
                 onClick={() => setLocation("/livestream")}
               >
-                Live Stream
+                Live
               </TabsTrigger>
               <TabsTrigger 
                 value="/insights" 
-                className="text-xs sm:text-sm px-2 sm:px-4 data-[state=active]:text-[#FBBC05] data-[state=active]:border-b-2 data-[state=active]:border-[#FBBC05]"
+                className="text-[10px] sm:text-xs md:text-sm px-1 sm:px-2 whitespace-nowrap data-[state=active]:text-[#FBBC05] data-[state=active]:border-b-2 data-[state=active]:border-[#FBBC05]"
                 onClick={() => setLocation("/insights")}
               >
                 Insights
               </TabsTrigger>
               <TabsTrigger 
                 value="/recordings" 
-                className="text-xs sm:text-sm px-2 sm:px-4 data-[state=active]:text-[#FBBC05] data-[state=active]:border-b-2 data-[state=active]:border-[#FBBC05]"
+                className="text-[10px] sm:text-xs md:text-sm px-1 sm:px-2 whitespace-nowrap data-[state=active]:text-[#FBBC05] data-[state=active]:border-b-2 data-[state=active]:border-[#FBBC05]"
                 onClick={() => setLocation("/recordings")}
               >
                 Recordings
               </TabsTrigger>
               <TabsTrigger 
                 value="/system-status" 
-                className="text-xs sm:text-sm px-2 sm:px-4 data-[state=active]:text-[#FBBC05] data-[state=active]:border-b-2 data-[state=active]:border-[#FBBC05]"
+                className="text-[10px] sm:text-xs md:text-sm px-1 sm:px-2 whitespace-nowrap data-[state=active]:text-[#FBBC05] data-[state=active]:border-b-2 data-[state=active]:border-[#FBBC05]"
                 onClick={() => setLocation("/system-status")}
               >
                 Status
