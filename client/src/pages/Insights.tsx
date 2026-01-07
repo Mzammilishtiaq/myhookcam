@@ -1,16 +1,41 @@
 import { useContext, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SelectionContext } from "@/App";
-import { BarChart3, TrendingUp, Clock, Activity, AlertTriangle, CheckCircle, Package, Weight, Wind } from "lucide-react";
+import { BarChart3, TrendingUp, Clock, Activity, AlertTriangle, CheckCircle, Package, Weight, Wind, Star, Share2, X, Play } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Legend, BarChart, ReferenceLine } from "recharts";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { useToast } from "@/hooks/use-toast";
+
+interface PickEvent {
+  id: string;
+  pickNumber: number;
+  timeStart: string;
+  timeEnd: string;
+  durationMinutes: number;
+  tonnage: number;
+  hour: number;
+  thumbnailUrl: string;
+  videoUrl: string;
+}
 
 export default function Insights() {
   const { selectedCameras } = useContext(SelectionContext);
   const [selectedMetric, setSelectedMetric] = useState<"duration" | "tonnage">("duration");
   const [showWindSpeed, setShowWindSpeed] = useState(false);
+  const [notes, setNotes] = useState<Record<string, string>>({});
+  const [starredPicks, setStarredPicks] = useState<Set<string>>(new Set());
+  const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [selectedPickForShare, setSelectedPickForShare] = useState<PickEvent | null>(null);
+  const [shareEmails, setShareEmails] = useState("");
+  const [shareMessage, setShareMessage] = useState("");
+  const { toast } = useToast();
 
   const pickTimeData = [
     { name: "Pick Time", value: 312, color: "#FBBC05" },
@@ -49,22 +74,22 @@ export default function Insights() {
     { hour: 24, windSpeed: 8 },
   ];
 
-  const pickEvents = [
-    { timeStart: "6:30 AM", timeEnd: "6:38 AM", durationMinutes: 8, tonnage: 3.2, hour: 6.5 },
-    { timeStart: "7:15 AM", timeEnd: "7:20 AM", durationMinutes: 5, tonnage: 2.1, hour: 7.25 },
-    { timeStart: "8:00 AM", timeEnd: "8:12 AM", durationMinutes: 12, tonnage: 5.8, hour: 8.0 },
-    { timeStart: "8:45 AM", timeEnd: "8:51 AM", durationMinutes: 6, tonnage: 2.5, hour: 8.75 },
-    { timeStart: "9:30 AM", timeEnd: "9:40 AM", durationMinutes: 10, tonnage: 4.2, hour: 9.5 },
-    { timeStart: "10:15 AM", timeEnd: "10:19 AM", durationMinutes: 4, tonnage: 1.8, hour: 10.25 },
-    { timeStart: "11:00 AM", timeEnd: "11:07 AM", durationMinutes: 7, tonnage: 3.5, hour: 11.0 },
-    { timeStart: "11:30 AM", timeEnd: "11:39 AM", durationMinutes: 9, tonnage: 4.0, hour: 11.5 },
-    { timeStart: "1:00 PM", timeEnd: "1:11 PM", durationMinutes: 11, tonnage: 5.2, hour: 13.0 },
-    { timeStart: "1:45 PM", timeEnd: "1:51 PM", durationMinutes: 6, tonnage: 2.8, hour: 13.75 },
-    { timeStart: "2:30 PM", timeEnd: "2:38 PM", durationMinutes: 8, tonnage: 3.6, hour: 14.5 },
-    { timeStart: "3:15 PM", timeEnd: "3:20 PM", durationMinutes: 5, tonnage: 2.2, hour: 15.25 },
-    { timeStart: "4:00 PM", timeEnd: "4:10 PM", durationMinutes: 10, tonnage: 4.5, hour: 16.0 },
-    { timeStart: "4:30 PM", timeEnd: "4:37 PM", durationMinutes: 7, tonnage: 3.1, hour: 16.5 },
-    { timeStart: "5:15 PM", timeEnd: "5:19 PM", durationMinutes: 4, tonnage: 1.9, hour: 17.25 },
+  const pickEvents: PickEvent[] = [
+    { id: "PK-7A3F2B", pickNumber: 1, timeStart: "6:30 AM", timeEnd: "6:38 AM", durationMinutes: 8, tonnage: 3.2, hour: 6.5, thumbnailUrl: "/api/placeholder/120/68", videoUrl: "https://hookcam.com/clips/pk-7a3f2b" },
+    { id: "PK-9D4E1C", pickNumber: 2, timeStart: "7:15 AM", timeEnd: "7:20 AM", durationMinutes: 5, tonnage: 2.1, hour: 7.25, thumbnailUrl: "/api/placeholder/120/68", videoUrl: "https://hookcam.com/clips/pk-9d4e1c" },
+    { id: "PK-2B5F8A", pickNumber: 3, timeStart: "8:00 AM", timeEnd: "8:12 AM", durationMinutes: 12, tonnage: 5.8, hour: 8.0, thumbnailUrl: "/api/placeholder/120/68", videoUrl: "https://hookcam.com/clips/pk-2b5f8a" },
+    { id: "PK-6C1D3E", pickNumber: 4, timeStart: "8:45 AM", timeEnd: "8:51 AM", durationMinutes: 6, tonnage: 2.5, hour: 8.75, thumbnailUrl: "/api/placeholder/120/68", videoUrl: "https://hookcam.com/clips/pk-6c1d3e" },
+    { id: "PK-8E2G4H", pickNumber: 5, timeStart: "9:30 AM", timeEnd: "9:40 AM", durationMinutes: 10, tonnage: 4.2, hour: 9.5, thumbnailUrl: "/api/placeholder/120/68", videoUrl: "https://hookcam.com/clips/pk-8e2g4h" },
+    { id: "PK-1A9B7C", pickNumber: 6, timeStart: "10:15 AM", timeEnd: "10:19 AM", durationMinutes: 4, tonnage: 1.8, hour: 10.25, thumbnailUrl: "/api/placeholder/120/68", videoUrl: "https://hookcam.com/clips/pk-1a9b7c" },
+    { id: "PK-3D5F2E", pickNumber: 7, timeStart: "11:00 AM", timeEnd: "11:07 AM", durationMinutes: 7, tonnage: 3.5, hour: 11.0, thumbnailUrl: "/api/placeholder/120/68", videoUrl: "https://hookcam.com/clips/pk-3d5f2e" },
+    { id: "PK-5G7H9I", pickNumber: 8, timeStart: "11:30 AM", timeEnd: "11:39 AM", durationMinutes: 9, tonnage: 4.0, hour: 11.5, thumbnailUrl: "/api/placeholder/120/68", videoUrl: "https://hookcam.com/clips/pk-5g7h9i" },
+    { id: "PK-2J4K6L", pickNumber: 9, timeStart: "1:00 PM", timeEnd: "1:11 PM", durationMinutes: 11, tonnage: 5.2, hour: 13.0, thumbnailUrl: "/api/placeholder/120/68", videoUrl: "https://hookcam.com/clips/pk-2j4k6l" },
+    { id: "PK-8M1N3O", pickNumber: 10, timeStart: "1:45 PM", timeEnd: "1:51 PM", durationMinutes: 6, tonnage: 2.8, hour: 13.75, thumbnailUrl: "/api/placeholder/120/68", videoUrl: "https://hookcam.com/clips/pk-8m1n3o" },
+    { id: "PK-4P6Q8R", pickNumber: 11, timeStart: "2:30 PM", timeEnd: "2:38 PM", durationMinutes: 8, tonnage: 3.6, hour: 14.5, thumbnailUrl: "/api/placeholder/120/68", videoUrl: "https://hookcam.com/clips/pk-4p6q8r" },
+    { id: "PK-9S2T4U", pickNumber: 12, timeStart: "3:15 PM", timeEnd: "3:20 PM", durationMinutes: 5, tonnage: 2.2, hour: 15.25, thumbnailUrl: "/api/placeholder/120/68", videoUrl: "https://hookcam.com/clips/pk-9s2t4u" },
+    { id: "PK-1V3W5X", pickNumber: 13, timeStart: "4:00 PM", timeEnd: "4:10 PM", durationMinutes: 10, tonnage: 4.5, hour: 16.0, thumbnailUrl: "/api/placeholder/120/68", videoUrl: "https://hookcam.com/clips/pk-1v3w5x" },
+    { id: "PK-6Y8Z2A", pickNumber: 14, timeStart: "4:30 PM", timeEnd: "4:37 PM", durationMinutes: 7, tonnage: 3.1, hour: 16.5, thumbnailUrl: "/api/placeholder/120/68", videoUrl: "https://hookcam.com/clips/pk-6y8z2a" },
+    { id: "PK-3B5C7D", pickNumber: 15, timeStart: "5:15 PM", timeEnd: "5:19 PM", durationMinutes: 4, tonnage: 1.9, hour: 17.25, thumbnailUrl: "/api/placeholder/120/68", videoUrl: "https://hookcam.com/clips/pk-3b5c7d" },
   ];
 
   const combinedData = pickEvents.map(pick => {
@@ -90,6 +115,51 @@ export default function Insights() {
       return [0, 15];
     }
     return [0, 7];
+  };
+
+  const getWindSpeedForPick = (hour: number) => {
+    const windEntry = windData.find(w => Math.floor(hour) === w.hour);
+    return windEntry?.windSpeed || 0;
+  };
+
+  const toggleStar = (pickId: string) => {
+    setStarredPicks(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(pickId)) {
+        newSet.delete(pickId);
+      } else {
+        newSet.add(pickId);
+      }
+      return newSet;
+    });
+  };
+
+  const handleShare = (pick: PickEvent) => {
+    setSelectedPickForShare(pick);
+    setShareEmails("");
+    setShareMessage("");
+    setShareModalOpen(true);
+  };
+
+  const sendShare = () => {
+    if (!selectedPickForShare || !shareEmails.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter at least one email address",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    toast({
+      title: "Pick Shared",
+      description: `Pick ${selectedPickForShare.id} shared with ${shareEmails.split(',').length} recipient(s)`
+    });
+    setShareModalOpen(false);
+  };
+
+  const updateNote = (pickId: string, note: string) => {
+    setNotes(prev => ({ ...prev, [pickId]: note }));
   };
 
   return (
@@ -281,6 +351,165 @@ export default function Insights() {
           </div>
         </CardContent>
       </Card>
+
+      <Card className="border-[#BCBBBB]">
+        <CardHeader>
+          <CardTitle className="text-[#555555] flex items-center gap-2">
+            <Activity className="h-5 w-5 text-[#FBBC05]" />
+            Pick Details Table
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-[#555555]">
+                  <TableHead className="text-white font-medium">Pick ID</TableHead>
+                  <TableHead className="text-white font-medium text-center">Pick #</TableHead>
+                  <TableHead className="text-white font-medium">Thumbnail</TableHead>
+                  <TableHead className="text-white font-medium">Start</TableHead>
+                  <TableHead className="text-white font-medium">End</TableHead>
+                  <TableHead className="text-white font-medium">Duration</TableHead>
+                  <TableHead className="text-white font-medium">Wind (mph)</TableHead>
+                  <TableHead className="text-white font-medium">Notes</TableHead>
+                  <TableHead className="text-white font-medium text-center">Star</TableHead>
+                  <TableHead className="text-white font-medium text-center">Share</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {pickEvents.map((pick) => (
+                  <TableRow key={pick.id} className="hover:bg-gray-50" data-testid={`pick-row-${pick.id}`}>
+                    <TableCell className="font-mono text-sm text-[#555555]">{pick.id}</TableCell>
+                    <TableCell className="text-center text-[#555555]">{pick.pickNumber}</TableCell>
+                    <TableCell>
+                      <div className="relative w-[120px] h-[68px] bg-[#555555] rounded overflow-hidden cursor-pointer group">
+                        <img 
+                          src={`https://picsum.photos/seed/${pick.id}/120/68`}
+                          alt={`Pick ${pick.id} thumbnail`}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                          }}
+                        />
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/30 group-hover:bg-black/40 transition-colors">
+                          <Play className="h-8 w-8 text-white opacity-80 group-hover:opacity-100 transition-opacity" />
+                        </div>
+                        <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-xs px-1 py-0.5 text-center">
+                          {pick.durationMinutes}m
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-[#555555]">{pick.timeStart}</TableCell>
+                    <TableCell className="text-[#555555]">{pick.timeEnd}</TableCell>
+                    <TableCell className="text-[#555555]">{pick.durationMinutes} min</TableCell>
+                    <TableCell className="text-[#555555]">{getWindSpeedForPick(pick.hour)}</TableCell>
+                    <TableCell>
+                      <Input
+                        placeholder="Add note..."
+                        value={notes[pick.id] || ""}
+                        onChange={(e) => updateNote(pick.id, e.target.value)}
+                        className="w-[150px] text-sm border-[#BCBBBB]"
+                        data-testid={`note-input-${pick.id}`}
+                      />
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => toggleStar(pick.id)}
+                        data-testid={`star-btn-${pick.id}`}
+                      >
+                        <Star 
+                          className={`h-5 w-5 ${starredPicks.has(pick.id) ? 'fill-[#FBBC05] text-[#FBBC05]' : 'text-[#BCBBBB]'}`} 
+                        />
+                      </Button>
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleShare(pick)}
+                        data-testid={`share-btn-${pick.id}`}
+                      >
+                        <Share2 className="h-5 w-5 text-[#555555] hover:text-[#FBBC05]" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Dialog open={shareModalOpen} onOpenChange={setShareModalOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle className="text-[#555555] flex items-center gap-2">
+              <Share2 className="h-5 w-5 text-[#FBBC05]" />
+              Share Pick {selectedPickForShare?.id}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label className="text-[#555555]">Email Recipients</Label>
+              <Input
+                placeholder="Enter email addresses (comma-separated)"
+                value={shareEmails}
+                onChange={(e) => setShareEmails(e.target.value)}
+                data-testid="share-emails-input"
+              />
+              <p className="text-xs text-[#BCBBBB]">Separate multiple emails with commas</p>
+            </div>
+            
+            <div className="space-y-2">
+              <Label className="text-[#555555]">Message (Optional)</Label>
+              <Textarea
+                placeholder="Add a message to include with the shared pick..."
+                value={shareMessage}
+                onChange={(e) => setShareMessage(e.target.value)}
+                rows={3}
+                data-testid="share-message-input"
+              />
+            </div>
+            
+            {selectedPickForShare && (
+              <div className="bg-[#F5F5F5] p-3 rounded-lg space-y-2">
+                <p className="text-sm font-medium text-[#555555]">Pick Information:</p>
+                <div className="text-sm text-[#555555] space-y-1">
+                  <p>Pick ID: <span className="font-mono">{selectedPickForShare.id}</span></p>
+                  <p>Time: {selectedPickForShare.timeStart} - {selectedPickForShare.timeEnd}</p>
+                  <p>Duration: {selectedPickForShare.durationMinutes} min</p>
+                  <p>Tonnage: {selectedPickForShare.tonnage} tons</p>
+                </div>
+                <div className="pt-2">
+                  <p className="text-sm text-[#555555]">Video Link:</p>
+                  <a 
+                    href={selectedPickForShare.videoUrl} 
+                    className="text-sm text-[#FBBC05] hover:underline break-all"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {selectedPickForShare.videoUrl}
+                  </a>
+                </div>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShareModalOpen(false)} data-testid="share-cancel-btn">
+              Cancel
+            </Button>
+            <Button 
+              onClick={sendShare} 
+              className="bg-[#FBBC05] hover:bg-[#FBBC05]/90 text-black"
+              data-testid="share-send-btn"
+            >
+              Send
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card className="border-[#BCBBBB]">
