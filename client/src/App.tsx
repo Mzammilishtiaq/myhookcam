@@ -159,27 +159,27 @@ function MainNavigation() {
         
         {!location.startsWith('/cameras') && (
           <div className="w-full overflow-hidden -mx-2 sm:-mx-4 px-2 sm:px-4">
-            <div className="flex w-full bg-[#444444] rounded-md">
+            <div className="flex w-full bg-white rounded-md">
               <button 
-                className={`flex-1 py-2 text-center text-[11px] sm:text-sm font-medium transition-colors ${location === "/" || location === "/livestream" ? "text-[#FBBC05] border-b-2 border-[#FBBC05] bg-[#555555]" : "text-white hover:bg-[#505050]"}`}
+                className={`flex-1 py-2 text-center text-[11px] sm:text-sm font-medium transition-colors ${location === "/" || location === "/livestream" ? "text-[#FBBC05] border-b-2 border-[#FBBC05]" : "text-[#555555] hover:bg-gray-100"}`}
                 onClick={() => setLocation("/livestream")}
               >
                 Live
               </button>
               <button 
-                className={`flex-1 py-2 text-center text-[11px] sm:text-sm font-medium transition-colors ${location === "/insights" ? "text-[#FBBC05] border-b-2 border-[#FBBC05] bg-[#555555]" : "text-white hover:bg-[#505050]"}`}
+                className={`flex-1 py-2 text-center text-[11px] sm:text-sm font-medium transition-colors ${location === "/insights" ? "text-[#FBBC05] border-b-2 border-[#FBBC05]" : "text-[#555555] hover:bg-gray-100"}`}
                 onClick={() => setLocation("/insights")}
               >
                 Insights
               </button>
               <button 
-                className={`flex-1 py-2 text-center text-[11px] sm:text-sm font-medium transition-colors ${location === "/recordings" ? "text-[#FBBC05] border-b-2 border-[#FBBC05] bg-[#555555]" : "text-white hover:bg-[#505050]"}`}
+                className={`flex-1 py-2 text-center text-[11px] sm:text-sm font-medium transition-colors ${location === "/recordings" ? "text-[#FBBC05] border-b-2 border-[#FBBC05]" : "text-[#555555] hover:bg-gray-100"}`}
                 onClick={() => setLocation("/recordings")}
               >
                 Recordings
               </button>
               <button 
-                className={`flex-1 py-2 text-center text-[11px] sm:text-sm font-medium transition-colors ${location === "/system-status" ? "text-[#FBBC05] border-b-2 border-[#FBBC05] bg-[#555555]" : "text-white hover:bg-[#505050]"}`}
+                className={`flex-1 py-2 text-center text-[11px] sm:text-sm font-medium transition-colors ${location === "/system-status" ? "text-[#FBBC05] border-b-2 border-[#FBBC05]" : "text-[#555555] hover:bg-gray-100"}`}
                 onClick={() => setLocation("/system-status")}
               >
                 Status
