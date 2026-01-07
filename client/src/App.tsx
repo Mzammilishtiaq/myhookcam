@@ -170,6 +170,13 @@ function MainNavigation() {
                 Live Stream
               </TabsTrigger>
               <TabsTrigger 
+                value="/insights" 
+                className="flex-1 data-[state=active]:text-[#FBBC05] data-[state=active]:border-b-2 data-[state=active]:border-[#FBBC05]"
+                onClick={() => setLocation("/insights")}
+              >
+                Insights
+              </TabsTrigger>
+              <TabsTrigger 
                 value="/recordings" 
                 className="flex-1 data-[state=active]:text-[#FBBC05] data-[state=active]:border-b-2 data-[state=active]:border-[#FBBC05]"
                 onClick={() => setLocation("/recordings")}
@@ -182,13 +189,6 @@ function MainNavigation() {
                 onClick={() => setLocation("/system-status")}
               >
                 System Status
-              </TabsTrigger>
-              <TabsTrigger 
-                value="/insights" 
-                className="flex-1 data-[state=active]:text-[#FBBC05] data-[state=active]:border-b-2 data-[state=active]:border-[#FBBC05]"
-                onClick={() => setLocation("/insights")}
-              >
-                Insights
               </TabsTrigger>
             </TabsList>
           </Tabs>
