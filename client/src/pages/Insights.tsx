@@ -50,27 +50,28 @@ export default function Insights() {
   ];
 
   const pickEvents = [
-    { timeLabel: "6:30 AM", durationMinutes: 8, tonnage: 3.2, hour: 6.5 },
-    { timeLabel: "7:15 AM", durationMinutes: 5, tonnage: 2.1, hour: 7.25 },
-    { timeLabel: "8:00 AM", durationMinutes: 12, tonnage: 5.8, hour: 8.0 },
-    { timeLabel: "8:45 AM", durationMinutes: 6, tonnage: 2.5, hour: 8.75 },
-    { timeLabel: "9:30 AM", durationMinutes: 10, tonnage: 4.2, hour: 9.5 },
-    { timeLabel: "10:15 AM", durationMinutes: 4, tonnage: 1.8, hour: 10.25 },
-    { timeLabel: "11:00 AM", durationMinutes: 7, tonnage: 3.5, hour: 11.0 },
-    { timeLabel: "11:30 AM", durationMinutes: 9, tonnage: 4.0, hour: 11.5 },
-    { timeLabel: "1:00 PM", durationMinutes: 11, tonnage: 5.2, hour: 13.0 },
-    { timeLabel: "1:45 PM", durationMinutes: 6, tonnage: 2.8, hour: 13.75 },
-    { timeLabel: "2:30 PM", durationMinutes: 8, tonnage: 3.6, hour: 14.5 },
-    { timeLabel: "3:15 PM", durationMinutes: 5, tonnage: 2.2, hour: 15.25 },
-    { timeLabel: "4:00 PM", durationMinutes: 10, tonnage: 4.5, hour: 16.0 },
-    { timeLabel: "4:30 PM", durationMinutes: 7, tonnage: 3.1, hour: 16.5 },
-    { timeLabel: "5:15 PM", durationMinutes: 4, tonnage: 1.9, hour: 17.25 },
+    { timeStart: "6:30 AM", timeEnd: "6:38 AM", durationMinutes: 8, tonnage: 3.2, hour: 6.5 },
+    { timeStart: "7:15 AM", timeEnd: "7:20 AM", durationMinutes: 5, tonnage: 2.1, hour: 7.25 },
+    { timeStart: "8:00 AM", timeEnd: "8:12 AM", durationMinutes: 12, tonnage: 5.8, hour: 8.0 },
+    { timeStart: "8:45 AM", timeEnd: "8:51 AM", durationMinutes: 6, tonnage: 2.5, hour: 8.75 },
+    { timeStart: "9:30 AM", timeEnd: "9:40 AM", durationMinutes: 10, tonnage: 4.2, hour: 9.5 },
+    { timeStart: "10:15 AM", timeEnd: "10:19 AM", durationMinutes: 4, tonnage: 1.8, hour: 10.25 },
+    { timeStart: "11:00 AM", timeEnd: "11:07 AM", durationMinutes: 7, tonnage: 3.5, hour: 11.0 },
+    { timeStart: "11:30 AM", timeEnd: "11:39 AM", durationMinutes: 9, tonnage: 4.0, hour: 11.5 },
+    { timeStart: "1:00 PM", timeEnd: "1:11 PM", durationMinutes: 11, tonnage: 5.2, hour: 13.0 },
+    { timeStart: "1:45 PM", timeEnd: "1:51 PM", durationMinutes: 6, tonnage: 2.8, hour: 13.75 },
+    { timeStart: "2:30 PM", timeEnd: "2:38 PM", durationMinutes: 8, tonnage: 3.6, hour: 14.5 },
+    { timeStart: "3:15 PM", timeEnd: "3:20 PM", durationMinutes: 5, tonnage: 2.2, hour: 15.25 },
+    { timeStart: "4:00 PM", timeEnd: "4:10 PM", durationMinutes: 10, tonnage: 4.5, hour: 16.0 },
+    { timeStart: "4:30 PM", timeEnd: "4:37 PM", durationMinutes: 7, tonnage: 3.1, hour: 16.5 },
+    { timeStart: "5:15 PM", timeEnd: "5:19 PM", durationMinutes: 4, tonnage: 1.9, hour: 17.25 },
   ];
 
   const combinedData = pickEvents.map(pick => {
     const windEntry = windData.find(w => Math.floor(pick.hour) === w.hour) || { windSpeed: 0 };
     return {
       ...pick,
+      timeLabel: pick.timeStart,
       windSpeed: windEntry.windSpeed
     };
   });
@@ -241,17 +242,13 @@ export default function Insights() {
                     if (active && payload && payload.length) {
                       const data = payload[0].payload;
                       return (
-                        <div className="bg-white p-2 border border-[#BCBBBB] rounded shadow-md">
-                          <p className="text-sm font-medium text-[#000000]">Pick at {data.timeLabel}</p>
-                          {selectedMetric === "duration" && (
-                            <p className="text-sm text-[#555555]">Duration: {data.durationMinutes} min</p>
-                          )}
-                          {selectedMetric === "tonnage" && (
-                            <p className="text-sm text-[#555555]">Tonnage: {data.tonnage} tons</p>
-                          )}
-                          {showWindSpeed && (
-                            <p className="text-sm text-[#555555]">Wind Speed: {data.windSpeed} mph</p>
-                          )}
+                        <div className="bg-white p-3 border border-[#BCBBBB] rounded shadow-md">
+                          <p className="text-sm font-bold text-[#000000] mb-2">Pick Details</p>
+                          <p className="text-sm text-[#555555]">Time Start: {data.timeStart}</p>
+                          <p className="text-sm text-[#555555]">Time End: {data.timeEnd}</p>
+                          <p className="text-sm text-[#555555]">Duration: {data.durationMinutes} min</p>
+                          <p className="text-sm text-[#555555]">Tonnage: {data.tonnage} tons</p>
+                          <p className="text-sm text-[#555555]">Wind Speed: {data.windSpeed} mph</p>
                         </div>
                       );
                     }
