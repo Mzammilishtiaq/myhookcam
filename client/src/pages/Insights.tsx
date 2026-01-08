@@ -1,7 +1,7 @@
 import { useContext, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SelectionContext } from "@/App";
-import { BarChart3, Clock, Activity, Package, Weight, Wind, Star, Share2, Play, Calendar } from "lucide-react";
+import { BarChart3, Clock, Activity, Package, Weight, Wind, Star, Share2, Play, Calendar, MapPin, Upload } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Legend, BarChart, ReferenceLine } from "recharts";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
@@ -26,6 +26,8 @@ interface PickEvent {
   hour: number;
   thumbnailUrl: string;
   videoUrl: string;
+  locationX: number;
+  locationY: number;
 }
 
 export default function Insights() {
@@ -79,22 +81,24 @@ export default function Insights() {
   ];
 
   const pickEvents: PickEvent[] = [
-    { id: "PK-7A3F2B", pickNumber: 1, timeStart: "6:30 AM", timeEnd: "6:38 AM", durationMinutes: 8, tonnage: 3.2, hour: 6.5, thumbnailUrl: "/api/placeholder/120/68", videoUrl: "https://hookcam.com/clips/pk-7a3f2b" },
-    { id: "PK-9D4E1C", pickNumber: 2, timeStart: "7:15 AM", timeEnd: "7:20 AM", durationMinutes: 5, tonnage: 2.1, hour: 7.25, thumbnailUrl: "/api/placeholder/120/68", videoUrl: "https://hookcam.com/clips/pk-9d4e1c" },
-    { id: "PK-2B5F8A", pickNumber: 3, timeStart: "8:00 AM", timeEnd: "8:12 AM", durationMinutes: 12, tonnage: 5.8, hour: 8.0, thumbnailUrl: "/api/placeholder/120/68", videoUrl: "https://hookcam.com/clips/pk-2b5f8a" },
-    { id: "PK-6C1D3E", pickNumber: 4, timeStart: "8:45 AM", timeEnd: "8:51 AM", durationMinutes: 6, tonnage: 2.5, hour: 8.75, thumbnailUrl: "/api/placeholder/120/68", videoUrl: "https://hookcam.com/clips/pk-6c1d3e" },
-    { id: "PK-8E2G4H", pickNumber: 5, timeStart: "9:30 AM", timeEnd: "9:40 AM", durationMinutes: 10, tonnage: 4.2, hour: 9.5, thumbnailUrl: "/api/placeholder/120/68", videoUrl: "https://hookcam.com/clips/pk-8e2g4h" },
-    { id: "PK-1A9B7C", pickNumber: 6, timeStart: "10:15 AM", timeEnd: "10:19 AM", durationMinutes: 4, tonnage: 1.8, hour: 10.25, thumbnailUrl: "/api/placeholder/120/68", videoUrl: "https://hookcam.com/clips/pk-1a9b7c" },
-    { id: "PK-3D5F2E", pickNumber: 7, timeStart: "11:00 AM", timeEnd: "11:07 AM", durationMinutes: 7, tonnage: 3.5, hour: 11.0, thumbnailUrl: "/api/placeholder/120/68", videoUrl: "https://hookcam.com/clips/pk-3d5f2e" },
-    { id: "PK-5G7H9I", pickNumber: 8, timeStart: "11:30 AM", timeEnd: "11:39 AM", durationMinutes: 9, tonnage: 4.0, hour: 11.5, thumbnailUrl: "/api/placeholder/120/68", videoUrl: "https://hookcam.com/clips/pk-5g7h9i" },
-    { id: "PK-2J4K6L", pickNumber: 9, timeStart: "1:00 PM", timeEnd: "1:11 PM", durationMinutes: 11, tonnage: 5.2, hour: 13.0, thumbnailUrl: "/api/placeholder/120/68", videoUrl: "https://hookcam.com/clips/pk-2j4k6l" },
-    { id: "PK-8M1N3O", pickNumber: 10, timeStart: "1:45 PM", timeEnd: "1:51 PM", durationMinutes: 6, tonnage: 2.8, hour: 13.75, thumbnailUrl: "/api/placeholder/120/68", videoUrl: "https://hookcam.com/clips/pk-8m1n3o" },
-    { id: "PK-4P6Q8R", pickNumber: 11, timeStart: "2:30 PM", timeEnd: "2:38 PM", durationMinutes: 8, tonnage: 3.6, hour: 14.5, thumbnailUrl: "/api/placeholder/120/68", videoUrl: "https://hookcam.com/clips/pk-4p6q8r" },
-    { id: "PK-9S2T4U", pickNumber: 12, timeStart: "3:15 PM", timeEnd: "3:20 PM", durationMinutes: 5, tonnage: 2.2, hour: 15.25, thumbnailUrl: "/api/placeholder/120/68", videoUrl: "https://hookcam.com/clips/pk-9s2t4u" },
-    { id: "PK-1V3W5X", pickNumber: 13, timeStart: "4:00 PM", timeEnd: "4:10 PM", durationMinutes: 10, tonnage: 4.5, hour: 16.0, thumbnailUrl: "/api/placeholder/120/68", videoUrl: "https://hookcam.com/clips/pk-1v3w5x" },
-    { id: "PK-6Y8Z2A", pickNumber: 14, timeStart: "4:30 PM", timeEnd: "4:37 PM", durationMinutes: 7, tonnage: 3.1, hour: 16.5, thumbnailUrl: "/api/placeholder/120/68", videoUrl: "https://hookcam.com/clips/pk-6y8z2a" },
-    { id: "PK-3B5C7D", pickNumber: 15, timeStart: "5:15 PM", timeEnd: "5:19 PM", durationMinutes: 4, tonnage: 1.9, hour: 17.25, thumbnailUrl: "/api/placeholder/120/68", videoUrl: "https://hookcam.com/clips/pk-3b5c7d" },
+    { id: "PK-7A3F2B", pickNumber: 1, timeStart: "6:30 AM", timeEnd: "6:38 AM", durationMinutes: 8, tonnage: 3.2, hour: 6.5, thumbnailUrl: "/api/placeholder/120/68", videoUrl: "https://hookcam.com/clips/pk-7a3f2b", locationX: 25, locationY: 30 },
+    { id: "PK-9D4E1C", pickNumber: 2, timeStart: "7:15 AM", timeEnd: "7:20 AM", durationMinutes: 5, tonnage: 2.1, hour: 7.25, thumbnailUrl: "/api/placeholder/120/68", videoUrl: "https://hookcam.com/clips/pk-9d4e1c", locationX: 45, locationY: 20 },
+    { id: "PK-2B5F8A", pickNumber: 3, timeStart: "8:00 AM", timeEnd: "8:12 AM", durationMinutes: 12, tonnage: 5.8, hour: 8.0, thumbnailUrl: "/api/placeholder/120/68", videoUrl: "https://hookcam.com/clips/pk-2b5f8a", locationX: 65, locationY: 45 },
+    { id: "PK-6C1D3E", pickNumber: 4, timeStart: "8:45 AM", timeEnd: "8:51 AM", durationMinutes: 6, tonnage: 2.5, hour: 8.75, thumbnailUrl: "/api/placeholder/120/68", videoUrl: "https://hookcam.com/clips/pk-6c1d3e", locationX: 35, locationY: 60 },
+    { id: "PK-8E2G4H", pickNumber: 5, timeStart: "9:30 AM", timeEnd: "9:40 AM", durationMinutes: 10, tonnage: 4.2, hour: 9.5, thumbnailUrl: "/api/placeholder/120/68", videoUrl: "https://hookcam.com/clips/pk-8e2g4h", locationX: 55, locationY: 35 },
+    { id: "PK-1A9B7C", pickNumber: 6, timeStart: "10:15 AM", timeEnd: "10:19 AM", durationMinutes: 4, tonnage: 1.8, hour: 10.25, thumbnailUrl: "/api/placeholder/120/68", videoUrl: "https://hookcam.com/clips/pk-1a9b7c", locationX: 75, locationY: 25 },
+    { id: "PK-3D5F2E", pickNumber: 7, timeStart: "11:00 AM", timeEnd: "11:07 AM", durationMinutes: 7, tonnage: 3.5, hour: 11.0, thumbnailUrl: "/api/placeholder/120/68", videoUrl: "https://hookcam.com/clips/pk-3d5f2e", locationX: 20, locationY: 55 },
+    { id: "PK-5G7H9I", pickNumber: 8, timeStart: "11:30 AM", timeEnd: "11:39 AM", durationMinutes: 9, tonnage: 4.0, hour: 11.5, thumbnailUrl: "/api/placeholder/120/68", videoUrl: "https://hookcam.com/clips/pk-5g7h9i", locationX: 50, locationY: 70 },
+    { id: "PK-2J4K6L", pickNumber: 9, timeStart: "1:00 PM", timeEnd: "1:11 PM", durationMinutes: 11, tonnage: 5.2, hour: 13.0, thumbnailUrl: "/api/placeholder/120/68", videoUrl: "https://hookcam.com/clips/pk-2j4k6l", locationX: 40, locationY: 40 },
+    { id: "PK-8M1N3O", pickNumber: 10, timeStart: "1:45 PM", timeEnd: "1:51 PM", durationMinutes: 6, tonnage: 2.8, hour: 13.75, thumbnailUrl: "/api/placeholder/120/68", videoUrl: "https://hookcam.com/clips/pk-8m1n3o", locationX: 60, locationY: 55 },
+    { id: "PK-4P6Q8R", pickNumber: 11, timeStart: "2:30 PM", timeEnd: "2:38 PM", durationMinutes: 8, tonnage: 3.6, hour: 14.5, thumbnailUrl: "/api/placeholder/120/68", videoUrl: "https://hookcam.com/clips/pk-4p6q8r", locationX: 30, locationY: 75 },
+    { id: "PK-9S2T4U", pickNumber: 12, timeStart: "3:15 PM", timeEnd: "3:20 PM", durationMinutes: 5, tonnage: 2.2, hour: 15.25, thumbnailUrl: "/api/placeholder/120/68", videoUrl: "https://hookcam.com/clips/pk-9s2t4u", locationX: 70, locationY: 65 },
+    { id: "PK-1V3W5X", pickNumber: 13, timeStart: "4:00 PM", timeEnd: "4:10 PM", durationMinutes: 10, tonnage: 4.5, hour: 16.0, thumbnailUrl: "/api/placeholder/120/68", videoUrl: "https://hookcam.com/clips/pk-1v3w5x", locationX: 45, locationY: 50 },
+    { id: "PK-6Y8Z2A", pickNumber: 14, timeStart: "4:30 PM", timeEnd: "4:37 PM", durationMinutes: 7, tonnage: 3.1, hour: 16.5, thumbnailUrl: "/api/placeholder/120/68", videoUrl: "https://hookcam.com/clips/pk-6y8z2a", locationX: 80, locationY: 40 },
+    { id: "PK-3B5C7D", pickNumber: 15, timeStart: "5:15 PM", timeEnd: "5:19 PM", durationMinutes: 4, tonnage: 1.9, hour: 17.25, thumbnailUrl: "/api/placeholder/120/68", videoUrl: "https://hookcam.com/clips/pk-3b5c7d", locationX: 15, locationY: 80 },
   ];
+
+  const [heatmapBackgroundUrl, setHeatmapBackgroundUrl] = useState<string>("");
 
   const combinedData = pickEvents.map(pick => {
     const windEntry = windData.find(w => Math.floor(pick.hour) === w.hour) || { windSpeed: 0 };
@@ -466,6 +470,151 @@ export default function Insights() {
                 ))}
               </TableBody>
             </Table>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Pick Location Heatmap */}
+      <Card className="border-[#BCBBBB]">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-base font-medium text-[#555555] flex items-center gap-2">
+            <MapPin className="h-5 w-5 text-[#FBBC05]" />
+            Pick Location Heatmap
+          </CardTitle>
+          <div className="flex items-center gap-2">
+            <Input
+              placeholder="Enter background image URL..."
+              value={heatmapBackgroundUrl}
+              onChange={(e) => setHeatmapBackgroundUrl(e.target.value)}
+              className="w-64 text-sm"
+              data-testid="heatmap-bg-input"
+            />
+            <label className="cursor-pointer">
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    const url = URL.createObjectURL(file);
+                    setHeatmapBackgroundUrl(url);
+                  }
+                }}
+                data-testid="heatmap-bg-file"
+              />
+              <Button variant="outline" size="sm" className="border-[#BCBBBB]" asChild>
+                <span>
+                  <Upload className="h-4 w-4 mr-1" />
+                  Upload
+                </span>
+              </Button>
+            </label>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div 
+            className="relative w-full h-[400px] rounded-lg overflow-hidden border border-[#BCBBBB]"
+            style={{
+              background: heatmapBackgroundUrl 
+                ? `url(${heatmapBackgroundUrl}) center/cover no-repeat` 
+                : 'linear-gradient(135deg, #f5f5f5 0%, #e0e0e0 100%)'
+            }}
+            data-testid="heatmap-container"
+          >
+            {!heatmapBackgroundUrl && (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <p className="text-[#BCBBBB] text-sm">Upload or enter a site map image URL to display as background</p>
+              </div>
+            )}
+            
+            {/* Grid overlay for reference */}
+            <div className="absolute inset-0 opacity-10">
+              {[...Array(10)].map((_, i) => (
+                <div key={`h-${i}`} className="absolute w-full border-t border-[#555555]" style={{ top: `${(i + 1) * 10}%` }} />
+              ))}
+              {[...Array(10)].map((_, i) => (
+                <div key={`v-${i}`} className="absolute h-full border-l border-[#555555]" style={{ left: `${(i + 1) * 10}%` }} />
+              ))}
+            </div>
+
+            {/* Pick location markers */}
+            {pickEvents.map((pick) => {
+              const windSpeed = getWindSpeedForPick(pick.hour);
+              return (
+                <div
+                  key={pick.id}
+                  className="absolute transform -translate-x-1/2 -translate-y-1/2 group cursor-pointer"
+                  style={{ 
+                    left: `${pick.locationX}%`, 
+                    top: `${pick.locationY}%` 
+                  }}
+                  data-testid={`heatmap-marker-${pick.id}`}
+                >
+                  {/* Heatmap glow effect based on tonnage */}
+                  <div 
+                    className="absolute rounded-full opacity-40"
+                    style={{
+                      width: `${pick.tonnage * 12}px`,
+                      height: `${pick.tonnage * 12}px`,
+                      background: 'radial-gradient(circle, #FBBC05 0%, transparent 70%)',
+                      transform: 'translate(-50%, -50%)',
+                      left: '50%',
+                      top: '50%'
+                    }}
+                  />
+                  
+                  {/* Pick marker */}
+                  <div 
+                    className="relative w-6 h-6 rounded-full border-2 border-white shadow-lg flex items-center justify-center text-white text-xs font-bold"
+                    style={{ 
+                      backgroundColor: pick.tonnage > 4 ? '#FBBC05' : pick.tonnage > 2 ? '#f59e0b' : '#555555'
+                    }}
+                  >
+                    {pick.pickNumber}
+                  </div>
+                  
+                  {/* Tooltip on hover */}
+                  <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 hidden group-hover:block z-10">
+                    <div className="bg-white rounded-lg shadow-lg p-2 text-xs whitespace-nowrap border border-[#BCBBBB]">
+                      <p className="font-bold text-[#555555]">Pick #{pick.pickNumber}</p>
+                      <p className="text-[#555555]">ID: {pick.id}</p>
+                      <p className="text-[#555555]">Time: {pick.timeStart}</p>
+                      <p className="text-[#555555]">Duration: {pick.durationMinutes} min</p>
+                      <p className="text-[#555555]">Tonnage: {pick.tonnage} tons</p>
+                      <p className="text-[#555555]">Wind: {windSpeed} mph</p>
+                    </div>
+                    <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-white" />
+                  </div>
+                </div>
+              );
+            })}
+
+            {/* Legend */}
+            <div className="absolute bottom-4 left-4 bg-white/90 rounded-lg p-3 shadow-lg">
+              <p className="text-xs font-semibold text-[#555555] mb-2">Tonnage Legend</p>
+              <div className="flex items-center gap-3 text-xs text-[#555555]">
+                <div className="flex items-center gap-1">
+                  <div className="w-3 h-3 rounded-full bg-[#555555]" />
+                  <span>&lt; 2 tons</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <div className="w-3 h-3 rounded-full bg-[#f59e0b]" />
+                  <span>2-4 tons</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <div className="w-3 h-3 rounded-full bg-[#FBBC05]" />
+                  <span>&gt; 4 tons</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Stats overlay */}
+            <div className="absolute top-4 right-4 bg-white/90 rounded-lg p-3 shadow-lg">
+              <p className="text-xs font-semibold text-[#555555] mb-1">Today's Stats</p>
+              <p className="text-xs text-[#555555]">{pickEvents.length} picks recorded</p>
+              <p className="text-xs text-[#555555]">{pickEvents.reduce((sum, p) => sum + p.tonnage, 0).toFixed(1)} total tons</p>
+            </div>
           </div>
         </CardContent>
       </Card>
