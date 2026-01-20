@@ -13,7 +13,7 @@ import {
   Volume,
   Volume2
 } from "lucide-react";
-import { usePageTitle, SelectionContext } from "@/App";
+import { usePageTitle, SelectionContext } from "@/context/SelectionContext";
 
 export default function LiveStream() {
   // Mock video stream URL - in production this would be replaced with a real stream URL

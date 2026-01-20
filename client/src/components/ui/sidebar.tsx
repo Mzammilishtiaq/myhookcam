@@ -35,7 +35,7 @@ export function Sidebar({ onSelectionChange }: SidebarProps) {
   const [_, setLocation] = useLocation();
   // Get the page title context
   const pageTitleContext = useContext(PageTitleContext);
-  
+
   // Sample jobsite data - in a real app this would come from an API
   const [jobsites, setJobsites] = useState<Jobsite[]>([
     {
@@ -71,10 +71,10 @@ export function Sidebar({ onSelectionChange }: SidebarProps) {
   const [isAddingCamera, setIsAddingCamera] = useState<number | null>(null);
   const [newJobsiteName, setNewJobsiteName] = useState("");
   const [newCameraName, setNewCameraName] = useState("");
-  
+
   // Mocked user data for demo
   const userName = "John Smith";
-  
+
   // Handle sidebar toggle with logging
   const handleToggleSidebar = () => {
     console.log("Sidebar toggle button clicked");
@@ -83,8 +83,8 @@ export function Sidebar({ onSelectionChange }: SidebarProps) {
 
   // Toggle jobsite expansion
   const toggleJobsite = (jobsiteId: number) => {
-    setJobsites(jobsites.map(site => 
-      site.id === jobsiteId 
+    setJobsites(jobsites.map(site =>
+      site.id === jobsiteId
         ? { ...site, isExpanded: !site.isExpanded }
         : site
     ));
@@ -92,49 +92,49 @@ export function Sidebar({ onSelectionChange }: SidebarProps) {
 
   // Toggle camera selection
   const toggleCamera = (jobsiteId: number, cameraId: number) => {
-    const updatedJobsites = jobsites.map(site => 
-      site.id === jobsiteId 
+    const updatedJobsites = jobsites.map(site =>
+      site.id === jobsiteId
         ? {
-            ...site, 
-            cameras: site.cameras.map(cam => 
-              cam.id === cameraId 
-                ? { ...cam, isActive: !cam.isActive }
-                : cam
-            )
-          }
+          ...site,
+          cameras: site.cameras.map(cam =>
+            cam.id === cameraId
+              ? { ...cam, isActive: !cam.isActive }
+              : cam
+          )
+        }
         : site
     );
-    
+
     setJobsites(updatedJobsites);
-    
+
     // Notify parent component of selection changes
     const selectedJobsites = updatedJobsites.map(site => site.id);
-    const selectedCameras = updatedJobsites.flatMap(site => 
+    const selectedCameras = updatedJobsites.flatMap(site =>
       site.cameras.filter(cam => cam.isActive).map(cam => cam.deviceId)
     );
-    
+
     onSelectionChange(selectedJobsites, selectedCameras);
   };
 
   // Select all cameras in a jobsite
   const selectAllCameras = (jobsiteId: number, isSelected: boolean) => {
-    const updatedJobsites = jobsites.map(site => 
-      site.id === jobsiteId 
+    const updatedJobsites = jobsites.map(site =>
+      site.id === jobsiteId
         ? {
-            ...site, 
-            cameras: site.cameras.map(cam => ({ ...cam, isActive: isSelected }))
-          }
+          ...site,
+          cameras: site.cameras.map(cam => ({ ...cam, isActive: isSelected }))
+        }
         : site
     );
-    
+
     setJobsites(updatedJobsites);
-    
+
     // Notify parent component of selection changes
     const selectedJobsites = updatedJobsites.map(site => site.id);
-    const selectedCameras = updatedJobsites.flatMap(site => 
+    const selectedCameras = updatedJobsites.flatMap(site =>
       site.cameras.filter(cam => cam.isActive).map(cam => cam.deviceId)
     );
-    
+
     onSelectionChange(selectedJobsites, selectedCameras);
   };
 
@@ -147,7 +147,7 @@ export function Sidebar({ onSelectionChange }: SidebarProps) {
         isExpanded: true,
         cameras: []
       };
-      
+
       setJobsites([...jobsites, newJobsite]);
       setNewJobsiteName("");
       setIsAddingJobsite(false);
@@ -157,23 +157,23 @@ export function Sidebar({ onSelectionChange }: SidebarProps) {
   // Add new camera to a jobsite
   const addNewCamera = (jobsiteId: number) => {
     if (newCameraName.trim()) {
-      const updatedJobsites = jobsites.map(site => 
-        site.id === jobsiteId 
+      const updatedJobsites = jobsites.map(site =>
+        site.id === jobsiteId
           ? {
-              ...site, 
-              cameras: [
-                ...site.cameras, 
-                {
-                  id: Math.max(0, ...jobsites.flatMap(s => s.cameras.map(c => c.id))) + 1,
-                  name: newCameraName.trim(),
-                  deviceId: Math.max(0, ...jobsites.flatMap(s => s.cameras.map(c => c.deviceId))) + 1,
-                  isActive: true
-                }
-              ]
-            }
+            ...site,
+            cameras: [
+              ...site.cameras,
+              {
+                id: Math.max(0, ...jobsites.flatMap(s => s.cameras.map(c => c.id))) + 1,
+                name: newCameraName.trim(),
+                deviceId: Math.max(0, ...jobsites.flatMap(s => s.cameras.map(c => c.deviceId))) + 1,
+                isActive: true
+              }
+            ]
+          }
           : site
       );
-      
+
       setJobsites(updatedJobsites);
       setNewCameraName("");
       setIsAddingCamera(null);
@@ -217,7 +217,7 @@ export function Sidebar({ onSelectionChange }: SidebarProps) {
             <Menu className="h-5 w-5" />
           </Button>
         </div>
-        
+
         <div className="flex items-center mt-4 pb-3">
           <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center mr-2">
             <User className="h-4 w-4 text-gray-600" />
@@ -228,15 +228,15 @@ export function Sidebar({ onSelectionChange }: SidebarProps) {
           </div>
         </div>
       </div>
-      
+
       <Separator className="bg-gray-600" />
-      
+
       {/* Navigation Section */}
       <div className="p-4 pb-2">
         <div className="flex justify-between items-center mb-2">
           <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider">Jobsites</h3>
-          <Button 
-            variant="ghost" 
+          <Button
+            variant="ghost"
             size="sm"
             className="h-7 w-7 p-0"
             onClick={() => setIsAddingJobsite(true)}
@@ -245,22 +245,22 @@ export function Sidebar({ onSelectionChange }: SidebarProps) {
           </Button>
         </div>
       </div>
-      
+
       <ScrollArea className="flex-1 px-2">
         {/* Jobsites List */}
         <div className="space-y-1 mb-4">
           {jobsites.map(jobsite => (
             <div key={jobsite.id} className="mb-3">
-              <div 
+              <div
                 className="flex items-center space-x-2 p-2 rounded-md hover:bg-gray-100 cursor-pointer transition-colors"
                 onClick={() => toggleJobsite(jobsite.id)}
               >
-                {jobsite.isExpanded 
-                  ? <ChevronDown className="h-4 w-4 text-gray-500" /> 
+                {jobsite.isExpanded
+                  ? <ChevronDown className="h-4 w-4 text-gray-500" />
                   : <ChevronRight className="h-4 w-4 text-gray-500" />
                 }
                 <MapPin className="h-4 w-4 text-[#FBBC05]" />
-                <span 
+                <span
                   className="flex-grow font-medium text-sm cursor-pointer hover:text-[#FBBC05] transition-colors"
                   onClick={(e) => {
                     e.stopPropagation();
@@ -275,52 +275,51 @@ export function Sidebar({ onSelectionChange }: SidebarProps) {
                 >
                   {jobsite.name}
                 </span>
-                
-                <div 
-                  className={`h-4 w-4 rounded border ${
-                    areAllCamerasSelected(jobsite.id) 
-                      ? 'bg-[#FBBC05] border-[#FBBC05]' 
+
+                <div
+                  className={`h-4 w-4 rounded border ${areAllCamerasSelected(jobsite.id)
+                      ? 'bg-[#FBBC05] border-[#FBBC05]'
                       : isAnyJobsiteCameraSelected(jobsite.id)
-                        ? 'bg-gray-300 border-gray-400' 
+                        ? 'bg-gray-300 border-gray-400'
                         : 'border-gray-400'
-                  }`}
+                    }`}
                   onClick={(e) => {
                     e.stopPropagation();
                     selectAllCameras(jobsite.id, !areAllCamerasSelected(jobsite.id));
                   }}
                 />
               </div>
-              
+
               {jobsite.isExpanded && (
                 <div className="ml-8 space-y-1 mt-1 pl-2 border-l border-gray-200">
                   {jobsite.cameras.map(camera => (
-                    <div 
+                    <div
                       key={camera.id}
                       className="flex items-center space-x-2 p-1.5 rounded-md hover:bg-gray-100 transition-colors"
                     >
                       <Camera className="h-4 w-4 text-gray-500" />
-                      <span 
+                      <span
                         className="flex-grow text-sm cursor-pointer hover:text-[#FBBC05] transition-colors"
                         onClick={(e) => {
                           e.stopPropagation();
-                          
+
                           // Important: Save the device ID (not camera ID) to localStorage
                           try {
                             localStorage.setItem('cameraSelection', JSON.stringify({
                               selectedCameras: [camera.deviceId], // Use deviceId instead of camera.id
                               selectedJobsites: [jobsite.id]
                             }));
-                            
+
                             // Clear any existing camera info from session storage
                             sessionStorage.removeItem('currentCameraInfo');
-                            
+
                             // Update the page title context
                             if (pageTitleContext) {
                               pageTitleContext.setCameraName(camera.name);
                               pageTitleContext.setJobsiteName(jobsite.name);
                               // Format the title as "Camera Name at Jobsite Name"
                               pageTitleContext.setPageTitle(`${camera.name} at ${jobsite.name}`);
-                              
+
                               // Save current camera info to session storage
                               const cameraData = {
                                 name: camera.name,
@@ -328,7 +327,7 @@ export function Sidebar({ onSelectionChange }: SidebarProps) {
                                 jobsiteName: jobsite.name
                               };
                               sessionStorage.setItem('currentCameraInfo', JSON.stringify(cameraData));
-                              
+
                               // Dispatch a custom event to notify App.tsx to update its state
                               const titleUpdateEvent = new CustomEvent('titleUpdate', {
                                 detail: {
@@ -338,49 +337,48 @@ export function Sidebar({ onSelectionChange }: SidebarProps) {
                                 }
                               });
                               window.dispatchEvent(titleUpdateEvent);
-                              
+
                               // Debug log
                               console.log(`SETTING TITLE: ${camera.name} at ${jobsite.name}`);
                             }
                           } catch (error) {
                             console.error("Error saving camera selection:", error);
                           }
-                          
+
                           // Navigate to livestream
                           setLocation(`/livestream`);
                         }}
                       >
                         {camera.name}
                       </span>
-                      <div 
-                        className={`h-4 w-4 rounded border ${
-                          camera.isActive
-                            ? 'bg-[#FBBC05] border-[#FBBC05]' 
+                      <div
+                        className={`h-4 w-4 rounded border ${camera.isActive
+                            ? 'bg-[#FBBC05] border-[#FBBC05]'
                             : 'border-gray-400'
-                        }`}
+                          }`}
                         onClick={() => toggleCamera(jobsite.id, camera.id)}
                       />
                     </div>
                   ))}
-                  
+
                   {isAddingCamera === jobsite.id ? (
                     <div className="flex items-center space-x-1 mt-1 p-1">
-                      <Input 
+                      <Input
                         value={newCameraName}
                         onChange={(e) => setNewCameraName(e.target.value)}
                         placeholder="Camera name"
                         className="text-sm h-7"
                       />
-                      <Button 
-                        size="sm" 
+                      <Button
+                        size="sm"
                         className="h-7 px-2 bg-[#FBBC05] hover:bg-[#FBBC05]/80"
                         onClick={() => addNewCamera(jobsite.id)}
                       >
                         Add
                       </Button>
-                      <Button 
-                        size="sm" 
-                        variant="ghost" 
+                      <Button
+                        size="sm"
+                        variant="ghost"
                         className="h-7 w-7 p-0"
                         onClick={() => setIsAddingCamera(null)}
                       >
@@ -388,9 +386,9 @@ export function Sidebar({ onSelectionChange }: SidebarProps) {
                       </Button>
                     </div>
                   ) : (
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       className="text-xs py-1 h-6 mt-1 w-full justify-start text-gray-500"
                       onClick={() => setIsAddingCamera(jobsite.id)}
                     >
@@ -403,27 +401,27 @@ export function Sidebar({ onSelectionChange }: SidebarProps) {
             </div>
           ))}
         </div>
-        
+
         {isAddingJobsite && (
           <div className="mt-2 p-3 border rounded-md shadow-sm bg-white">
             <h4 className="text-sm font-medium mb-2">Add New Jobsite</h4>
-            <Input 
+            <Input
               value={newJobsiteName}
               onChange={(e) => setNewJobsiteName(e.target.value)}
               placeholder="Jobsite name"
               className="mb-2"
             />
             <div className="flex justify-end space-x-2">
-              <Button 
-                size="sm" 
+              <Button
+                size="sm"
                 onClick={addNewJobsite}
                 className="bg-[#FBBC05] hover:bg-[#FBBC05]/80"
               >
                 Add
               </Button>
-              <Button 
-                size="sm" 
-                variant="outline" 
+              <Button
+                size="sm"
+                variant="outline"
                 onClick={() => setIsAddingJobsite(false)}
               >
                 Cancel
@@ -432,12 +430,6 @@ export function Sidebar({ onSelectionChange }: SidebarProps) {
           </div>
         )}
       </ScrollArea>
-      
-      <div className="p-4 mt-auto">
-        <div className="text-xs text-center text-gray-400">
-          © 2025 HookCam System
-        </div>
-      </div>
     </Card>
   );
 }

@@ -107,6 +107,8 @@ export default function Home() {
               isLoading={isLoading}
               isError={isError}
               onSelectClip={setCurrentClip}
+              onExportCurrentClip={handleExportCurrentClip}
+              selectedDate={formattedDate}
             />
             
             <ClipControls 

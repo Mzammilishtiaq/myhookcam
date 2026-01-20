@@ -1,338 +1,25 @@
 import React, { useState, useEffect, createContext, useContext } from "react";
-import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
-import { Sidebar } from "@/components/ui/sidebar";
-import { Menu, X } from "lucide-react";
-import NotFound from "@/pages/not-found";
-import Home from "@/pages/Home";
-import LiveStream from "@/pages/LiveStream";
-import Recordings from "@/pages/Recordings";
-import SystemStatus from "@/pages/SystemStatus";
-import Insights from "@/pages/Insights";
-import CameraDashboard from "@/pages/CameraDashboard";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import useSidebarStore from "@/hooks/use-sidebar";
-
-// Context type for selection
-type SelectionContextType = {
-  selectedCameras: number[];
-  selectedJobsites: number[];
-  handleSelectionChange: (jobsiteIds: number[], cameraIds: number[]) => void;
-};
-
-// Context type for page title
-type PageTitleContextType = {
-  pageTitle: string;
-  setPageTitle: (title: string) => void;
-  cameraName: string;
-  setCameraName: (name: string) => void;
-  jobsiteName: string;
-  setJobsiteName: (name: string) => void;
-};
-
-// Default selection context
-const defaultSelectionContext: SelectionContextType = {
-  selectedCameras: [],
-  selectedJobsites: [],
-  handleSelectionChange: () => {},
-};
-
-// Default page title context
-const defaultPageTitleContext: PageTitleContextType = {
-  pageTitle: "System",
-  setPageTitle: () => {},
-  cameraName: "",
-  setCameraName: () => {},
-  jobsiteName: "",
-  setJobsiteName: () => {},
-};
-
-// Context will be used just for jobsite/camera selection
-export const SelectionContext = createContext<SelectionContextType>(defaultSelectionContext);
-
-// Context for page title management
-export const PageTitleContext = createContext<PageTitleContextType>(defaultPageTitleContext);
-
-// Add a provider hook for better debugging
-export function usePageTitle() {
-  const context = useContext(PageTitleContext);
-  if (context === undefined) {
-    throw new Error('usePageTitle must be used within a PageTitleProvider');
-  }
-  return context;
-}
-
-function MainNavigation() {
-  const [location, setLocation] = useLocation();
-  const { isOpen, toggle } = useSidebarStore();
-  const { pageTitle, cameraName, jobsiteName } = useContext(PageTitleContext);
-  
-  // Get isMobile status for this component
-  const [isMobileView, setIsMobileView] = useState(false);
-  
-  useEffect(() => {
-    // Check screen size on mount and when window resizes
-    const checkScreenSize = () => {
-      setIsMobileView(window.innerWidth < 768); 
-    };
-    
-    // Initial check
-    checkScreenSize();
-    
-    // Add resize listener
-    window.addEventListener('resize', checkScreenSize);
-    
-    // Clean up
-    return () => window.removeEventListener('resize', checkScreenSize);
-  }, []);
-  
-  // Handle toggle with detailed debug log
-  const handleMenuClick = () => {
-    console.log("Sidebar toggle button clicked");
-    console.log("Zustand toggle called");
-    toggle();
-  };
-  
-  // Determine the header title based on the page context
-  const getHeaderTitle = () => {
-    // Debug log for title generation
-    console.log("Generating header title with:", { 
-      pageTitle,
-      cameraName, 
-      jobsiteName, 
-      location 
-    });
-    
-    // Default header title
-    let title = <><span className="text-[#FBBC05]">HookCam</span> System</>;
-    
-    // Check if we're on Dashboard page
-    if (location.startsWith('/cameras')) {
-      // Use static "HookCam Dashboard" title since jobsite name is already displayed in main title
-      title = <><span className="text-[#FBBC05]">HookCam</span> Dashboard</>;
-    } 
-    // Check if we're on a specific camera view and have a camera name
-    else if (cameraName && (location === '/livestream' || location === '/recordings' || location === '/system-status' || location === '/insights')) {
-      // Use the exact title that was set by sidebar or LiveStream component
-      if (pageTitle && pageTitle !== "Live Stream" && pageTitle !== "System") {
-        // The title has already been formatted as "Camera Name at Jobsite Name"
-        title = <>{pageTitle}</>;
-      }
-      // Fallback to camera name only if we don't have a properly formatted title
-      else if (cameraName) {
-        if (jobsiteName) {
-          title = <>{cameraName} at {jobsiteName}</>;
-        } else {
-          title = <>{cameraName}</>;
-        }
-      }
-    }
-    
-    console.log("Generated title:", title);
-    return title;
-  };
-  
-  return (
-    <div className="bg-[#555555] text-[#FFFFFF] px-2 sm:px-4 pt-4 shadow-md overflow-hidden">
-      <div className="w-full max-w-full">
-        <div className="flex justify-between items-center mb-4">
-          <div className="flex items-center min-w-0">
-            {(!isOpen || isMobileView) && (
-              <Button 
-                variant="ghost" 
-                size="sm"
-                className="mr-2 sm:mr-3 text-white hover:bg-[#666666] transition-colors flex-shrink-0"
-                onClick={handleMenuClick}
-              >
-                <Menu className="h-5 w-5" />
-              </Button>
-            )}
-            <h1 className="text-base sm:text-xl font-semibold truncate">
-              {getHeaderTitle()}
-            </h1>
-          </div>
-        </div>
-        
-        {!location.startsWith('/cameras') && (
-          <div className="w-full overflow-hidden -mx-2 sm:-mx-4 px-2 sm:px-4">
-            <div className="flex w-full bg-white rounded-md">
-              <button 
-                className={`flex-1 py-2 text-center text-[11px] sm:text-sm font-medium transition-colors ${location === "/" || location === "/livestream" ? "text-[#FBBC05] border-b-2 border-[#FBBC05]" : "text-[#555555] hover:bg-gray-100"}`}
-                onClick={() => setLocation("/livestream")}
-              >
-                Live
-              </button>
-              <button 
-                className={`flex-1 py-2 text-center text-[11px] sm:text-sm font-medium transition-colors ${location === "/insights" ? "text-[#FBBC05] border-b-2 border-[#FBBC05]" : "text-[#555555] hover:bg-gray-100"}`}
-                onClick={() => setLocation("/insights")}
-              >
-                Insights
-              </button>
-              <button 
-                className={`flex-1 py-2 text-center text-[11px] sm:text-sm font-medium transition-colors ${location === "/recordings" ? "text-[#FBBC05] border-b-2 border-[#FBBC05]" : "text-[#555555] hover:bg-gray-100"}`}
-                onClick={() => setLocation("/recordings")}
-              >
-                Recordings
-              </button>
-              <button 
-                className={`flex-1 py-2 text-center text-[11px] sm:text-sm font-medium transition-colors ${location === "/system-status" ? "text-[#FBBC05] border-b-2 border-[#FBBC05]" : "text-[#555555] hover:bg-gray-100"}`}
-                onClick={() => setLocation("/system-status")}
-              >
-                Status
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function Layout() {
-  const selectionContext = useContext(SelectionContext);
-  const { handleSelectionChange } = selectionContext;
-  const { isOpen, toggle } = useSidebarStore();
-  
-  // Function to determine if the screen is mobile
-  const [isMobileView, setIsMobileView] = useState(false);
-  
-  useEffect(() => {
-    // Check screen size on mount and when window resizes
-    const checkScreenSize = () => {
-      setIsMobileView(window.innerWidth < 768); // 768px is standard tablet breakpoint
-    };
-    
-    // Initial check
-    checkScreenSize();
-    
-    // Add resize listener
-    window.addEventListener('resize', checkScreenSize);
-    
-    // Clean up
-    return () => window.removeEventListener('resize', checkScreenSize);
-  }, []);
-  
-  // Handle toggle with debug log
-  const handleToggleClick = () => {
-    console.log("Toggle button clicked in layout, current state:", isOpen);
-    toggle();
-  };
-  
-  return (
-    <div className="min-h-screen flex flex-col bg-[#FFFFFF]">
-      {/* Header positioned as a fixed-width element at the top */}
-      <div 
-        className="bg-[#555555] z-40 relative"
-        style={{
-          marginLeft: isOpen && !isMobileView ? '280px' : '0',
-          width: isOpen && !isMobileView ? 'calc(100% - 280px)' : '100%',
-          transition: 'margin-left 0.3s ease-in-out, width 0.3s ease-in-out'
-        }}
-      >
-        <MainNavigation />
-      </div>
-      
-      {/* Main content area with sidebar and content */}
-      <div className="flex flex-1">
-        {/* Hamburger menu toggle button moved to header */}
-        
-        {/* Sidebar - fixed position on mobile, auto width on desktop */}
-        {isMobileView ? (
-          // Mobile sidebar with overlay
-          isOpen && (
-            <>
-              <div className="fixed inset-0 z-50 bg-black/50">
-                <div className="h-full w-[280px] max-w-xs">
-                  <Sidebar onSelectionChange={handleSelectionChange} />
-                </div>
-              </div>
-              
-              {/* Mobile close button */}
-              <Button
-                variant="ghost"
-                size="sm"
-                className="fixed top-4 right-4 z-[60] bg-white rounded-full h-8 w-8 p-0 shadow-md"
-                onClick={handleToggleClick}
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </>
-          )
-        ) : (
-          // Desktop sidebar with inline styles for more reliable transitions - now fixed position
-          <div style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            height: '100vh',
-            width: isOpen ? '280px' : '0',
-            overflow: 'hidden',
-            transition: 'width 0.3s ease-in-out',
-            zIndex: 30
-          }}>
-            <div style={{
-              height: '100vh',
-              width: '280px',
-              transform: isOpen ? 'translateX(0)' : 'translateX(-100%)',
-              transition: 'transform 0.3s ease-in-out'
-            }}>
-              <Sidebar onSelectionChange={handleSelectionChange} />
-            </div>
-          </div>
-        )}
-        
-        {/* Main content column - includes content and footer */}
-        <div style={{
-          display: 'flex',
-          flexDirection: 'column',
-          width: isOpen && !isMobileView ? 'calc(100% - 280px)' : '100%',
-          transition: 'margin-left 0.3s ease-in-out, width 0.3s ease-in-out',
-          marginLeft: isOpen && !isMobileView ? '280px' : '0'
-        }}>
-          {/* Content area - header is now placed outside this div so it can extend full width */}
-          
-          {/* Main content */}
-          <main className="flex-grow p-4">
-            <Switch>
-              <Route path="/" component={LiveStream} />
-              <Route path="/livestream" component={LiveStream} />
-              <Route path="/recordings" component={Recordings} />
-              <Route path="/system-status" component={SystemStatus} />
-              <Route path="/insights" component={Insights} />
-              <Route path="/cameras">
-                {(params) => <CameraDashboard />}
-              </Route>
-              <Route path="/cameras/:jobsiteId">
-                {(params) => <CameraDashboard jobsiteId={params.jobsiteId} />}
-              </Route>
-              <Route component={NotFound} />
-            </Switch>
-          </main>
-          
-          {/* Footer */}
-          <footer className="bg-[#BCBBBB] text-[#555555] p-3 text-sm text-center">
-            <p><span className="font-semibold"><span className="text-[#FBBC05]">HookCam</span> System v1.0</span> | Connected to AWS S3 Storage</p>
-          </footer>
-        </div>
-      </div>
-    </div>
-  );
-}
+import { PageTitleContext, SelectionContext } from '@/context/SelectionContext'
+import MainLayout from "./pages/Layout/MainLayout";
+import ProtectRoute from "./hooks/ProtectRoute";
+import Login from '@/pages/Login'
+import { GetStorage } from "./Utlis/authServices";
+import AppRouting from "./AppRouting";
 
 function App() {
   // Camera selection state
   const [selectedCameras, setSelectedCameras] = useState<number[]>([]);
   const [selectedJobsites, setSelectedJobsites] = useState<number[]>([]);
-  
+
   // Page title state
   const [pageTitle, setPageTitle] = useState("System");
   const [cameraName, setCameraName] = useState("");
   const [jobsiteName, setJobsiteName] = useState("");
-  
+
   // Load selection from localStorage on initial mount
   useEffect(() => {
     try {
@@ -349,21 +36,21 @@ function App() {
     } catch (error) {
       console.error("Error loading camera selection from localStorage:", error);
     }
-    
+
     // Expose context to window for direct access from components
     // that might not have React context available (e.g., external libraries)
     window.pageTitleContext = {
       setCameraName,
-      setJobsiteName, 
+      setJobsiteName,
       setPageTitle
     };
-    
+
     return () => {
       // Clean up on unmount
       delete window.pageTitleContext;
     };
   }, []);
-  
+
   // Watch for window events to update title state from other components
   useEffect(() => {
     // Listen for storage events (for cross-tab sync)
@@ -384,7 +71,7 @@ function App() {
         }
       }
     };
-    
+
     // Listen for custom titleUpdate events
     const handleTitleUpdateEvent = (event: CustomEvent) => {
       const { cameraName: newCameraName, jobsiteName: newJobsiteName, pageTitle: newPageTitle } = event.detail;
@@ -393,11 +80,11 @@ function App() {
       setPageTitle(newPageTitle);
       console.log("App.tsx updated title from custom event:", newPageTitle);
     };
-    
+
     // Add event listeners
     window.addEventListener('storage', handleStorageEvent);
     window.addEventListener('titleUpdate', handleTitleUpdateEvent as EventListener);
-    
+
     // Also check for existing session storage on initial mount
     try {
       const savedCameraInfo = sessionStorage.getItem('currentCameraInfo');
@@ -411,17 +98,17 @@ function App() {
     } catch (e) {
       console.error("Error loading camera info from session storage:", e);
     }
-    
+
     return () => {
       window.removeEventListener('storage', handleStorageEvent);
       window.removeEventListener('titleUpdate', handleTitleUpdateEvent as EventListener);
     };
   }, []);
-  
+
   const handleSelectionChange = (jobsiteIds: number[], cameraIds: number[]) => {
     setSelectedJobsites(jobsiteIds);
     setSelectedCameras(cameraIds);
-    
+
     // Save selection to localStorage for persistence
     try {
       localStorage.setItem('cameraSelection', JSON.stringify({
@@ -432,7 +119,7 @@ function App() {
       console.error("Error saving camera selection to localStorage:", error);
     }
   };
-  
+
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
@@ -449,7 +136,7 @@ function App() {
             selectedJobsites,
             handleSelectionChange
           }}>
-            <Layout />
+          <AppRouting/>
             <Toaster />
           </SelectionContext.Provider>
         </PageTitleContext.Provider>

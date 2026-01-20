@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Camera, Activity, Clock } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
-import { PageTitleContext } from "@/App";
+import { PageTitleContext } from "@/context/SelectionContext";
 
 // Define the camera type
 interface Camera {

@@ -1,6 +1,6 @@
 import { useContext, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { SelectionContext } from "@/App";
+import { SelectionContext } from "@/context/SelectionContext";
 import { BarChart3, Clock, Activity, Package, Weight, Wind, Star, Share2, Play, Calendar, MapPin, Upload } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Legend, BarChart, ReferenceLine } from "recharts";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -15,7 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { format } from "date-fns";
-
+import MapContainer from '@/components/Map/Map'
 interface PickEvent {
   id: string;
   pickNumber: number;
@@ -481,7 +481,7 @@ export default function Insights() {
             <MapPin className="h-5 w-5 text-[#FBBC05]" />
             Pick Location Heatmap
           </CardTitle>
-          <div className="flex items-center gap-2">
+          {/* <div className="flex items-center gap-2">
             <Input
               placeholder="Enter background image URL..."
               value={heatmapBackgroundUrl}
@@ -510,7 +510,7 @@ export default function Insights() {
                 </span>
               </Button>
             </label>
-          </div>
+          </div> */}
         </CardHeader>
         <CardContent>
           <div 
@@ -522,24 +522,24 @@ export default function Insights() {
             }}
             data-testid="heatmap-container"
           >
-            {!heatmapBackgroundUrl && (
+            {/* {!heatmapBackgroundUrl && (
               <div className="absolute inset-0 flex items-center justify-center">
                 <p className="text-[#BCBBBB] text-sm">Upload or enter a site map image URL to display as background</p>
               </div>
-            )}
+            )} */}
             
             {/* Grid overlay for reference */}
-            <div className="absolute inset-0 opacity-10">
+            {/* <div className="absolute inset-0 opacity-10">
               {[...Array(10)].map((_, i) => (
                 <div key={`h-${i}`} className="absolute w-full border-t border-[#555555]" style={{ top: `${(i + 1) * 10}%` }} />
               ))}
               {[...Array(10)].map((_, i) => (
                 <div key={`v-${i}`} className="absolute h-full border-l border-[#555555]" style={{ left: `${(i + 1) * 10}%` }} />
               ))}
-            </div>
+            </div> */}
 
             {/* Pick location markers */}
-            {pickEvents.map((pick) => {
+            {/* {pickEvents.map((pick) => {
               const windSpeed = getWindSpeedForPick(pick.hour);
               return (
                 <div
@@ -551,7 +551,6 @@ export default function Insights() {
                   }}
                   data-testid={`heatmap-marker-${pick.id}`}
                 >
-                  {/* Heatmap glow effect based on tonnage */}
                   <div 
                     className="absolute rounded-full opacity-40"
                     style={{
@@ -564,7 +563,6 @@ export default function Insights() {
                     }}
                   />
                   
-                  {/* Pick marker */}
                   <div 
                     className="relative w-6 h-6 rounded-full border-2 border-white shadow-lg flex items-center justify-center text-white text-xs font-bold"
                     style={{ 
@@ -574,7 +572,6 @@ export default function Insights() {
                     {pick.pickNumber}
                   </div>
                   
-                  {/* Tooltip on hover */}
                   <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 hidden group-hover:block z-10">
                     <div className="bg-white rounded-lg shadow-lg p-2 text-xs whitespace-nowrap border border-[#BCBBBB]">
                       <p className="font-bold text-[#555555]">Pick #{pick.pickNumber}</p>
@@ -588,10 +585,11 @@ export default function Insights() {
                   </div>
                 </div>
               );
-            })}
+            })} */}
 
+<MapContainer/>
             {/* Legend */}
-            <div className="absolute bottom-4 left-4 bg-white/90 rounded-lg p-3 shadow-lg">
+            <div className="absolute bottom-4 left-4 bg-white/90 rounded-lg p-3 shadow-lg z-50">
               <p className="text-xs font-semibold text-[#555555] mb-2">Tonnage Legend</p>
               <div className="flex items-center gap-3 text-xs text-[#555555]">
                 <div className="flex items-center gap-1">
@@ -610,7 +608,7 @@ export default function Insights() {
             </div>
 
             {/* Stats overlay */}
-            <div className="absolute top-4 right-4 bg-white/90 rounded-lg p-3 shadow-lg">
+            <div className="absolute top-4 right-4 bg-white/90 rounded-lg p-3 shadow-lg z-50">
               <p className="text-xs font-semibold text-[#555555] mb-1">Today's Stats</p>
               <p className="text-xs text-[#555555]">{pickEvents.length} picks recorded</p>
               <p className="text-xs text-[#555555]">{pickEvents.reduce((sum, p) => sum + p.tonnage, 0).toFixed(1)} total tons</p>
