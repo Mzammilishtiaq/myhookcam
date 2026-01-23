@@ -6,15 +6,23 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { PageTitleContext, SelectionContext } from '@/context/SelectionContext'
 import MainLayout from "./pages/Layout/MainLayout";
 import ProtectRoute from "./hooks/ProtectRoute";
-import Login from '@/pages/Login'
+import Login from '@/pages/Auth/Login'
 import { GetStorage } from "./Utlis/authServices";
 import AppRouting from "./AppRouting";
+import { LoadingAnimation } from "./components/ui/LoadingAnimation";
 
 function App() {
   // Camera selection state
   const [selectedCameras, setSelectedCameras] = useState<number[]>([]);
   const [selectedJobsites, setSelectedJobsites] = useState<number[]>([]);
+  const [fullscreenloading, setFullscreenLoading] = useState(true);
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setFullscreenLoading(false);
+    }, 2500); // Show animation for 2.5 seconds
 
+    return () => clearTimeout(timer);
+  }, []);
   // Page title state
   const [pageTitle, setPageTitle] = useState("System");
   const [cameraName, setCameraName] = useState("");
@@ -123,6 +131,7 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
+        {fullscreenloading && <LoadingAnimation />}
         <PageTitleContext.Provider value={{
           pageTitle,
           setPageTitle,
@@ -136,7 +145,7 @@ function App() {
             selectedJobsites,
             handleSelectionChange
           }}>
-          <AppRouting/>
+            <AppRouting />
             <Toaster />
           </SelectionContext.Provider>
         </PageTitleContext.Provider>

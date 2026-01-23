@@ -1,9 +1,10 @@
 import { Button } from "@/components/ui/button";
 import useSidebarStore from "@/hooks/use-sidebar";
-import { Menu } from "lucide-react";
+import { MapPin, Menu, Plus, UserPlus } from "lucide-react";
 import { useContext, useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { PageTitleContext } from "@/context/SelectionContext"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@radix-ui/react-dropdown-menu";
 
 
 function MainNavigation() {
@@ -50,15 +51,15 @@ function MainNavigation() {
     });
 
     // Default header title
-    let title = <><span className="text-[#FBBC05]">HookCam</span> System</>;
+    let title = <><span className="text-[#FBBC05]">HookCam</span> </>;
 
     // Check if we're on Dashboard page
-    if (pathname.startsWith('/cameras')) {
+    if (pathname.startsWith('camera/list')) {
       // Use static "HookCam Dashboard" title since jobsite name is already displayed in main title
       title = <><span className="text-[#FBBC05]">HookCam</span> Dashboard</>;
     }
     // Check if we're on a specific camera view and have a camera name
-    else if (cameraName && (pathname === '/livestream' || pathname === '/recordings' || pathname === '/system-status' || pathname === '/insights')) {
+    else if (cameraName && (pathname === 'camera/livestream' || pathname === 'camera/recordings' || pathname === 'camera/system-status' || pathname === 'camera/insights')) {
       // Use the exact title that was set by sidebar or LiveStream component
       if (pageTitle && pageTitle !== "Live Stream" && pageTitle !== "System") {
         // The title has already been formatted as "Camera Name at Jobsite Name"
@@ -97,39 +98,84 @@ function MainNavigation() {
               {getHeaderTitle()}
             </h1>
           </div>
+          <div className="flex items-center gap-2">
+            {/* {(userRole === 'super_admin' || userRole === 'manager') && ( */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-[#FBBC05] border-[#FBBC05] bg-white/10 hover:bg-[#FBBC05] hover:text-white"
+                >
+                  <Plus className="h-4 w-4 mr-1" />
+                  New
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48 bg-white rounded">
+                <DropdownMenuItem onClick={() => navigate("jobsite/create")} className="text-black flex  gap-x-2 items-center text-sm p-2 mb-2 cursor-pointer">
+                  <MapPin className="h-4 w-4 text-[#FBBC05]" />
+                  Create Site
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate("camera/create")} className="text-black flex  gap-x-2 items-center text-sm p-2 mb-2 cursor-pointer">
+                  <UserPlus className="h-4 w-4 text-[#FBBC05]" />
+                  Create User
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            {/* )} */}
+            {/* {userRole && ( */}
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-white border-white/20 bg-white/10 hover:bg-white/20"
+            // onClick={handleLogout}
+            >
+              Logout
+            </Button>
+            {/* )} */}
+          </div>
         </div>
 
-        {!pathname.startsWith('/cameras') && (
-          <div className="w-full overflow-hidden -mx-2 sm:-mx-4 px-2 sm:px-4">
-            <div className="flex w-full bg-white rounded-md">
-              <button
-                className={`flex-1 py-2 text-center text-[11px] sm:text-sm font-medium transition-colors ${pathname === "/" || pathname === "/livestream" ? "text-[#FBBC05] border-b-2 border-[#FBBC05]" : "text-[#555555] hover:bg-gray-100"}`}
-                onClick={() => navigate("/livestream")}
-              >
-                Live
-              </button>
-              <button
-                className={`flex-1 py-2 text-center text-[11px] sm:text-sm font-medium transition-colors ${pathname === "/insights" ? "text-[#FBBC05] border-b-2 border-[#FBBC05]" : "text-[#555555] hover:bg-gray-100"}`}
-                onClick={() => navigate("/insights")}
-              >
-                Insights
-              </button>
-              <button
-                className={`flex-1 py-2 text-center text-[11px] sm:text-sm font-medium transition-colors ${pathname === "/recordings" ? "text-[#FBBC05] border-b-2 border-[#FBBC05]" : "text-[#555555] hover:bg-gray-100"}`}
-                onClick={() => navigate("/recordings")}
-              >
-                Recordings
-              </button>
-              <button
-                className={`flex-1 py-2 text-center text-[11px] sm:text-sm font-medium transition-colors ${pathname === "/system-status" ? "text-[#FBBC05] border-b-2 border-[#FBBC05]" : "text-[#555555] hover:bg-gray-100"}`}
-                onClick={() => navigate("/system-status")}
-              >
-                Status
-              </button>
+        {!pathname.startsWith("/camera/list") &&
+          !pathname.startsWith("/admin-dashboard") &&
+          !pathname.startsWith("/users") &&
+          !pathname.startsWith("/camera/setting") &&
+          !pathname.startsWith("/jobsite/setting") &&
+          !pathname.startsWith("/jobsite/create") &&
+          !pathname.startsWith("/camera/create") &&
+          (
+            <div className="w-full overflow-hidden -mx-2 sm:-mx-4 px-2 sm:px-4">
+              <div className="flex w-full bg-white rounded-md">
+                <button
+                  className={`flex-1 py-2 text-center text-[11px] sm:text-sm font-medium transition-colors ${pathname === "/" || pathname === "/camera/livestream" ? "text-[#FBBC05] border-b-2 border-[#FBBC05]" : "text-[#555555] hover:bg-gray-100"}`}
+                  onClick={() => navigate("/camera/livestream")}
+                >
+                  Live
+                </button>
+                <button
+                  className={`flex-1 py-2 text-center text-[11px] sm:text-sm font-medium transition-colors ${pathname === "/camera/insights" ? "text-[#FBBC05] border-b-2 border-[#FBBC05]" : "text-[#555555] hover:bg-gray-100"}`}
+                  onClick={() => navigate("/camera/insights")}
+                >
+                  Insights
+                </button>
+                <button
+                  className={`flex-1 py-2 text-center text-[11px] sm:text-sm font-medium transition-colors ${pathname === "/camera/recordings" ? "text-[#FBBC05] border-b-2 border-[#FBBC05]" : "text-[#555555] hover:bg-gray-100"}`}
+                  onClick={() => navigate("/camera/recordings")}
+                >
+                  Recordings
+                </button>
+                <button
+                  className={`flex-1 py-2 text-center text-[11px] sm:text-sm font-medium transition-colors ${pathname === "/camera/system-status" ? "text-[#FBBC05] border-b-2 border-[#FBBC05]" : "text-[#555555] hover:bg-gray-100"}`}
+                  onClick={() => navigate("/camera/system-status")}
+                >
+                  Status
+                </button>
+              </div>
             </div>
-          </div>
-        )}
+          )}
       </div>
+
+      {/* </div> */}
     </div>
   );
 }
