@@ -184,7 +184,7 @@ export default function CameraDashboard({
     }
 
     // Navigate to the Live Stream tab (the main tab view)
-    navigate("/livestream");
+    navigate("/camera/livestream");
   };
 
   return (

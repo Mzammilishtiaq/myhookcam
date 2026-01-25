@@ -5,7 +5,8 @@ import { ScrollArea } from '../ui/scroll-area';
 import { Input } from '../ui/input';
 import { useNavigate } from 'react-router-dom';
 import { PageTitleContext } from "@/context/SelectionContext";
-
+import { useAuthStore } from "@/hooks/authStore";
+import {PersonType} from "@/hooks/enum"
 interface SidebarProps {
   onSelectionChange: (selectedJobsites: number[], selectedCameras: number[]) => void;
 }
@@ -24,6 +25,7 @@ interface Jobsite {
 }
 
 function SidebaJob({ onSelectionChange }: SidebarProps) {
+  const { user } = useAuthStore();
   const navigate = useNavigate();
   // Get the page title context
   const pageTitleContext = useContext(PageTitleContext);
@@ -159,38 +161,41 @@ function SidebaJob({ onSelectionChange }: SidebarProps) {
     <div>
       <div className="p-4 pb-2">
         <div className="space-y-1 mb-4">
-          <Button
-            variant="ghost"
-            className="w-full justify-start text-sm font-medium hover:bg-gray-100"
-            onClick={() => navigate("admin-dashboard")}
-          >
-            <LayoutDashboard className="h-4 w-4 mr-2 text-[#FBBC05]" />
-            Dashboard
-          </Button>
-          {/* {(userRole === "super_admin" || userRole === "manager") && ( */}
-          <>
-            <Button
-              variant="ghost"
-              className="w-full justify-start text-sm font-medium hover:bg-gray-100"
-              onClick={() => navigate("users")}
-            >
-              <User className="h-4 w-4 mr-2 text-[#FBBC05]" />
-              User Management
-            </Button>
-          </>
-          {/* )} */}
+          {(user?.userType === PersonType.ADMIN) && (
+            <>
+              <Button
+                variant="ghost"
+                className="w-full justify-start text-sm font-medium hover:bg-gray-100"
+                onClick={() => navigate("admin-dashboard")}
+              >
+                <LayoutDashboard className="h-4 w-4 mr-2 text-[#FBBC05]" />
+                Dashboard
+              </Button>
+              <Button
+                variant="ghost"
+                className="w-full justify-start text-sm font-medium hover:bg-gray-100"
+                onClick={() => navigate("users")}
+              >
+                <User className="h-4 w-4 mr-2 text-[#FBBC05]" />
+                User Management
+              </Button>
+            </>
+          )}
         </div>
         <div className="p-4 pb-2">
           <div className="flex justify-between items-center mb-2">
             <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider">Jobsites</h3>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-7 w-7 p-0"
-              onClick={() => navigate("jobsite/create")}
-            >
-              <Plus className="h-4 w-4" />
-            </Button>
+            {user?.userType?.toLowerCase() === PersonType.ADMIN && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 w-7 p-0"
+                onClick={() => navigate("/jobsite/create")}
+              >
+                <Plus className="h-4 w-4" />
+              </Button>
+            )}
+
           </div>
         </div>
 
@@ -224,7 +229,7 @@ function SidebaJob({ onSelectionChange }: SidebarProps) {
                     {jobsite.name}
                   </span>
                   {/* {(userRole === "super_admin" || userRole === "manager") && ( */}
-                  <Button
+                  {(user?.userType === PersonType.ADMIN) && <Button
                     variant="ghost"
                     size="sm"
                     className="h-7 w-7 p-0 text-gray-400 hover:text-[#FBBC05]"
@@ -235,7 +240,7 @@ function SidebaJob({ onSelectionChange }: SidebarProps) {
                     }}
                   >
                     <Settings className="h-4 w-4" />
-                  </Button>
+                  </Button>}
                   {/* // )} */}
                   {/* <div className={`h-4 w-4 rounded border ${areAllCamerasSelected(jobsite.id)
                     ? 'bg-[#FBBC05] border-[#FBBC05]'
@@ -248,7 +253,7 @@ function SidebaJob({ onSelectionChange }: SidebarProps) {
                       selectAllCameras(jobsite.id, !areAllCamerasSelected(jobsite.id));
                     }}
                   /> */}
-                  </div>
+                </div>
 
                 {jobsite.isExpanded && (
                   <div className="ml-8 space-y-1 mt-1 pl-2 border-l border-gray-200">
@@ -311,21 +316,20 @@ function SidebaJob({ onSelectionChange }: SidebarProps) {
                         >
                           {camera.name}
                         </span>
-                        {/* {(userRole === "super_admin" ||
-                        userRole === "manager") && ( */}
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-6 w-6 p-0 text-gray-400 hover:text-[#FBBC05]"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            // Logic to open settings
-                            navigate("camera/setting");
-                          }}
-                        >
-                          <Settings className="h-3 w-3" />
-                        </Button>
-                        {/* )} */}
+                        {(user?.userType === PersonType.ADMIN) && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 w-6 p-0 text-gray-400 hover:text-[#FBBC05]"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              // Logic to open settings
+                              navigate("camera/setting");
+                            }}
+                          >
+                            <Settings className="h-3 w-3" />
+                          </Button>
+                        )}
                         {/* <div
                           className={`h-4 w-4 rounded border ${camera.isActive
                             ? 'bg-[#FBBC05] border-[#FBBC05]'
@@ -361,7 +365,7 @@ function SidebaJob({ onSelectionChange }: SidebarProps) {
                         </Button>
                       </div>
                     ) : (
-                      <Button
+                      (user?.userType === PersonType.ADMIN) && <Button
                         variant="ghost"
                         size="sm"
                         className="text-xs py-1 h-6 mt-1 w-full justify-start text-gray-500"

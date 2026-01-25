@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Login from "@/pages/Auth/Login";
 import MainLayout from "@/pages/Layout/MainLayout";
 import LiveStream from "@/pages/Cameras/LiveStream/LiveStream";
@@ -14,14 +14,30 @@ import CameraSetting from "./pages/Cameras/CameraSetting/CameraSetting";
 import CreateCamera from "./pages/Cameras/CreateCamera/CreateCamera";
 import CreateJobsite from "./pages/Jobsite/CreateJobSite/CreateJobsite";
 import JobsiteSetting from "./pages/Jobsite/JobSiteSetting/JobSetting";
-
+import { useAuthStore } from "@/hooks/authStore";
 function AppRouting() {
+    const { user } = useAuthStore()
+    const isAdmin =
+        user?.userType === "admin" ||
+        user?.userType === "sub-admin";
     return (
         <BrowserRouter>
             <Routes>
 
                 {/* Public Route */}
                 <Route path="/login" element={<Login />} />
+                <Route
+                    path="/"
+                    element={
+                        !user ? (
+                            <Login />
+                        ) : isAdmin ? (
+                            <Navigate to="/admin-dashboard" replace />
+                        ) : (
+                            <Navigate to="/camera/list" replace />
+                        )
+                    }
+                />
 
                 {/* Protected Wrapper */}
                 <Route
@@ -35,7 +51,6 @@ function AppRouting() {
                     {/* Protected Children */}
                     <Route path="camera/create" element={<CreateCamera />} />
                     <Route path="camera/setting" element={<CameraSetting />} />
-                    <Route path="" element={<LiveStream />} />
                     <Route path="camera/livestream" element={<LiveStream />} />
                     <Route path="camera/insights" element={<Insight />} />
                     <Route path="camera/recordings" element={<Recording />} />

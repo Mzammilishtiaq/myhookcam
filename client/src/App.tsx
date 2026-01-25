@@ -12,6 +12,7 @@ import AppRouting from "./AppRouting";
 import { LoadingAnimation } from "./components/ui/LoadingAnimation";
 
 function App() {
+  
   // Camera selection state
   const [selectedCameras, setSelectedCameras] = useState<number[]>([]);
   const [selectedJobsites, setSelectedJobsites] = useState<number[]>([]);

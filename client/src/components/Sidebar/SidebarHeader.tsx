@@ -2,8 +2,9 @@ import React from 'react'
 import { Button } from '../ui/button'
 import { User, Menu } from 'lucide-react'
 import useSidebarStore from "@/hooks/use-sidebar";
-
+import {GetStorage} from "@/Utlis/authServices"
 function SidebarHeader() {
+  const getstorage = GetStorage()
   const { toggle } = useSidebarStore();
     // Mocked user data for demo
   const userName = "John Smith";
@@ -41,7 +42,7 @@ function SidebarHeader() {
             <User className="h-4 w-4 text-gray-600" />
           </div>
           <div>
-            <div className="text-sm font-medium">{userName}</div>
+            <div className="text-sm font-medium">{(getstorage?.data as any)?.full_name}</div>
             <div className="text-xs text-gray-300">Project Manager</div>
           </div>
         </div>

@@ -5,9 +5,10 @@ import { useContext, useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { PageTitleContext } from "@/context/SelectionContext"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@radix-ui/react-dropdown-menu";
-
-
+import {useAuthStore} from '@/hooks/authStore';
+import { PersonType } from "@/hooks/enum";
 function MainNavigation() {
+  const { logout,user } = useAuthStore()
   const location = useLocation();
   const pathname = location.pathname;
   const navigate = useNavigate();
@@ -99,7 +100,7 @@ function MainNavigation() {
             </h1>
           </div>
           <div className="flex items-center gap-2">
-            {/* {(userRole === 'super_admin' || userRole === 'manager') && ( */}
+             {(user?.userType === PersonType.ADMIN) &&  (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
@@ -122,13 +123,16 @@ function MainNavigation() {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-            {/* )} */}
+            )}
             {/* {userRole && ( */}
             <Button
               variant="outline"
               size="sm"
               className="text-white border-white/20 bg-white/10 hover:bg-white/20"
-            // onClick={handleLogout}
+            onClick={()=>{
+              logout();
+              navigate('/login')
+            }}
             >
               Logout
             </Button>

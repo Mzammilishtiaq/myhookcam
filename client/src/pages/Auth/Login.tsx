@@ -8,8 +8,11 @@ import { useToast } from "@/hooks/use-toast";
 import { SetStorage } from "@/Utlis/authServices";
 import { backendCall } from "@/Utlis/BackendService";
 import { useForm } from "react-hook-form";
-
+import { useAuthStore } from "@/hooks/authStore"
+import {useUserTypeRedirect} from "@/hooks/userType"
 export default function Login() {
+    const { redirectByUserType } = useUserTypeRedirect();
+    const { login } = useAuthStore();
     const navigate = useNavigate();
     const { toast } = useToast();
     const [loading, setLoading] = useState(false)
@@ -43,8 +46,9 @@ export default function Login() {
                     meta: null
                 };
                 setLoading(false)
-                SetStorage(finalData, rememberMe);
-                navigation(`/livestream`)
+                login(finalData, rememberMe);
+                redirectByUserType(response.person_type);
+
                 toast({
                     title: "Login Successful",
                     description: "You have been logged in successfully.",
