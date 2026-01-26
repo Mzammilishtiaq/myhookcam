@@ -18,19 +18,12 @@ function PickAnalytics() {
         <div className="space-y-6" data-testid="insights-page">
             <div className="flex items-center justify-between">
                 <h2 className="text-xl font-semibold text-[#555555]">Pick Analytics</h2>
-                <Button
-                    variant="outline"
-                    className="border-[#BCBBBB] text-[#555555] hover:bg-[#FBBC05]/10"
-                    data-testid="date-picker-btn"
-                >
-                    <Calendar className="mr-2 h-4 w-4 text-[#FBBC05]" />
                     <CustomDatePicker
                         initialDate={new Date("2025-02-05")}
                         onChange={(date) => {
                             console.log(date)
                         }}
                     />
-                </Button>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

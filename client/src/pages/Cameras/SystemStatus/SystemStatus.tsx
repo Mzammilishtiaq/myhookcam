@@ -221,7 +221,7 @@ export default function SystemStatus() {
         deviceId,
         date: formattedDate,
         weekStartDate: null,
-        month: null,
+        month: null,  
         runtimeMinutes: Math.floor(totalMinutes * baseReliability * (0.95 + Math.random() * 0.05)),
         type: timeframe,
         updatedAt: new Date().toISOString()

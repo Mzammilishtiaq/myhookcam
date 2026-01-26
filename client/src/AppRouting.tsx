@@ -3,7 +3,7 @@ import Login from "@/pages/Auth/Login";
 import MainLayout from "@/pages/Layout/MainLayout";
 import LiveStream from "@/pages/Cameras/LiveStream/LiveStream";
 import Insight from "@/pages/Cameras/InSight/index";
-import Recording from "@/pages/Cameras/Recording/Recordings";
+import Recording from "@/pages/Cameras/Recording/index";
 import SystemStatus from "@/pages/Cameras/SystemStatus/SystemStatus";
 import AuthGuide from "./hooks/ProtectRoute";
 import NotFound from "@/pages/not-found";

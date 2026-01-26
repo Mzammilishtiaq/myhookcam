@@ -323,7 +323,7 @@ export function Timeline({
           {renderClips()}
         </div>
         
-        {contentWidth > visibleWidth && (
+        {/* {contentWidth > visibleWidth && (
           <div className="absolute bottom-0 left-0 right-0 px-4 py-2 bg-[#F5F5F5] border-t border-[#BCBBBB]">
             <Slider
               value={[scrollPercentage]}
@@ -334,7 +334,7 @@ export function Timeline({
               className="w-full"
             />
           </div>
-        )}
+        )} */}
       </div>
       
       {/* Action buttons */}

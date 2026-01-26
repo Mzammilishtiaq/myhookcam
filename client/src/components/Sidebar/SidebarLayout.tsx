@@ -11,7 +11,7 @@ interface SidebarProps {
 function SidebarLayout({ onSelectionChange }: SidebarProps) {
 
   return (
-    <Card className="h-full flex flex-col rounded-r-xl shadow-lg w-[280px]">
+    <Card className="h-full flex flex-col rounded-none shadow-lg w-full md:w-[280px]">
       <SidebarHeader />
       <Separator className="bg-gray-600" />
       <SidebarJob onSelectionChange={onSelectionChange} />

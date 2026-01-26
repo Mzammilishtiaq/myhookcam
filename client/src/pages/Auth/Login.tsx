@@ -9,7 +9,8 @@ import { SetStorage } from "@/Utlis/authServices";
 import { backendCall } from "@/Utlis/BackendService";
 import { useForm } from "react-hook-form";
 import { useAuthStore } from "@/hooks/authStore"
-import {useUserTypeRedirect} from "@/hooks/userType"
+import { useUserTypeRedirect } from "@/hooks/userType"
+import Loginimg from "@/assets/login1.png"
 export default function Login() {
     const { redirectByUserType } = useUserTypeRedirect();
     const { login } = useAuthStore();
@@ -73,17 +74,17 @@ export default function Login() {
             {/* Left side: Hero/Branding */}
             <div className="flex-1 flex flex-col items-center justify-center p-8 bg-[#555555] text-white">
                 <div className="max-w-md text-center">
-                    <div className="mb-8 flex justify-center">
-                        <div className="w-48 h-48 md:w-64 md:h-64 relative">
+                    <div className="flex justify-center">
+                        <div className="w-full h-96 -pb-10 relative">
                             <img
-                                src={"https://myhookcam.com/images/logo_white.png?id=asd"}
+                                src={Loginimg}
                                 alt="HookCam Crane"
                                 className="w-full h-full object-contain filter brightness-110"
                                 style={{ filter: 'sepia(1) saturate(10) hue-rotate(-10deg) brightness(1.1)' }}
                             />
                         </div>
                     </div>
-                    <h1 className="text-5xl md:text-7xl font-bold mb-4 tracking-tight">
+                    <h1 className="font-poppins text-5xl md:text-7xl font-bold mb-4 tracking-tight">
                         <span className="text-[#FBBC05]">Hook</span>Cam
                     </h1>
                     <p className="text-xl md:text-2xl text-gray-300 font-light">
