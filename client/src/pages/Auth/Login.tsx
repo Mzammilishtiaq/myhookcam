@@ -1,16 +1,16 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { SetStorage } from "@/Utlis/authServices";
 import { backendCall } from "@/Utlis/BackendService";
 import { useForm } from "react-hook-form";
 import { useAuthStore } from "@/hooks/authStore"
 import { useUserTypeRedirect } from "@/hooks/userType"
 import Loginimg from "@/assets/login1.png"
+import decodeJwtToken from "@/Utlis/Decode"
+
 export default function Login() {
     const { redirectByUserType } = useUserTypeRedirect();
     const { login } = useAuthStore();
@@ -19,7 +19,7 @@ export default function Login() {
     const [loading, setLoading] = useState(false)
     const form = useForm({
         defaultValues: {
-            username: "",
+            email: "",
             password: ""
         }
     });
@@ -27,47 +27,59 @@ export default function Login() {
     const navigation = useNavigate();
 
     const handleLogin = async () => {
-        const values = form.getValues();
-        const rememberMe = true; // Add missing variable
-        setLoading(true)
-        await backendCall({
-            url: "/person/login",
-            method: "POST",
-            data: {
-                email: values.username,
-                password: values.password
-            }
-        }).then((response: any) => {
-            if (response && !response.error) {
-                console.log(response)
-                const finalData = {
-                    data: response, // Use response instead of undefined response variable
-                    userType: response.person_type,
-                    token: "",      // no token in API
-                    meta: null
-                };
-                setLoading(false)
-                login(finalData, rememberMe);
-                redirectByUserType(response.person_type);
+        const values = form.getValues()
+        const rememberMe = true
 
-                toast({
-                    title: "Login Successful",
-                    description: "You have been logged in successfully.",
-                })
-                // handleToastMessage('success',response?.message)
-            } else {
-                setLoading(false)
+        setLoading(true)
+
+        try {
+            const response: any = await backendCall({
+                url: "/accounts/signin",
+                method: "POST",
+                data: {
+                    email: values.email,
+                    password: values.password,
+                },
+            })
+
+            // login failed (business or api error)
+            if (!response || response.status !== "success") {
                 toast({
                     title: "Login Failed",
-                    description: response?.message || "Invalid credentials. Please try again.",
-                    variant: "destructive"
+                    description: response?.message || "Login failed",
+                    variant: "destructive",
                 })
-                console.log('error', response?.message);
+                return
             }
-        });
 
+            // success
+            const finalData = {
+                data: {},
+                userType: response.person_type,
+                token: response.data.token,
+                meta: {},
+            }
 
-    };
+            login(finalData, rememberMe)
+            decodeJwtToken(response.data.token)
+            redirectByUserType(response.person_type)
+
+            toast({
+                title: "Login Successful",
+                description: "You have been logged in successfully.",
+            })
+
+        } catch (err) {
+            toast({
+                title: "Login Failed",
+                description: "An unexpected error occurred. Please try again.",
+                variant: "destructive",
+            })
+        } finally {
+            setLoading(false)
+        }
+    }
+
 
     return (
         <div className="min-h-screen w-full flex flex-col md:flex-row bg-[#555555]">
@@ -75,7 +87,7 @@ export default function Login() {
             <div className="flex-1 flex flex-col items-center justify-center p-8 bg-[#555555] text-white">
                 <div className="max-w-md text-center">
                     <div className="flex justify-center">
-                        <div className="w-full h-96 -pb-10 relative">
+                        <div className="w-full lg:h-96  lg:-pb-10 pb-0 relative">
                             <img
                                 src={Loginimg}
                                 alt="HookCam Crane"
@@ -102,20 +114,38 @@ export default function Login() {
                     </div>
                     <form onSubmit={form.handleSubmit(handleLogin)} className="space-y-6">
                         <div className="space-y-2">
-                            <Label htmlFor="username" className="text-sm font-bold text-gray-700 uppercase tracking-wider">Email Address</Label>
+                            <Label htmlFor="email" className="text-sm font-bold text-gray-700 uppercase tracking-wider">Email Address</Label>
                             <Input
                                 type="email"
                                 placeholder="name@company.com"
-                                className="h-14 text-lg rounded-none border-gray-300 focus:border-[#FBBC05] focus:ring-0"                                {...form.register("username", { required: true })}
+                                className="h-14 text-lg rounded-none border-gray-300 focus:border-[#FBBC05] focus:ring-0"
+                                 {...form.register("email", {
+                                    required: "Email address is required",
+                                    pattern: {
+                                        value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                                        message: "Invalid email address"
+                                    }
+                                })}
                             />
                         </div>
 
-                        <div className="space-y-2">
+                        <div className="space-y-2"><div className="flex justify-between items-end">
                             <Label htmlFor="password" title="Password" className="text-sm font-bold text-gray-700 uppercase tracking-wider">Password</Label>
+                            <Link to="/forgot-password">
+                                <span className="text-sm text-[#555555] hover:text-[#FBBC05] cursor-pointer transition-colors font-medium">Forgot Password?</span>
+                            </Link>
+                        </div>
                             <Input
                                 type="password"
                                 placeholder="••••••••"
-                                className="h-14 text-lg rounded-none border-gray-300 focus:border-[#FBBC05] focus:ring-0"                                {...form.register("password", { required: true })}
+                                className="h-14 text-lg rounded-none border-gray-300 focus:border-[#FBBC05] focus:ring-0"
+                                    {...form.register("password", {
+                                        required: "Password is required",
+                                        minLength: {
+                                            value: 8,
+                                            message: "Password must be at least 8 characters"
+                                        }
+                                    })}
                             />
                         </div>
 

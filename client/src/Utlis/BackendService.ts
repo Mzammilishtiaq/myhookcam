@@ -1,59 +1,66 @@
-import axios from 'axios'
-import { GetStorage } from "@/Utlis/authServices";
+import axios from "axios"
+import { useAuthStore } from "@/hooks/authStore"
+import { handleApiError } from "@/Utlis/apiErrorHandler"
+import { handleBusinessError } from "@/Utlis/businessErrorHandler"
 
 export const backendCall = async ({
-    url,
-    method = 'POST',
-    data,
-    source,
-    isNavigate = true,
-    isShowErrorMessage = true,
-    contentType = 'application/json',
-    dataModel,
+  url,
+  method = "POST",
+  data,
+  source,
+  isNavigate = true,
+  isShowErrorMessage = true,
+  contentType = "application/json",
+  dataModel,
 }: backendCall) => {
-    const storageData = await GetStorage();
-    const _headers = {
-        'Content-Type': contentType,
-        // Authorization: 'Bearer ' + storageData?.token || '',
-    };
-console.log('token')
-    let _response: any = '';
-    await axios(import.meta.env.VITE_REACT_API_URL + url, {
-        method: method,
-        data: data,
-        headers: _headers,
-        cancelToken: source?.token,
-    }).then((response: { data: string }) => {
-// debugger
-        _response = response.data;
-        if (dataModel) {
-            let dataSet = dataModel.adapt(_response?.data);
-            console.log('data pass', dataSet)
-            _response.data = dataSet;
-        }
-    }).catch((error: { response: { data: any; status: number } }) => {
-        let _responseData = error.response?.data;
-        if (isShowErrorMessage) {
-            // handleToastMessage("error", _responseData.message);
-            console.log('error ==', _responseData?.message);
-        }
-        _response = _responseData;
-        if (error.response?.status === 401 && isNavigate) {
-            // window.location.replace("/");
-            // localStorage.clear();
-        }
-    });
 
-    return _response;
+  const user = useAuthStore.getState().user
+
+  const headers: any = {
+    "Content-Type": contentType,
+  }
+
+  if (user?.token) {
+    headers.Authorization = `Bearer ${user.token}`
+  }
+
+  try {
+    const response = await axios({
+      url: import.meta.env.VITE_REACT_API_URL + url,
+      method,
+      data,
+      headers,
+      cancelToken: source?.token,
+    })
+
+    let result = response.data
+
+    // business error
+    if (result?.status === "fail") {
+      return handleBusinessError(result)
+    }
+
+    if (dataModel && result?.data) {
+      result.data = dataModel.adapt(result.data)
+    }
+
+    return result
+
+  } catch (error: any) {
+    return handleApiError(error, {
+      isNavigate,
+      isShowErrorMessage,
+    })
+  }
 }
 
 interface backendCall {
-    url: string;
-    method: string;
-    data?: any;
-    source?: any;
-    isNavigate?: boolean;
-    isShowErrorMessage?: boolean;
-    contentType?: string;
-    dataModel?: any;
+  url: string
+  method?: string
+  data?: any
+  source?: any
+  isNavigate?: boolean
+  isShowErrorMessage?: boolean
+  contentType?: string
+  dataModel?: any
 }
