@@ -15,6 +15,7 @@ import CreateCamera from "./pages/Cameras/CreateCamera/CreateCamera";
 import CreateJobsite from "./pages/Jobsite/CreateJobSite/CreateJobsite";
 import JobsiteSetting from "./pages/Jobsite/JobSiteSetting/JobSetting";
 import FortgotPassword from "./pages/Auth/ForgotPassword";
+import NewResetPassword from "./pages/Auth/NewResetPassowrs";
 import { useAuthStore } from "@/hooks/authStore";
 function AppRouting() {
     const { user } = useAuthStore()
@@ -28,6 +29,7 @@ function AppRouting() {
                 {/* Public Route */}
                 <Route path="/login" element={<Login />} />
                 <Route path="/forgot-password" element={<FortgotPassword />} />
+                <Route path="/reset-password" element={<NewResetPassword />} />
                 <Route
                     path="/"
                     element={
