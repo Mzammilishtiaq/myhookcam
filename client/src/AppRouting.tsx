@@ -7,7 +7,7 @@ import Recording from "@/pages/Cameras/Recording/index";
 import SystemStatus from "@/pages/Cameras/SystemStatus/SystemStatus";
 import AuthGuide from "./hooks/ProtectRoute";
 import NotFound from "@/pages/not-found";
-import UserManagement from "./pages/Admin/UserManagement";
+import UserManagement from "./pages/Admin/User/UserManagement";
 import AdminDashboard from "./pages/Admin/AdminDashboard";
 import CameraDashboard from "./pages/Jobsite/CameraDashboard";
 import CameraSetting from "./pages/Cameras/CameraSetting/CameraSetting";
@@ -17,6 +17,9 @@ import JobsiteSetting from "./pages/Jobsite/JobSiteSetting/JobSetting";
 import FortgotPassword from "./pages/Auth/ForgotPassword";
 import NewResetPassword from "./pages/Auth/NewResetPassowrs";
 import { useAuthStore } from "@/hooks/authStore";
+import MailSent from "./pages/Auth/MailSent";
+import GetUserProfile from "./pages/Admin/User/GetUserProfile";
+import UpdateUserProfile from "./pages/Admin/User/UpdateUserProfile";
 function AppRouting() {
     const { user } = useAuthStore()
     const isAdmin =
@@ -30,6 +33,7 @@ function AppRouting() {
                 <Route path="/login" element={<Login />} />
                 <Route path="/forgot-password" element={<FortgotPassword />} />
                 <Route path="/reset-password" element={<NewResetPassword />} />
+                <Route path="/mail-sent" element={<MailSent />} />
                 <Route
                     path="/"
                     element={
@@ -63,13 +67,13 @@ function AppRouting() {
                     <Route path="jobsite/create" element={<CreateJobsite />} />
                     <Route path="jobsite/setting" element={<JobsiteSetting />} />
                     <Route path="users" element={<UserManagement />} />
+                    <Route path="user/profile" element={<GetUserProfile />} />
+                    <Route path="user/profile/update" element={<UpdateUserProfile />} />
                     <Route path="admin-dashboard" element={<AdminDashboard />} />
                     <Route path="*" element={<NotFound />} />
                 </Route>
-
                 {/* 404 */}
                 <Route path="*" element={<NotFound />} />
-
             </Routes>
         </BrowserRouter>
     );
