@@ -1,5 +1,3 @@
-import { users } from "@shared/schema"
-
 export interface UserManagementProps {
     id: string
     email: string
