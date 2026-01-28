@@ -1,3 +1,4 @@
+import {ErrorCode} from "@/hooks/enum" 
 export const handleBusinessError = (res: any) => {
     const code = res?.code
     const backendMessage = res?.message
@@ -5,13 +6,13 @@ export const handleBusinessError = (res: any) => {
     let message = "Request failed"
 
     switch (code) {
-        case "AUTH_FAILED":
+        case ErrorCode.AUTH_FAILED:
             message = backendMessage || `Authentication failed status ${code}.`
             break;
-        case "RESET_TOKEN_INVALI":
+        case ErrorCode.TOKEN_EXPIRED:
             message = backendMessage || `Reset token is invalid or expired status ${code}.`
             break;
-        case "VALIDATION_ERROR":
+        case ErrorCode.VALIDATION_ERROR:
             message = backendMessage || `Invalid profile data status ${code}.`
             break;
         default:
