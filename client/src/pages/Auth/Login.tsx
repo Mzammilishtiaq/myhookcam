@@ -1,58 +1,50 @@
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { useToast } from "@/hooks/use-toast";
-import { backendCall } from "@/Utlis/BackendService";
-import { useForm } from "react-hook-form";
+import { Link, useNavigate } from "react-router-dom"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { useToast } from "@/hooks/use-toast"
+import { backendCall } from "@/Utlis/BackendService"
+import { useForm } from "react-hook-form"
 import { useAuthStore } from "@/hooks/authStore"
-import { useUserTypeRedirect } from "@/hooks/userType"
 import Loginimg from "@/assets/login1.png"
 import decodeJwtToken from "@/Utlis/Decode"
+import { useMutation } from "@tanstack/react-query"
+
+type LoginForm = {
+    email: string
+    password: string
+}
+
+const loginApi = async (payload: LoginForm) => {
+    const response: any = await backendCall({
+        url: "/accounts/signin",
+        method: "POST",
+        data: payload,
+    })
+
+    if (!response || response.status !== "success") {
+        throw new Error(response?.message || "Login failed")
+    }
+
+    return response
+}
 
 export default function Login() {
-    const { redirectByUserType } = useUserTypeRedirect();
-    const { login } = useAuthStore();
-    const navigate = useNavigate();
-    const { toast } = useToast();
-    const [loading, setLoading] = useState(false)
-    const form = useForm({
+    const navigate = useNavigate()
+    const { toast } = useToast()
+    const { login } = useAuthStore()
+
+    const form = useForm<LoginForm>({
         defaultValues: {
             email: "",
-            password: ""
-        }
-    });
+            password: "",
+        },
+    })
 
-    const navigation = useNavigate();
+    const { mutate, isPending } = useMutation({
+        mutationFn: loginApi,
 
-    const handleLogin = async () => {
-        const values = form.getValues()
-        const rememberMe = true
-
-        setLoading(true)
-
-        try {
-            const response: any = await backendCall({
-                url: "/accounts/signin",
-                method: "POST",
-                data: {
-                    email: values.email,
-                    password: values.password,
-                },
-            })
-
-            // login failed (business or api error)
-            if (!response || response.status !== "success") {
-                toast({
-                    title: "Login Failed",
-                    description: response?.message || "Login failed",
-                    variant: "destructive",
-                })
-                return
-            }
-
-            // success
+        onSuccess: (response) => {
             const finalData = {
                 data: {},
                 userType: response.person_type,
@@ -60,26 +52,30 @@ export default function Login() {
                 meta: {},
             }
 
-            login(finalData, rememberMe)
+            login(finalData, true)
             decodeJwtToken(response.data.token)
-            redirectByUserType(response.person_type)
 
             toast({
                 title: "Login Successful",
-                description: "You have been logged in successfully.",
+                description: "You are logged in",
             })
 
-        } catch (err) {
+            navigate("/")
+        },
+
+        onError: (error: any) => {
             toast({
                 title: "Login Failed",
-                description: "An unexpected error occurred. Please try again.",
+                description: error.message,
                 variant: "destructive",
             })
-        } finally {
-            setLoading(false)
-        }
-    }
+        },
+    })
 
+    const handleLogin = () => {
+        const values = form.getValues()
+        mutate(values)
+    }
 
     return (
         <div className="min-h-screen w-full flex flex-col md:flex-row bg-[#555555]">
@@ -152,9 +148,9 @@ export default function Login() {
                         <Button
                             className="w-full bg-[#FBBC05] hover:bg-[#e5a900] text-white font-bold h-16 text-xl rounded-none mt-4 transition-all"
                             onClick={handleLogin}
-                            disabled={loading}
+                            disabled={isPending}
                         >
-                            {loading ? "Authenticating..." : "Login to Portal"}
+                             {isPending ? "Logging in..." : "Login"}
                         </Button>
 
                         <div className="mt-8 text-center">
