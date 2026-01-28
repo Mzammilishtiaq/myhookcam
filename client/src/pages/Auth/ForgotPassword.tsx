@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,7 +23,9 @@ export default function ForgotPassword() {
             email: ""
         }
     });
-
+    useEffect(() => {
+        form.trigger("email")
+    }, [form.watch("email")])
     const onSubmit = async (data: FormData) => {
         const values = form.getValues()
         setIsLoading(true);
@@ -40,18 +42,20 @@ export default function ForgotPassword() {
             if (!response || response.status !== "success") {
                 toast({
                     title: "Email Send Failed",
-                    description: response?.message || "Email send failed",
+                    description: response?.data?.message || "Email send failed",
                     variant: "destructive",
                 })
                 return
+            } else {
+                // success
+                toast({
+                    title: "Email Sent Successfully",
+                    description: response?.data?.message || "If an account exists for this email, you will receive reset instructions.",
+                })
+                navigate("/mail-sent");
             }
-            // success
-            toast({
-                title: "Email Sent Successfully",
-                description: "If an account exists for this email, you will receive reset instructions.",
-            })
-
         } catch (err) {
+            setIsLoading(false);
             toast({
                 title: "Email Send Failed",
                 description: "An error occurred while sending the email. Please try again.",
