@@ -1,13 +1,13 @@
 import { useNavigate } from "react-router-dom";
-import { PersonType } from "@/hooks/enum";
+import { UserType } from "@/hooks/enum";
 
 export const useUserTypeRedirect = () => {
   const navigate = useNavigate();
 
   const redirectByUserType = (personType: string) => {
     if (
-      personType === PersonType.ADMIN ||
-      personType === PersonType.SUB_ADMIN
+      personType === UserType.ADMIN ||
+      personType === UserType.SUB_ADMIN
     ) {
       navigate("/admin-dashboard", { replace: true });
     } else {

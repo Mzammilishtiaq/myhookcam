@@ -5,10 +5,10 @@ import { useContext, useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { PageTitleContext } from "@/context/SelectionContext"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@radix-ui/react-dropdown-menu";
-import {useAuthStore} from '@/hooks/authStore';
-import { PersonType } from "@/hooks/enum";
+import { useAuthStore } from '@/hooks/authStore';
+import { UserType } from "@/hooks/enum";
 function MainNavigation() {
-  const { logout,user } = useAuthStore()
+  const { logout, user } = useAuthStore()
   const location = useLocation();
   const pathname = location.pathname;
   const navigate = useNavigate();
@@ -100,39 +100,39 @@ function MainNavigation() {
             </h1>
           </div>
           <div className="flex items-center gap-2">
-             {(user?.userType === PersonType.ADMIN) &&  (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="text-[#FBBC05] border-[#FBBC05] bg-white/10 hover:bg-[#FBBC05] hover:text-white"
-                >
-                  <Plus className="h-4 w-4 mr-1" />
-                  New
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48 bg-white rounded">
-                <DropdownMenuItem onClick={() => navigate("jobsite/create")} className="text-black flex  gap-x-2 items-center text-sm p-2 mb-2 cursor-pointer">
-                  <MapPin className="h-4 w-4 text-[#FBBC05]" />
-                  Create Site
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate("camera/create")} className="text-black flex  gap-x-2 items-center text-sm p-2 mb-2 cursor-pointer">
-                  <UserPlus className="h-4 w-4 text-[#FBBC05]" />
-                  Create User
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-            )}
+            {/* {(user?.userType === UserType.ADMIN) && ( */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-[#FBBC05] border-[#FBBC05] bg-white/10 hover:bg-[#FBBC05] hover:text-white"
+                  >
+                    <Plus className="h-4 w-4 mr-1" />
+                    New
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48 bg-white rounded">
+                  <DropdownMenuItem onClick={() => navigate("jobsite/create")} className="text-black flex  gap-x-2 items-center text-sm p-2 mb-2 cursor-pointer">
+                    <MapPin className="h-4 w-4 text-[#FBBC05]" />
+                    Create Site
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate("camera/create")} className="text-black flex  gap-x-2 items-center text-sm p-2 mb-2 cursor-pointer">
+                    <UserPlus className="h-4 w-4 text-[#FBBC05]" />
+                    Create User
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            {/* )} */}
             {/* {userRole && ( */}
             <Button
               variant="outline"
               size="sm"
               className="text-white border-white/20 bg-white/10 hover:bg-white/20"
-            onClick={()=>{
-              logout();
-              navigate('/login')
-            }}
+              onClick={() => {
+                logout();
+                navigate('/login')
+              }}
             >
               Logout
             </Button>
