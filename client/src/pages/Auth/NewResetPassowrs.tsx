@@ -1,43 +1,95 @@
-import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useForm } from "react-hook-form";
 import login1 from "@/assets/login1.png";
+import { backendCall } from "@/Utlis/BackendService";
+
+interface FormData {
+    password: string;
+    confirmPassword: string;
+}
 export default function ResetPassword() {
+    const [searchParams] = useSearchParams()
+    const token = searchParams.get("token")
+
     const navigate = useNavigate();
     const { toast } = useToast();
     const [isLoading, setIsLoading] = useState(false);
 
-    const form = useForm({
+    const form = useForm<FormData>({
         defaultValues: {
             password: "",
             confirmPassword: "",
         }
     });
+    useEffect(() => {
+        form.trigger("confirmPassword")
+    }, [form.watch("password")])
 
-    const handleSubmit = (data: { password: string; confirmPassword: string }) => {
-        if (data.password !== data.confirmPassword) {
+    const handleSubmit = async (data: FormData) => {
+        if (!token) {
             toast({
-                title: "Error",
-                description: "Passwords do not match",
+                title: "Invalid link",
+                description: "Reset token is missing or expired",
                 variant: "destructive",
-            });
-            return;
+            })
+            return
         }
 
-        setIsLoading(true);
-        setTimeout(() => {
-            setIsLoading(false);
+        if (data.password !== data.confirmPassword) {
             toast({
-                title: "Password Reset",
-                description: "Your password has been successfully reset.",
-            });
-            navigate("/login");
-        }, 1500);
-    };
+                title: "Password mismatch",
+                description: "Passwords do not match",
+                variant: "destructive",
+            })
+            return
+        }
+
+        setIsLoading(true)
+
+        try {
+            const response: any = await backendCall({
+                url: "/accounts/password/reset/confirm",
+                method: "POST",
+                data: {
+                    token: token,
+                    password: data.password,
+                },
+                isNavigate: false,
+            })
+
+            if (response && response.status === "success") {
+                toast({
+                    title: "Password Updated",
+                    description: "Your password has been reset successfully",
+                })
+
+                navigate("/login")
+            } else {
+                toast({
+                    title: "Reset Failed",
+                    description: response?.message || "Password reset failed",
+                    variant: "destructive",
+                })
+                return
+            }
+
+
+
+        } catch {
+            toast({
+                title: "Reset Failed",
+                description: "Something went wrong. Please try again.",
+                variant: "destructive",
+            })
+        } finally {
+            setIsLoading(false)
+        }
+    }
 
     return (
         <div className="min-h-screen w-full flex flex-col md:flex-row bg-[#555555]">
@@ -74,7 +126,7 @@ export default function ResetPassword() {
                                 type="password"
                                 placeholder="••••••••"
                                 className="h-14 text-lg rounded-none border-gray-300 focus:border-[#FBBC05] focus:ring-0"
-                                {...form.register("password", { required: true })}
+                                {...form.register("password", { required: "password is required" })}
                             />
                         </div>
 
@@ -85,8 +137,17 @@ export default function ResetPassword() {
                                 type="password"
                                 placeholder="••••••••"
                                 className="h-14 text-lg rounded-none border-gray-300 focus:border-[#FBBC05] focus:ring-0"
-                                {...form.register("confirmPassword", { required: true })}
+                                {...form.register("confirmPassword", {
+                                    required: "Confirm password is required",
+                                    validate: (value) =>
+                                        value === form.watch("password") || "Passwords do not match",
+                                })}
                             />
+                            {form.formState.errors.confirmPassword && (
+                                <p className="text-sm text-red-500">
+                                    {form.formState.errors.confirmPassword.message}
+                                </p>
+                            )}
                         </div>
 
                         <Button
