@@ -2,14 +2,14 @@ import { Link, useNavigate } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { useToast } from "@/hooks/use-toast"
+import { toast, useToast } from "@/hooks/use-toast"
 import { backendCall } from "@/Utlis/BackendService"
 import { useForm } from "react-hook-form"
 import { useAuthStore } from "@/hooks/authStore"
 import Loginimg from "@/assets/login1.png"
 import decodeJwtToken from "@/Utlis/Decode"
 import { useMutation } from "@tanstack/react-query"
-
+import { useUserTypeRedirect } from "@/hooks/userType"
 type LoginForm = {
     email: string
     password: string
@@ -23,17 +23,20 @@ const loginApi = async (payload: LoginForm) => {
     })
 
     if (!response || response.status !== "success") {
-        throw new Error(response?.message || "Login failed")
+        toast({
+            title: "Login Failed",
+            description: response?.message || "Invalid email or password",
+            variant: "destructive",
+        })
     }
 
     return response
 }
 
 export default function Login() {
-    const navigate = useNavigate()
     const { toast } = useToast()
     const { login } = useAuthStore()
-
+    const { redirectByUserType } = useUserTypeRedirect();
     const form = useForm<LoginForm>({
         defaultValues: {
             email: "",
@@ -45,31 +48,32 @@ export default function Login() {
         mutationFn: loginApi,
 
         onSuccess: (response) => {
+            const decoded = decodeJwtToken(response.data.token)
+
             const finalData = {
-                data: {},
+                data: decoded,
                 userType: response.person_type,
                 token: response.data.token,
                 meta: {},
             }
 
             login(finalData, true)
-            decodeJwtToken(response.data.token)
-
+            console.log("decoded token added to store:", decoded);
+            redirectByUserType(decoded.role);
             toast({
                 title: "Login Successful",
                 description: "You are logged in",
             })
-
-            navigate("/")
         },
 
         onError: (error: any) => {
             toast({
                 title: "Login Failed",
-                description: error.message,
+                description: error?.message || "Invalid email or password",
                 variant: "destructive",
             })
-        },
+        }
+
     })
 
     const handleLogin = () => {
@@ -115,7 +119,7 @@ export default function Login() {
                                 type="email"
                                 placeholder="name@company.com"
                                 className="h-14 text-lg rounded-none border-gray-300 focus:border-[#FBBC05] focus:ring-0"
-                                 {...form.register("email", {
+                                {...form.register("email", {
                                     required: "Email address is required",
                                     pattern: {
                                         value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
@@ -135,13 +139,13 @@ export default function Login() {
                                 type="password"
                                 placeholder="••••••••"
                                 className="h-14 text-lg rounded-none border-gray-300 focus:border-[#FBBC05] focus:ring-0"
-                                    {...form.register("password", {
-                                        required: "Password is required",
-                                        minLength: {
-                                            value: 8,
-                                            message: "Password must be at least 8 characters"
-                                        }
-                                    })}
+                                {...form.register("password", {
+                                    required: "Password is required",
+                                    minLength: {
+                                        value: 8,
+                                        message: "Password must be at least 8 characters"
+                                    }
+                                })}
                             />
                         </div>
 
@@ -150,7 +154,7 @@ export default function Login() {
                             onClick={handleLogin}
                             disabled={isPending}
                         >
-                             {isPending ? "Logging in..." : "Login"}
+                            {isPending ? "Logging in..." : "Login"}
                         </Button>
 
                         <div className="mt-8 text-center">
