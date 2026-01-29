@@ -8,6 +8,7 @@ import { useForm } from "react-hook-form";
 import { ChevronLeft } from "lucide-react";
 import Login1 from "@/assets/login1.png";
 import { backendCall } from "@/Utlis/BackendService";
+import { useMutation } from "@tanstack/react-query";
 
 interface FormData {
     email: string;
@@ -16,62 +17,60 @@ interface FormData {
 export default function ForgotPassword() {
     const navigate = useNavigate();
     const { toast } = useToast();
-    const [isLoading, setIsLoading] = useState(false);
 
     const form = useForm<FormData>({
         defaultValues: {
             email: ""
         }
     });
-    useEffect(() => {
-        form.trigger("email")
-    }, [form.watch("email")])
-    const onSubmit = async (data: FormData) => {
-        const values = form.getValues()
-        setIsLoading(true);
-        try {
-            const response: any = await backendCall({
+
+    const forgotPasswordMutation = useMutation({
+        mutationFn: (email: string) =>
+            backendCall({
                 url: "/accounts/password/reset/request",
                 method: "POST",
-                data: {
-                    email: values.email,
-                },
-            })
-
-            // login failed (business or api error)
-            if (!response || response.status !== "success") {
+                data: { email },
+            }),
+        onSuccess: (response: any) => {
+            if (response?.status !== "success") {
                 toast({
                     title: "Email Send Failed",
                     description: response?.data?.message || "Email send failed",
                     variant: "destructive",
-                })
-                return
-            } else {
-                // success
-                toast({
-                    title: "Email Sent Successfully",
-                    description: response?.data?.message || "If an account exists for this email, you will receive reset instructions.",
-                })
-                navigate("/mail-sent");
+                });
+                return;
             }
-        } catch (err) {
-            setIsLoading(false);
+
+            toast({
+                title: "Email Sent Successfully",
+                description: response?.data?.message || "If an account exists for this email, you will receive reset instructions.",
+            });
+
+            navigate("/mail-sent");
+        },
+        onError: () => {
             toast({
                 title: "Email Send Failed",
                 description: "An error occurred while sending the email. Please try again.",
                 variant: "destructive",
-            })
-        } finally {
-            setIsLoading(false)
+            });
         }
+    });
+
+    const onSubmit = (data: FormData) => {
+        forgotPasswordMutation.mutate(data.email);
     };
+
+    useEffect(() => {
+        form.trigger("email");
+    }, [form.watch("email")]);
 
     return (
         <div className="min-h-screen w-full flex flex-col md:flex-row bg-[#555555]">
             <div className="flex-1 flex flex-col items-center justify-center p-8 bg-[#555555] text-white">
                 <div className="max-w-md text-center">
                     <div className="mb-8 flex justify-center">
-                        <div className="w-full lg:h-96  lg:-pb-10 pb-0 relative">
+                        <div className="w-full lg:h-96 lg:-pb-10 pb-0 relative">
                             <img
                                 src={Login1}
                                 alt="HookCam Crane"
@@ -100,7 +99,9 @@ export default function ForgotPassword() {
 
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                         <div className="space-y-2">
-                            <Label htmlFor="email" className="text-sm font-bold text-gray-700 uppercase tracking-wider">Email Address</Label>
+                            <Label htmlFor="email" className="text-sm font-bold text-gray-700 uppercase tracking-wider">
+                                Email Address
+                            </Label>
                             <Input
                                 id="email"
                                 type="email"
@@ -122,9 +123,9 @@ export default function ForgotPassword() {
                         <Button
                             type="submit"
                             className="w-full bg-[#FBBC05] hover:bg-[#e5a900] text-white font-bold h-16 text-xl rounded-none mt-4 transition-all"
-                            disabled={isLoading}
+                            disabled={forgotPasswordMutation.isPending}
                         >
-                            {isLoading ? "Sending..." : "Send Reset Link"}
+                            {forgotPasswordMutation.isPending ? "Sending..." : "Send Reset Link"}
                         </Button>
                     </form>
                 </div>
