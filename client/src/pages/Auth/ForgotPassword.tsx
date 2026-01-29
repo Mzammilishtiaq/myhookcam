@@ -35,7 +35,7 @@ export default function ForgotPassword() {
             if (response?.status !== "success") {
                 toast({
                     title: "Email Send Failed",
-                    description: response?.data?.message || "Email send failed",
+                    description: response?.data?.message || "An error occurred while sending the email. Please try again.",
                     variant: "destructive",
                 });
                 return;
