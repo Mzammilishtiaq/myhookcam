@@ -7,6 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useForm } from "react-hook-form";
 import login1 from "@/assets/login1.png";
 import { backendCall } from "@/Utlis/BackendService";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 interface FormData {
     password: string;
@@ -29,15 +30,50 @@ export default function ResetPassword() {
     useEffect(() => {
         form.trigger("confirmPassword")
     }, [form.watch("password")])
+    const queryClient = useQueryClient();
 
-    const handleSubmit = async (data: FormData) => {
+    const {isPending,mutate} = useMutation({
+        mutationFn: async (payload: { token: string, password: string }) => {
+            return backendCall({
+                url: "/accounts/password/reset/confirm",
+                method: "POST",
+                data: payload,
+            });
+        },
+
+        onSuccess: (response: any) => {
+            if (response.status === "success") {
+                toast({
+                    title: "Password Updated",
+                    description: "Your password has been reset successfully",
+                });
+                navigate("/login");
+            } else {
+                toast({
+                    title: "Reset Failed",
+                    description: response?.message || "Password reset failed",
+                    variant: "destructive",
+                });
+            }
+        },
+
+        onError: (error: any) => {
+            toast({
+                title: "Reset Failed",
+                description: error?.message || "Something went wrong",
+                variant: "destructive",
+            });
+        }
+    });
+
+    const handleSubmit = (data: FormData) => {
         if (!token) {
             toast({
                 title: "Invalid link",
                 description: "Reset token is missing or expired",
                 variant: "destructive",
-            })
-            return
+            });
+            return;
         }
 
         if (data.password !== data.confirmPassword) {
@@ -45,51 +81,13 @@ export default function ResetPassword() {
                 title: "Password mismatch",
                 description: "Passwords do not match",
                 variant: "destructive",
-            })
-            return
+            });
+            return;
         }
 
-        setIsLoading(true)
+        mutate({ token, password: data.password });
+    };
 
-        try {
-            const response: any = await backendCall({
-                url: "/accounts/password/reset/confirm",
-                method: "POST",
-                data: {
-                    token: token,
-                    password: data.password,
-                },
-                isNavigate: false,
-            })
-
-            if (response && response.status === "success") {
-                toast({
-                    title: "Password Updated",
-                    description: "Your password has been reset successfully",
-                })
-
-                navigate("/login")
-            } else {
-                toast({
-                    title: "Reset Failed",
-                    description: response?.message || "Password reset failed",
-                    variant: "destructive",
-                })
-                return
-            }
-
-
-
-        } catch {
-            toast({
-                title: "Reset Failed",
-                description: "Something went wrong. Please try again.",
-                variant: "destructive",
-            })
-        } finally {
-            setIsLoading(false)
-        }
-    }
 
     return (
         <div className="min-h-screen w-full flex flex-col md:flex-row bg-[#555555]">
@@ -153,10 +151,8 @@ export default function ResetPassword() {
                         <Button
                             type="submit"
                             className="w-full bg-[#FBBC05] hover:bg-[#e5a900] text-white font-bold h-16 text-xl rounded-none mt-4 transition-all"
-                            disabled={isLoading}
-                        >
-                            {isLoading ? "Resetting..." : "Update Password"}
-                        </Button>
+                            disabled={isPending}                        >
+                            {isPending ? "Resetting..." : "Update Password"}                        </Button>
                     </form>
                 </div>
             </div>
