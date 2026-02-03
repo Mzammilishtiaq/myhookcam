@@ -20,6 +20,8 @@ import { useAuthStore } from "@/hooks/authStore";
 import MailSent from "./pages/Auth/MailSent";
 import GetUserProfile from "./pages/Admin/User/GetUserProfile";
 import UpdateUserProfile from "./pages/Admin/User/UpdateUserProfile";
+import CreateUser from "./pages/Admin/User/CreateUser";
+import UpdateUser from "./pages/Admin/User/UpdateUser";
 function AppRouting() {
     const { user } = useAuthStore()
     const isAdmin =
@@ -28,17 +30,18 @@ function AppRouting() {
     return (
         <BrowserRouter>
             <Routes>
-
-                {/* Public Route */}
+                {/* Public Routes */}
                 <Route path="/login" element={<Login />} />
                 <Route path="/forgot-password" element={<FortgotPassword />} />
                 <Route path="/reset-password" element={<NewResetPassword />} />
                 <Route path="/mail-sent" element={<MailSent />} />
+
+                {/* Default redirect based on user */}
                 <Route
                     path="/"
                     element={
                         !user ? (
-                            <Login />
+                            <Navigate to="/login" replace />
                         ) : isAdmin ? (
                             <Navigate to="/admin-dashboard" replace />
                         ) : (
@@ -48,31 +51,46 @@ function AppRouting() {
                 />
 
                 {/* Protected Wrapper */}
-                <Route
-                    path="/"
-                    element={
-                        <AuthGuide protectedPath={true}>
-                            <MainLayout />
-                        </AuthGuide>
-                    }
-                >
-                    {/* Protected Children */}
-                    <Route path="camera/create" element={<CreateCamera />} />
-                    <Route path="camera/setting" element={<CameraSetting />} />
-                    <Route path="camera/livestream" element={<LiveStream />} />
-                    <Route path="camera/insights" element={<Insight />} />
-                    <Route path="camera/recordings" element={<Recording />} />
-                    <Route path="camera/system-status" element={<SystemStatus />} />
-                    <Route path="camera/list" element={<CameraDashboard />} />
-                    <Route path="jobsite/create" element={<CreateJobsite />} />
-                    <Route path="jobsite/setting" element={<JobsiteSetting />} />
-                    <Route path="users" element={<UserManagement />} />
-                    <Route path="user/profile" element={<GetUserProfile />} />
-                    <Route path="user/profile/update" element={<UpdateUserProfile />} />
+                <Route element={<AuthGuide protectedPath={true}><MainLayout /></AuthGuide>}>
+
+                    {/* Camera Routes */}
+                    <Route path="camera">
+                        <Route path="create" element={<CreateCamera />} />
+                        <Route path="setting" element={<CameraSetting />} />
+                        <Route path="livestream" element={<LiveStream />} />
+                        <Route path="insights" element={<Insight />} />
+                        <Route path="recordings" element={<Recording />} />
+                        <Route path="system-status" element={<SystemStatus />} />
+                        <Route path="list" element={<CameraDashboard />} />
+                    </Route>
+
+                    {/* Jobsite Routes */}
+                    <Route path="jobsite">
+                        <Route path="create" element={<CreateJobsite />} />
+                        <Route path="setting" element={<JobsiteSetting />} />
+                    </Route>
+
+                    {/* User Management Routes */}
+                    <Route path="user-management">
+                        <Route index element={<UserManagement />} />          {/* /user-management */}
+                        <Route path="create" element={<CreateUser />} />      {/* /user-management/create */}
+                        <Route path="update/:userid" element={<UpdateUser />} /> {/* /user-management/update/:userid */}
+                    </Route>
+
+                    {/* User Profile Routes */}
+                    <Route path="user">
+                        <Route path="profile" element={<GetUserProfile />} />               {/* /user/profile */}
+                        <Route path="profile/update" element={<UpdateUserProfile />} />     {/* /user/profile/update */}
+                    </Route>
+
+                    {/* Admin Dashboard */}
                     <Route path="admin-dashboard" element={<AdminDashboard />} />
+
+                    {/* Catch all for protected routes */}
                     <Route path="*" element={<NotFound />} />
                 </Route>
-                {/* 404 */}
+
+                {/* 404 for public routes */}
                 <Route path="*" element={<NotFound />} />
             </Routes>
         </BrowserRouter>
