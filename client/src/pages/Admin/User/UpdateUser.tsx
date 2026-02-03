@@ -6,8 +6,9 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { UserPlus } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { backendCall } from "@/Utlis/BackendService";
+
 type FormData = {
   first_name: string;
   last_name: string;
@@ -16,61 +17,47 @@ type FormData = {
   confirmPassword: string;
 };
 
-type CreateUserPayload = {
-  first_name: string;
-  last_name: string;
-  email: string;
-  password: string;
-};
-
-export default function CreateUser() {
+export default function UpdateUser() {
   const { toast } = useToast();
-  const { register, handleSubmit, watch, formState: { errors } } = useForm<FormData>();
-  const password = watch("password");
+  const { userid } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { isPending, mutate } = useMutation({
-    mutationFn: async (payload: CreateUserPayload) => {
+  const { register, handleSubmit, watch, formState: { errors } } = useForm<FormData>();
+  const password = watch("password");
+
+  const { mutate, isPending: isUpdating } = useMutation({
+    mutationFn: async (payload: FormData) => {
       return backendCall({
-        url: "/users",
-        method: "POST",
-        data: payload,
+        url: `/users/${userid}`,
+        method: "PUT",
+        data: {
+          first_name: payload.first_name,
+          last_name: payload.last_name,
+          email: payload.email,
+          password: payload.password,
+        },
       });
     },
     onSuccess: () => {
-      toast({
-        title: "User created",
-        description: "User added successfully",
-      });
-      // 🔄 refetch users list
+      toast({ title: "User updated", description: "User updated successfully" });
       queryClient.invalidateQueries({ queryKey: ["/users"] });
-      // 👉 go back to user management
       navigate("/user-management");
     },
     onError: (error: any) => {
       toast({
         title: "Error",
-        description: error?.message || "Failed to create user",
+        description: error?.message || "Failed to update user",
         variant: "destructive",
       });
     },
   });
+
   const onSubmit = (data: FormData) => {
     if (data.password !== data.confirmPassword) {
-      toast({
-        title: "Error",
-        description: "Passwords do not match",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: "Passwords do not match", variant: "destructive" });
       return;
     }
-
-    mutate({
-      first_name: data.first_name,
-      last_name: data.last_name,
-      email: data.email,
-      password: data.password,
-    });
+    mutate(data);
   };
 
   return (
@@ -79,10 +66,10 @@ export default function CreateUser() {
         <CardHeader className="px-0 pb-10">
           <CardTitle className="text-4xl font-bold flex items-center gap-3">
             <UserPlus className="h-10 w-10 text-[#FBBC05]" />
-            Create New User
+            Update User
           </CardTitle>
           <CardDescription className="text-xl mt-2">
-            Enter user details to grant access to the system
+            Update user details manually
           </CardDescription>
         </CardHeader>
         <CardContent className="px-0">
@@ -90,29 +77,25 @@ export default function CreateUser() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
               <div className="space-y-3">
                 <Label className="text-lg">First Name *</Label>
-                <Input
-                  className="h-16 text-lg"
-                  {...register("first_name", { required: "First name is required" })}
-                />
+                <Input {...register("first_name", { required: "First name is required" })} className="h-16 text-lg" />
                 {errors.first_name && <p className="text-red-500 text-sm">{errors.first_name.message}</p>}
               </div>
+
               <div className="space-y-3">
                 <Label className="text-lg">Last Name *</Label>
-                <Input
-                  className="h-16 text-lg"
-                  {...register("last_name", { required: "Last name is required" })}
-                />
+                <Input {...register("last_name", { required: "Last name is required" })} className="h-16 text-lg" />
                 {errors.last_name && <p className="text-red-500 text-sm">{errors.last_name.message}</p>}
               </div>
+
               <div className="space-y-3">
                 <Label className="text-lg">Email *</Label>
                 <Input
                   type="email"
-                  className="h-16 text-lg"
                   {...register("email", {
                     required: "Email is required",
-                    pattern: { value: /^[^@]+@[^@]+\.[^@]+$/, message: "Invalid email format" }
+                    pattern: { value: /^[^@]+@[^@]+\.[^@]+$/, message: "Invalid email format" },
                   })}
+                  className="h-16 text-lg"
                 />
                 {errors.email && <p className="text-red-500 text-sm">{errors.email.message}</p>}
               </div>
@@ -121,44 +104,30 @@ export default function CreateUser() {
                 <Label className="text-lg">Password *</Label>
                 <Input
                   type="password"
-                  min={8}
-                  max={8}
-                  className="h-16 text-lg"
                   {...register("password", {
                     required: "Password is required",
                     minLength: { value: 8, message: "Password must be at least 8 characters" },
                     maxLength: { value: 8, message: "Password cannot exceed 8 characters" },
                   })}
+                  className="h-16 text-lg"
                 />
                 {errors.password && <p className="text-red-500 text-sm">{errors.password.message}</p>}
               </div>
+
               <div className="space-y-3">
                 <Label className="text-lg">Confirm Password *</Label>
                 <Input
                   type="password"
-                  className="h-16 text-lg"
-                  max={8}
-                  min={8}
                   {...register("confirmPassword", {
                     required: "Please confirm your password",
-                    minLength: { value: 8, message: "Password must be at least 8 characters" },
-                    maxLength: { value: 8, message: "Password cannot exceed 8 characters" },
-                    validate: value => value === watch("password") || "Passwords do not match"
+                    validate: value => value === password || "Passwords do not match",
                   })}
+                  className="h-16 text-lg"
                 />
-                {errors.confirmPassword && (
-                  <p className="text-red-500 text-sm">
-                    {errors.confirmPassword.message}
-                  </p>
+                {errors.confirmPassword && <p className="text-red-500 text-sm">{errors.confirmPassword.message}</p>}
+                {!errors.confirmPassword && watch("confirmPassword") === password && watch("confirmPassword") && (
+                  <p className="text-green-600 text-sm">Passwords match</p>
                 )}
-
-                {!errors.confirmPassword &&
-                  watch("confirmPassword") &&
-                  watch("confirmPassword") === watch("password") && (
-                    <p className="text-green-600 text-sm">
-                      Passwords is a match
-                    </p>
-                  )}
               </div>
             </div>
 
@@ -166,12 +135,8 @@ export default function CreateUser() {
               <Button type="button" variant="outline" className="h-16 px-10 text-xl" onClick={() => window.history.back()}>
                 Cancel
               </Button>
-              <Button
-                type="submit"
-                disabled={isPending}
-                className="bg-[#FBBC05] hover:bg-[#e5a900] text-white h-16 px-16 text-xl font-bold"
-              >
-                {isPending ? "Creating..." : "Create User"}
+              <Button type="submit" disabled={isUpdating} className="bg-[#FBBC05] hover:bg-[#e5a900] text-white h-16 px-16 text-xl font-bold">
+                {isUpdating ? "Updating..." : "Update User"}
               </Button>
             </div>
           </form>
