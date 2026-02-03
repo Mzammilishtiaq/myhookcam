@@ -22,7 +22,7 @@ import { LoadingAnimation } from "@/components/ui/LoadingAnimation";
 import { backendCall } from "@/Utlis/BackendService";
 import { UserManagementModule, UserManagementProps } from "@/Module/usermanagement";
 import { useNavigate } from "react-router-dom";
-
+import { useDeleteUser } from "@/pages/Admin/User/useDeleteUser"
 
 
 const getUsers = async (): Promise<UserManagementProps[]> => {
@@ -66,8 +66,9 @@ export default function UserManagement() {
   const { toast } = useToast();
   const [currentPage, setCurrentPage] = useState(1);
   const navigate = useNavigate();
+  const deleteUser = useDeleteUser();
   const { data, isLoading, isError, error } = useQuery<UserManagementProps[]>({
-    queryKey: ["users"],
+    queryKey: ["/users"],
     queryFn: getUsers,
   });
   useEffect(() => {
@@ -89,7 +90,7 @@ export default function UserManagement() {
   ) || [];
 
   const handleEdit = (userId: string) => {
-    navigate(`/user/update/${userId}`);
+    navigate(`/user-management/update/${userId}`);
     toast({
       title: "Edit User",
       description: `Editing user ID ${userId}`,
@@ -97,6 +98,7 @@ export default function UserManagement() {
   };
 
   const handleDelete = (userId: string) => {
+    deleteUser.mutate(userId);
     toast({
       title: "Delete User",
       description: `Deleting user ID ${userId}`,
