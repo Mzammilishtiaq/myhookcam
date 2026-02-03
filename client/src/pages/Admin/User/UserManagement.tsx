@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   Card,
@@ -8,7 +8,7 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast";
+import { toast, useToast } from "@/hooks/use-toast";
 import {
   Edit2,
   Mail,
@@ -21,48 +21,75 @@ import {
 import { LoadingAnimation } from "@/components/ui/LoadingAnimation";
 import { backendCall } from "@/Utlis/BackendService";
 import { UserManagementModule, UserManagementProps } from "@/Module/usermanagement";
+import { useNavigate } from "react-router-dom";
 
 
 
 const getUsers = async (): Promise<UserManagementProps[]> => {
   try {
     const response: any = await backendCall({
-      url: "/person/getPersons",
+      url: "/users",
       method: "GET",
-      dataModel: UserManagementModule
-    })
+      dataModel: UserManagementModule,
+    });
 
-    console.log("response", response)
+    console.log("API response:", response);
 
-    if (!response.error) {
-      return response.users || []
+    // Make sure we return the array inside "data"
+    if (response?.status === "success") {
+      toast({
+        title: "Users fetched successfully",
+        description: `Fetched ${response.data.length} users.`,
+      });
+      return response.data;
     }
 
-    console.log("error", response.message)
-    return []
-  } catch (err) {
-    console.log("error", err)
-    return []
+    toast({
+      title: "Error",
+      description: response?.message || "Unable to fetch users",
+      variant: "destructive",
+    });
+    return [];
+  } catch (err: any) {
+    console.error("Error fetching users:", err.message || err);
+    toast({
+      title: "Error",
+      description: err.message || "Unable to fetch users",
+      variant: "destructive",
+    });
+    return [];
   }
-}
+};
+
 
 export default function UserManagement() {
   const { toast } = useToast();
   const [currentPage, setCurrentPage] = useState(1);
-  const { data: users = [], isLoading, isError } = useQuery<UserManagementProps[]>({
+  const navigate = useNavigate();
+  const { data, isLoading, isError, error } = useQuery<UserManagementProps[]>({
     queryKey: ["users"],
     queryFn: getUsers,
   });
+  useEffect(() => {
+    if (isError) {
+      toast({
+        title: "Error",
+        description: error?.message || "Unable to fetch users",
+        variant: "destructive",
+      });
+    }
+  }, [isError]);
 
   const usersPerPage = 20;
-  const totalPages = Math.ceil(users.length / usersPerPage);
+  const totalPages = Math.ceil(data?.length || 0 / usersPerPage);
 
-  const currentUsers = users.slice(
+  const currentUsers = data?.slice(
     (currentPage - 1) * usersPerPage,
     currentPage * usersPerPage
-  );
+  ) || [];
 
   const handleEdit = (userId: string) => {
+    navigate(`/user/update/${userId}`);
     toast({
       title: "Edit User",
       description: `Editing user ID ${userId}`,
@@ -118,6 +145,9 @@ export default function UserManagement() {
                     Email
                   </th>
                   <th className="px-6 py-4 text-left text-sm font-bold text-gray-500">
+                    Status
+                  </th>
+                  <th className="px-6 py-4 text-left text-sm font-bold text-gray-500">
                     Role
                   </th>
                   <th className="px-6 py-4 text-left text-sm font-bold text-gray-500 hidden md:table-cell">
@@ -135,7 +165,7 @@ export default function UserManagement() {
                     <tr key={user.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4">
                         <span className="text-sm text-gray-400 flex items-center gap-1">
-                          {user.full_name}
+                          {user.first_name} {user.last_name}
                         </span>
                       </td>
                       <td className="px-6 py-4">
@@ -144,10 +174,14 @@ export default function UserManagement() {
                           {user.email}
                         </span>
                       </td>
-
+                      <td className="px-6 py-4">
+                        <span className={`text-[10px] px-2 py-1 rounded ${user.status ? "bg-green-500" : "bg-red-500"} text-white uppercase font-bold border`}>
+                          {user.status ? "Active" : "Inactive"}
+                        </span>
+                      </td>
                       <td className="px-6 py-4">
                         <span className="text-[10px] px-2 py-1 rounded bg-gray-100 text-gray-600 uppercase font-bold border">
-                          {user.person_type}
+                          {user.role}
                         </span>
                       </td>
 
@@ -197,8 +231,8 @@ export default function UserManagement() {
             <div className="flex justify-between items-center mt-8">
               <p className="text-sm text-gray-500">
                 Showing {(currentPage - 1) * usersPerPage + 1} to{" "}
-                {Math.min(currentPage * usersPerPage, users.length)} of{" "}
-                {users.length}
+                {Math.min(currentPage * usersPerPage, data?.length || 0)} of{" "}
+                {data?.length || 0}
               </p>
 
               <div className="flex gap-2">
