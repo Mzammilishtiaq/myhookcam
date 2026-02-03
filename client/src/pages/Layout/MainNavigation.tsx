@@ -117,7 +117,7 @@ function MainNavigation() {
                     <MapPin className="h-4 w-4 text-[#FBBC05]" />
                     Create Site
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate("camera/create")} className="text-black flex  gap-x-2 items-center text-sm p-2 mb-2 cursor-pointer">
+                  <DropdownMenuItem onClick={() => navigate("user/create")} className="text-black flex  gap-x-2 items-center text-sm p-2 mb-2 cursor-pointer">
                     <UserPlus className="h-4 w-4 text-[#FBBC05]" />
                     Create User
                   </DropdownMenuItem>
