@@ -22,15 +22,16 @@ import GetUserProfile from "./pages/Admin/User/GetUserProfile";
 import UpdateUserProfile from "./pages/Admin/User/UpdateUserProfile";
 import CreateUser from "./pages/Admin/User/CreateUser";
 import UpdateUser from "./pages/Admin/User/UpdateUser";
+import Signup from "./pages/Auth/Signup";
 function AppRouting() {
     const { user } = useAuthStore()
     const isAdmin =
-        user?.userType === "admin" ||
-        user?.userType === "sub-admin";
+        user?.userType === "admin";
     return (
         <BrowserRouter>
             <Routes>
                 {/* Public Routes */}
+                <Route path="/signup" element={<Signup />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/forgot-password" element={<FortgotPassword />} />
                 <Route path="/reset-password" element={<NewResetPassword />} />
@@ -61,13 +62,13 @@ function AppRouting() {
                         <Route path="insights" element={<Insight />} />
                         <Route path="recordings" element={<Recording />} />
                         <Route path="system-status" element={<SystemStatus />} />
-                        <Route path="list" element={<CameraDashboard />} />
                     </Route>
 
                     {/* Jobsite Routes */}
-                    <Route path="jobsite">
+                    <Route path="jobsites">
+                        <Route path=":jobsiteId" element={<CameraDashboard />} />
                         <Route path="create" element={<CreateJobsite />} />
-                        <Route path="setting" element={<JobsiteSetting />} />
+                        <Route path="setting/:jobsiteId" element={<JobsiteSetting />} />
                     </Route>
 
                     {/* User Management Routes */}
