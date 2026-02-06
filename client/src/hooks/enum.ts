@@ -9,10 +9,15 @@ export enum ErrorCode {
   VALIDATION_ERROR = "VALIDATION_ERROR",
   BAD_REQUEST = "BAD_REQUEST",
   NOT_FOUND = "NOT_FOUND",
+  FORBIDDEN = "FORBIDDEN",
 }
 
 export enum UserType {
   ADMIN = "admin",
-  SUB_ADMIN = "sub-admin",
-  USER = "admin",
+  USER = "user",
+}
+
+export enum JobSiteRole {
+  SITE_MANAGER = "manager",
+  VIEWER = "viewer",
 }
