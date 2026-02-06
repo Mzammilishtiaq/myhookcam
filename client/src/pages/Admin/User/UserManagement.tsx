@@ -177,8 +177,8 @@ export default function UserManagement() {
                         </span>
                       </td>
                       <td className="px-6 py-4">
-                        <span className={`text-[10px] px-2 py-1 rounded ${user.status ? "bg-green-500" : "bg-red-500"} text-white uppercase font-bold border`}>
-                          {user.status ? "Active" : "Inactive"}
+                        <span className={`text-[10px] px-2 py-1 rounded ${user.is_active ? "bg-green-500" : "bg-red-500"} text-white uppercase font-bold border`}>
+                          {user.is_active ? "Active" : "InActive"}
                         </span>
                       </td>
                       <td className="px-6 py-4">

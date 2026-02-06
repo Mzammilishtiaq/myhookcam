@@ -6,7 +6,7 @@ export interface UserManagementProps {
     role: string
     created_at: string
     last_login: string
-    status?: boolean
+    is_active?: boolean
 }
 
 
@@ -18,7 +18,7 @@ export class UserManagementModule {
         public last_name: string,
         public created_at: string,
         public last_login: string,
-        public status?: boolean
+        public is_active?: boolean
     ) { }
 
     static adapt(response: any): { data: UserManagementProps[]; } {
@@ -33,7 +33,7 @@ export class UserManagementModule {
             role: u.role,
             created_at: u.created_at,
             last_login: u.last_login,
-            status: u.status,
+            is_active: u.is_active,
         }))
     }
 }
