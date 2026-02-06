@@ -1,55 +1,166 @@
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { useToast } from "@/hooks/use-toast";
+import { toast, useToast } from "@/hooks/use-toast";
 import { MapPin, UserPlus, X, Trash2, Camera, Plus } from "lucide-react";
+import JobsiteInvite from "./JobSiteInvite";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useForm } from "react-hook-form";
+import { useNavigate, useParams } from "react-router-dom";
+import { backendCall } from "@/Utlis/BackendService"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+type FormValues = {
+  name: string
+};
+const updateJobsite = async (
+  jobsiteId: string,
+  payload: { name: string }
+) => {
+  try {
+    const response = await backendCall({
+      url: `/jobsites/${jobsiteId}`,
+      method: "PUT",
+      data: payload,
+    })
+
+    if (!response || response.status !== "success") {
+      throw response
+    }
+
+    toast({
+      title: "Update Successful",
+      description: response?.data.success || "Jobsite updated successfully",
+    })
+
+    return response
+  } catch (error: any) {
+    toast({
+      title: "Update Failed",
+      description:
+        error?.message || "Failed to update jobsite",
+      variant: "destructive",
+    })
+
+    throw error // VERY important
+  }
+}
+
+const deleteJobsite = async (
+  jobsiteId: string,
+  toast: ReturnType<typeof useToast>["toast"]
+) => {
+  try {
+    const response = await backendCall({
+      url: `/jobsites/${jobsiteId}`,
+      method: "DELETE",
+    });
+
+    if (!response || response.status !== "success") {
+      // Throw an error to trigger onError
+      throw new Error(response?.message || "Failed to delete jobsite");
+    }
+
+    // Success toast
+    toast({
+      title: "Deleted",
+      description: "Jobsite has been deleted successfully",
+      variant: "destructive",
+    });
+
+    return response;
+  } catch (error: any) {
+    // Show error toast
+    toast({
+      title: "Delete Failed",
+      description: error?.message || "Failed to delete jobsite",
+      variant: "destructive",
+    });
+
+    // VERY IMPORTANT: re-throw the error so onError is called
+    throw error;
+  }
+};
 
 export default function JobsiteSetting() {
+  const navigate = useNavigate();
   const { toast } = useToast();
-  const [siteName, setSiteName] = useState("Downtown Construction");
-  const [inviteEmail, setInviteEmail] = useState("");
-  const [inviteRole, setInviteRole] = useState("");
-  const [permissions, setPermissions] = useState({
-    canViewLive: false,
-    canViewRecordings: false,
-    recordingDays: "7",
-    canPTZ: false
-  });
-  const [assignedManagers, setAssignedManagers] = useState([
-    "manager1@example.com",
-    "pm@acme-construction.com"
-  ]);
+  const queryClient = useQueryClient();
+  const { jobsiteId } = useParams();
+  const [showDeleteSiteDialog, setShowDeleteSiteDialog] = useState(false);
+  const [userToRemove, setUserToRemove] = useState<string | null>(null);
+
+  const confirmDeleteSite = () => {
+    toast({ title: "Jobsite Deleted", variant: "destructive" });
+    setShowDeleteSiteDialog(false);
+  };
   const [assignedUsers, setAssignedUsers] = useState([
-    { email: "user1@example.com", role: "site_manager" },
-    { email: "user2@example.com", role: "viewer" }
+    { email: "manager1@example.com", role: "Site Manager", status: "joined" },
+    { email: "viewer1@example.com", role: "Viewer", status: "joined" },
+    { email: "pending_user@example.com", role: "Viewer", status: "pending" }
   ]);
-
-  const handleInvite = () => {
-    if (!inviteEmail) return;
-    setAssignedManagers([...assignedManagers, inviteEmail]);
-    toast({ title: "Manager Invited", description: `Invitation sent to ${inviteEmail}` });
-    setInviteEmail("");
-  };
-
-  const removeUser = (email: string) => {
-    setAssignedUsers(assignedUsers.filter(u => u.email !== email));
-    toast({ title: "User Removed", description: "Access has been revoked." });
-  };
-
-  const removeManager = (email: string) => {
-    setAssignedManagers(assignedManagers.filter(m => m !== email));
-    toast({ title: "Manager Removed", description: "Access has been revoked." });
-  };
-
-  const handleDelete = () => {
-    if (confirm("Are you sure you want to delete this jobsite? All associated camera settings will be removed.")) {
-      toast({ title: "Jobsite Deleted", variant: "destructive" });
+  const confirmRemoveUser = () => {
+    if (userToRemove) {
+      setAssignedUsers(assignedUsers.filter(u => u.email !== userToRemove));
+      toast({ title: "User Removed", description: "Access has been revoked." });
+      setUserToRemove(null);
     }
   };
+  const form = useForm<FormValues>({
+    defaultValues: {
+      name: "Downtown Construction",
+    },
+  })
+
+  const updateMutation = useMutation({
+    mutationFn: (data: FormValues) =>
+      updateJobsite(jobsiteId!, { name: data.name }),
+    onSuccess: () => {
+      toast({
+        title: "Updated",
+        description: "Jobsite name updated successfully",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/jobsites"] });
+      queryClient.invalidateQueries({ queryKey: ["/jobsites", jobsiteId] }); // if you have single jobsite query  
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Update Failed",
+        description: error.message || "Something went wrong",
+        variant: "destructive",
+      });
+    },
+  })
+
+  const deleteMutation = useMutation({
+    mutationFn: () => deleteJobsite(jobsiteId!, toast),
+
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/jobsites"] });
+      navigate("/admin-dashboard"); // Only navigates on success
+    },
+
+    onError: (error: any) => {
+      // Error toast already shown inside deleteJobsite, so navigation won't happen
+      console.error("Delete failed:", error);
+    },
+  });
+
+
+  const onSubmit = (data: FormValues) => {
+    updateMutation.mutate(data)
+  }
 
   return (
     <div className="w-full h-full min-h-[calc(100vh-140px)] py-6 px-4 bg-gray-50/50">
@@ -64,26 +175,31 @@ export default function JobsiteSetting() {
               Update site details and manage manager access
             </p>
           </div>
-          <Button 
-            variant="outline" 
-            size="lg" 
+          <Button
+            variant="outline"
+            size="lg"
             className="text-red-500 hover:text-red-700 border-red-100 h-14 px-6 text-lg rounded-none"
-            onClick={handleDelete}
-          >
+            onClick={() => setShowDeleteSiteDialog(true)}          >
             <Trash2 className="h-6 w-6 mr-2" />
             Delete Site
           </Button>
         </div>
-        <div className="space-y-12">
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-12">
           <div className="space-y-4">
             <Label className="text-xl font-bold text-[#555555]">Jobsite Name</Label>
             <div className="flex gap-4">
-              <Input 
-                value={siteName}
-                onChange={(e) => setSiteName(e.target.value)}
+              <Input
+                {...form.register("name", { required: true })}
                 className="h-16 text-xl max-w-2xl rounded-none border-[#BCBBBB]"
               />
-              <Button className="h-16 px-10 text-xl bg-[#FBBC05] hover:bg-[#e5a900] rounded-none">Update Name</Button>
+              <Button
+                type="button"
+                onClick={form.handleSubmit(onSubmit)}
+                disabled={updateMutation.isPending}
+                className="h-16 px-10 text-xl bg-[#FBBC05] hover:bg-[#e5a900] rounded-none"
+              >
+                {updateMutation.isPending ? "Updating..." : "Update Name"}
+              </Button>
             </div>
           </div>
 
@@ -93,7 +209,7 @@ export default function JobsiteSetting() {
               Add New Camera to this Site
             </h4>
             <div className="flex gap-4">
-              <Button 
+              <Button
                 className="h-16 px-10 text-xl bg-[#FBBC05] hover:bg-[#e5a900] rounded-none"
                 onClick={() => {
                   toast({ title: "Redirecting", description: "Navigating to Camera Settings to add new device." });
@@ -106,170 +222,32 @@ export default function JobsiteSetting() {
               </Button>
             </div>
           </div>
-
-         <div className="pt-10 border-t space-y-6">
-            <h4 className="text-2xl font-bold flex items-center gap-3 text-[#555555]">
-              <UserPlus className="h-6 w-6 text-[#FBBC05]" />
-              Invite User to this Site
-            </h4>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-              <div className="space-y-6">
-                <div className="space-y-4">
-                  <Label className="text-lg text-[#555555]">User Email</Label>
-                  <Input
-                    placeholder="user@example.com"
-                    value={inviteEmail}
-                    onChange={(e) => setInviteEmail(e.target.value)}
-                    className="h-14 text-lg rounded-none border-[#BCBBBB]"
-                  />
-                </div>
-
-                <div className="space-y-4">
-                  <Label className="text-lg text-[#555555]">Role</Label>
-                  <Select value={inviteRole} onValueChange={setInviteRole}>
-                    <SelectTrigger className="h-14 text-lg rounded-none border-[#BCBBBB]">
-                      <SelectValue placeholder="Select a role" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="site_manager">Site Manager</SelectItem>
-                      <SelectItem value="viewer">Viewer</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {inviteRole === "viewer" && (
-                  <div className="space-y-6 p-6 bg-gray-50 border border-[#BCBBBB]">
-                    <h5 className="font-bold text-[#555555]">
-                      Viewer Permissions
-                    </h5>
-
-                    <div className="space-y-4">
-                      <div className="flex items-center space-x-3">
-                        <Checkbox
-                          id="live"
-                          checked={permissions.canViewLive}
-                          onCheckedChange={(checked) =>
-                            setPermissions({
-                              ...permissions,
-                              canViewLive: !!checked,
-                            })
-                          }
-                        />
-                        <Label
-                          htmlFor="live"
-                          className="text-base font-medium cursor-pointer"
-                        >
-                          Can View Live Stream
-                        </Label>
-                      </div>
-
-                      <div className="space-y-4">
-                        <div className="flex items-center space-x-3">
-                          <Checkbox
-                            id="recordings"
-                            checked={permissions.canViewRecordings}
-                            onCheckedChange={(checked) =>
-                              setPermissions({
-                                ...permissions,
-                                canViewRecordings: !!checked,
-                              })
-                            }
-                          />
-                          <Label
-                            htmlFor="recordings"
-                            className="text-base font-medium cursor-pointer"
-                          >
-                            Can View Recordings
-                          </Label>
-                        </div>
-
-                        {permissions.canViewRecordings && (
-                          <div className="pl-8 space-y-3">
-                            <Label className="text-sm text-gray-500 uppercase font-bold tracking-wider">
-                              Recording Days Access
-                            </Label>
-                            <Select
-                              value={permissions.recordingDays}
-                              onValueChange={(val) =>
-                                setPermissions({
-                                  ...permissions,
-                                  recordingDays: val,
-                                })
-                              }
-                            >
-                              <SelectTrigger className="h-12 text-base rounded-none border-[#BCBBBB] bg-white">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="7">7 Days</SelectItem>
-                                <SelectItem value="30">30 Days</SelectItem>
-                                <SelectItem value="90">90 Days</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="flex items-center space-x-3">
-                        <Checkbox
-                          id="ptz"
-                          checked={permissions.canPTZ}
-                          onCheckedChange={(checked) =>
-                            setPermissions({
-                              ...permissions,
-                              canPTZ: !!checked,
-                            })
-                          }
-                        />
-                        <Label
-                          htmlFor="ptz"
-                          className="text-base font-medium cursor-pointer"
-                        >
-                          Can PTZ
-                        </Label>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                <Button
-                  className="w-full h-14 text-lg bg-[#FBBC05] hover:bg-[#e5a900] rounded-none"
-                  onClick={handleInvite}
-                >
-                  Send Invitation
-                </Button>
-              </div>
-
-              <div className="space-y-4">
-                <Label className="text-sm text-gray-500 uppercase font-black tracking-[0.2em]">
-                  Currently Assigned
-                </Label>
-                <div className="space-y-3">
-                  {assignedUsers.map((user) => (
-                    <div
-                      key={user.email}
-                      className="p-4 bg-white border border-[#BCBBBB] rounded-none text-lg flex items-center justify-between group"
-                    >
-                      <div className="flex flex-col">
-                        <span className="font-bold text-[#555555]">
-                          {user.email}
-                        </span>
-                        <span className="text-sm text-[#FBBC05] font-bold uppercase tracking-wider">
-                          {user.role}
-                        </span>
-                      </div>
-                      <X
-                        className="h-6 w-6 cursor-pointer text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
-                        onClick={() => removeUser(user.email)}
-                      />
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+          <JobsiteInvite />
+        </form>
       </div>
+      <AlertDialog open={showDeleteSiteDialog} onOpenChange={setShowDeleteSiteDialog}>
+        <AlertDialogContent className="rounded-none border-none shadow-2xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-2xl font-bold">Delete Jobsite?</AlertDialogTitle>
+            <AlertDialogDescription className="text-lg">
+              This action cannot be undone. All associated camera settings, user permissions,
+              and site data will be permanently removed.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="pt-4">
+            <AlertDialogCancel className="rounded-none h-12 border-gray-200">Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={deleteMutation.isPending}
+              onClick={() => {
+                deleteMutation.mutate(); // ✅ THIS triggers the API
+                setShowDeleteSiteDialog(false); // close dialog
+              }} className="rounded-none h-12 bg-red-600 hover:bg-red-700 text-white font-bold"
+            >
+              {deleteMutation.isPending ? "Deleting..." : "DELETE JOBSITE"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
