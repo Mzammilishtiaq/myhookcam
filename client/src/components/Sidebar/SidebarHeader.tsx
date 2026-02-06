@@ -15,7 +15,7 @@ function SidebarHeader() {
     toggle();
   };
   return (
-    <div className="px-6 py-8 bg-[#555555] text-white rounded-tr-xl">
+    <div className="px-6 py-8 bg-[#555555] text-white">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center">
           <div className="flex-shrink-0 w-12 h-12 bg-[#FBBC05] rounded-full flex items-center justify-center mr-3">
@@ -25,7 +25,9 @@ function SidebarHeader() {
             <div className="text-xl font-bold">
               <span className="text-[#FBBC05]">ACME</span> Construction
             </div>
-            <div className="text-xs text-gray-300">powered by <span className="text-[#FBBC05]">HookCam</span></div>
+            <div className="text-xs text-gray-300">
+              powered by <span className="text-[#FBBC05]">HookCam</span>
+            </div>
           </div>
         </div>
         <Button
@@ -37,17 +39,16 @@ function SidebarHeader() {
           <Menu className="h-5 w-5" />
         </Button>
       </div>
-      <Link to="/user/profile" className="no-underline">
-        <div className="flex items-center mt-4 pb-3">
-          <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center mr-2">
-            <User className="h-4 w-4 text-gray-600" />
-          </div>
-          <div>
-            <div className="text-sm font-medium">{(getstorage?.data as any)?.full_name}</div>
-            <div className="text-xs text-gray-300">Project Manager</div>
-          </div>
+
+      <div className="flex items-center mt-4 pb-3">
+        <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center mr-2">
+          <User className="h-4 w-4 text-gray-600" />
         </div>
-      </Link>
+        <div>
+          <div className="text-sm font-medium">{userName}</div>
+          <div className="text-xs text-gray-300">Project Manager</div>
+        </div>
+      </div>
     </div>
   )
 }
