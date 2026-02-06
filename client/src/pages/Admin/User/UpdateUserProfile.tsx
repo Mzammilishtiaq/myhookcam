@@ -168,15 +168,16 @@ export default function UpdateUserProfile() {
                   type="password"
                   placeholder="Current password"
                   className="h-16 text-lg"
+                  maxLength={8} // Prevent typing more than 8 characters
                   {...form.register("currentpassword", {
                     minLength: {
                       value: 8,
-                      message: "Password must be at least 8 characters",
+                      message: "Password must be exactly 8 characters",
                     },
                     maxLength: {
                       value: 8,
-                      message: "Password must be at most 8 characters",
-                    }
+                      message: "Password must be exactly 8 characters",
+                    },
                   })}
                 />
                 {form.formState.errors.currentpassword && (
@@ -192,15 +193,19 @@ export default function UpdateUserProfile() {
                   type="password"
                   placeholder="New password"
                   className="h-16 text-lg"
+                  maxLength={8} // Prevent typing more than 8 characters
                   {...form.register("newpassword", {
                     minLength: {
                       value: 8,
-                      message: "Password must be at least 8 characters",
+                      message: "Password must be exactly 8 characters",
                     },
                     maxLength: {
                       value: 8,
-                      message: "Password must be at most 8 characters",
-                    }
+                      message: "Password must be exactly 8 characters",
+                    },
+                    validate: (value) =>
+                      value !== form.getValues("currentpassword") ||
+                      "New password cannot be the same as current password",
                   })}
                 />
                 {form.formState.errors.newpassword && (
