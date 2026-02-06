@@ -18,6 +18,9 @@ export const handleBusinessError = (res: any) => {
         case ErrorCode.BAD_REQUEST:
             message = backendMessage || `Bad request status ${code}.`
             break;
+             case ErrorCode.FORBIDDEN:
+            message = backendMessage || `Not Allow status ${code}.`
+            break;
         case ErrorCode.NOT_FOUND:
             message = backendMessage || `Resource not found status ${code}.`
             break;
