@@ -1,6 +1,5 @@
 import { Button } from "@/components/ui/button";
 import useSidebarStore from "@/hooks/use-sidebar";
-import { X } from "lucide-react";
 import { createContext, useContext, useEffect, useState } from "react";
 import Sidebar from '@/components/Sidebar/SidebarLayout'
 import MainNavigation from "@/pages/Layout/MainNavigation"
@@ -99,23 +98,11 @@ function MainLayout() {
         {isMobileView ? (
           // Mobile sidebar with overlay
           isOpen && (
-            <>
-              <div className="fixed inset-0 z-50 bg-black/50">
-                <div className="h-full w-[280px] max-w-xs">
-                  <Sidebar onSelectionChange={handleSelectionChange} />
-                </div>
+            <div className="fixed inset-0 z-50 bg-black/50">
+              <div className="h-full w-full">
+                <Sidebar onSelectionChange={handleSelectionChange} />
               </div>
-
-              {/* Mobile close button */}
-              <Button
-                variant="ghost"
-                size="sm"
-                className="fixed top-4 right-4 z-[60] bg-white rounded-full h-8 w-8 p-0 shadow-md"
-                onClick={handleToggleClick}
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </>
+            </div>
           )
         ) : (
           // Desktop sidebar with inline styles for more reliable transitions - now fixed position
@@ -152,12 +139,12 @@ function MainLayout() {
 
           {/* Main content */}
           <main className="flex-grow p-4">
-           <Outlet/>
+            <Outlet />
           </main>
 
           {/* Footer */}
           <footer className="bg-[#BCBBBB] text-[#555555] p-3 text-sm text-center">
-            <p><span className="font-semibold"><span className="text-[#FBBC05]">HookCam</span> System v1.0</span> | Connected to AWS S3 Storage</p>
+            <p><span className="font-semibold">© 2026 HookCam System</span></p>
           </footer>
         </div>
       </div>

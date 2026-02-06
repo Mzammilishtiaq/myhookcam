@@ -12,32 +12,17 @@ function MainNavigation() {
   const location = useLocation();
   const pathname = location.pathname;
   const navigate = useNavigate();
-  const { isOpen, toggle } = useSidebarStore();
+  const { isOpen, toggle, checkScreenSize, isMobileView } = useSidebarStore();
   const { pageTitle, cameraName, jobsiteName } = useContext(PageTitleContext);
 
-  // Get isMobile status for this component
-  const [isMobileView, setIsMobileView] = useState(false);
-
   useEffect(() => {
-    // Check screen size on mount and when window resizes
-    const checkScreenSize = () => {
-      setIsMobileView(window.innerWidth < 768);
-    };
-
-    // Initial check
-    checkScreenSize();
-
-    // Add resize listener
-    window.addEventListener('resize', checkScreenSize);
-
-    // Clean up
-    return () => window.removeEventListener('resize', checkScreenSize);
-  }, []);
+    checkScreenSize(); // initial check
+    window.addEventListener("resize", checkScreenSize); // listen to resize
+    return () => window.removeEventListener("resize", checkScreenSize);
+  }, [checkScreenSize]);
 
   // Handle toggle with detailed debug log
   const handleMenuClick = () => {
-    console.log("Sidebar toggle button clicked");
-    console.log("Zustand toggle called");
     toggle();
   };
 
@@ -101,28 +86,28 @@ function MainNavigation() {
           </div>
           <div className="flex items-center gap-2">
             {/* {(user?.userType === UserType.ADMIN) && ( */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="text-[#FBBC05] border-[#FBBC05] bg-white/10 hover:bg-[#FBBC05] hover:text-white"
-                  >
-                    <Plus className="h-4 w-4 mr-1" />
-                    New
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48 bg-white rounded">
-                  <DropdownMenuItem onClick={() => navigate("jobsite/create")} className="text-black flex  gap-x-2 items-center text-sm p-2 mb-2 cursor-pointer">
-                    <MapPin className="h-4 w-4 text-[#FBBC05]" />
-                    Create Site
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate("user/create")} className="text-black flex  gap-x-2 items-center text-sm p-2 mb-2 cursor-pointer">
-                    <UserPlus className="h-4 w-4 text-[#FBBC05]" />
-                    Create User
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-[#FBBC05] border-[#FBBC05] bg-white/10 hover:bg-[#FBBC05] hover:text-white"
+                >
+                  <Plus className="h-4 w-4 mr-1" />
+                  New
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48 bg-white rounded">
+                <DropdownMenuItem onClick={() => navigate("jobsite/create")} className="text-black flex  gap-x-2 items-center text-sm p-2 mb-2 cursor-pointer">
+                  <MapPin className="h-4 w-4 text-[#FBBC05]" />
+                  Create Site
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate("user/create")} className="text-black flex  gap-x-2 items-center text-sm p-2 mb-2 cursor-pointer">
+                  <UserPlus className="h-4 w-4 text-[#FBBC05]" />
+                  Create User
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             {/* )} */}
             {/* {userRole && ( */}
             <Button
