@@ -139,12 +139,17 @@ export default function Login() {
                                 type="password"
                                 placeholder="••••••••"
                                 className="h-14 text-lg rounded-none border-gray-300 focus:border-[#FBBC05] focus:ring-0"
+                                maxLength={8} // Prevent typing more than 8 characters
                                 {...form.register("password", {
                                     required: "Password is required",
                                     minLength: {
                                         value: 8,
-                                        message: "Password must be at least 8 characters"
-                                    }
+                                        message: "Password must be exactly 8 characters",
+                                    },
+                                    maxLength: {
+                                        value: 8,
+                                        message: "Password must be exactly 8 characters",
+                                    },
                                 })}
                             />
                         </div>
